@@ -1,9 +1,7 @@
 mod export;
 mod bitmask;
 mod zigzag;
-
-// qr code should be handled in the format
-// "Vec<Vec<bool>>".
+mod image_type;
 
 // program flow:
 // generate blank matrix
