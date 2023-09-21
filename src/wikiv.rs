@@ -5,6 +5,8 @@ const DEBUG: bool = false;
 
 // the qr-specific generator polynomial, 0b10100110111
 pub const QR_GEN: u32 = 0x537;
+// recurring polynomial in the wikiversity article, unsure of its significance
+pub const PRIM: u32 = 0x11d;
 
 // returns the remainder of fmt divided by g in GF(2^8), assuming fmt < 2^15
 // named "check format" because it returns qr format data:
@@ -135,7 +137,6 @@ pub fn qr_multiply(x: u32, y: u32) -> u32 {
 }
 
 pub fn bit_length(n: u32) -> u32 {
-    //32 - n.leading_zeros()
     match n {
         0 => 0,
         _ => n.ilog2() + 1,
@@ -147,8 +148,8 @@ pub fn carryless_divide(dividend: u32, divisor: u32) -> u32 {
         return dividend;
     }
 
-    let dnd_length = bit_length(dividend); // 32 - dividend.leading_zeros();
-    let dsr_length = bit_length(divisor); // 32 - divisor.leading_zeros();
+    let dnd_length = bit_length(dividend);
+    let dsr_length = bit_length(divisor);
     let mut dnd = dividend;
     for i in (0..=(dnd_length - dsr_length)).rev() {
         if dnd & (1 << i + dsr_length - 1) != 0 {
@@ -217,4 +218,72 @@ pub fn galois_multiply_peasant_full(
 // not sure what the field character is supposed to be, but i'm guessing 256
 pub fn galois_multiply_peasant_qr(x: u32, y: u32) -> u32 {
     galois_multiply_peasant_full(x, y, QR_GEN, 256, true)
+}
+
+// NEW ADDITIONS BELOW: section "multiplication with logarithms" starts here
+
+// "init_tables", freely interpreted
+// i don't understand why this function would reach all entries in log...
+pub fn generate_exp_log_tables(tables: &mut ([u32; 256], [u32; 256]), prime: u32) {
+    let (exp, log) = tables;
+    let mut x: usize = 1;
+    for i in 0..256 {
+        exp[i] = x as u32;
+        log[x % 256] = i as u32;
+        x = (galois_multiply(x as u32, 2, prime)) as usize;
+    }
+}
+
+// table index helper function
+// NOTE: the text uses modulo 255 rather than 256, which is a complete mystery to me
+// i've elected to keep going with 256 anyway, but if i encounter bugs this might be why
+fn i(x: u32) -> usize {
+    (x % 256) as usize
+}
+
+// "gf_mul"
+pub fn table_multiply(x: u32, y: u32, tables: &([u32; 256], [u32; 256])) -> u32 {
+    if x == 0 || y == 0 {
+        0
+    } else {
+        let (exp, log) = tables;
+        exp[i(log[i(x)] + log[i(y)])]
+    }
+}
+
+// "gf_div"
+pub fn table_divide(x: u32, y: u32, tables: &([u32; 256], [u32; 256])) -> u32 {
+    if y == 0 {
+        panic!();
+    }
+
+    if x == 0 {
+        0
+    } else {
+        let (exp, log) = tables;
+        // again using 256 where the text uses 255
+        exp[i(log[i(x)] + (256 - log[i(y)]))]
+    }
+}
+
+pub fn table_pow(x: u32, power: u32, tables: &([u32; 256], [u32; 256])) -> u32 {
+    let (exp, log) = tables;
+    exp[i(log[i(x)] * power)]
+}
+
+// "polynomials" section starts below
+// polynomials are written in descending order:
+// [a, b, c, d] = ax^3 + bx^2 + cx + d
+// (i personally don't think that's a good decision, but)
+
+pub fn polynomial_scale(poly: &Vec<u32>, x: u32, tables: &([u32; 256], [u32; 256])) -> Vec<u32> {
+    let mut output: Vec<u32> = Vec::new();
+    for &i in poly {
+        output.push(table_multiply(i, x, tables));
+    }
+    output
+}
+
+pub fn gf_poly_add() {
+    todo!()
 }
