@@ -1,3 +1,5 @@
+// NOTE: all code in this file is very obsolete, implementation-wise
+
 // change to use "Vec<Vec<bool>>" input/output type, if necessary
 
 // convert vector of bytes into vector of bit arrays
@@ -6,7 +8,7 @@ pub fn binarify(bytevec: &Vec<u8>) -> Vec<[bool; 8]> {
 
     for byte in bytevec {
         let mut bits: [bool; 8] = [false; 8];
-        
+
         for id in 0..8 {
             // "7 - id" to adjust for endianness
             bits[7 - id] = (byte & (1 << id)) != 0;
@@ -16,8 +18,11 @@ pub fn binarify(bytevec: &Vec<u8>) -> Vec<[bool; 8]> {
     return bitvec;
 }
 
-pub fn test_btb () {
-    let bitvec = binarify(&vec![0x40, 0xd2, 0x75, 0x47, 0x76, 0x17, 0x32, 0x06, 0x27, 0x26, 0x96, 0xc6, 0xc6, 0x96, 0x70, 0xec]);
+pub fn test_btb() {
+    let bitvec = binarify(&vec![
+        0x40, 0xd2, 0x75, 0x47, 0x76, 0x17, 0x32, 0x06, 0x27, 0x26, 0x96, 0xc6, 0xc6, 0x96, 0x70,
+        0xec,
+    ]);
 
     for byte in bitvec {
         for bit in byte {

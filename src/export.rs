@@ -33,7 +33,7 @@ fn main() {
 }
 */
 
-pub fn print_pattern (pattern: &Vec<Vec<bool>>) {
+pub fn print_pattern(pattern: &Vec<Vec<bool>>) {
     for line in pattern {
         // this routine is made to print 3x2 rectangles of characters
         // which makes a square in my 8x12px terminal font

@@ -23,6 +23,58 @@ impl Img {
         }
     }
 
+    // adapted from the code in qr/src/bitmask.rs
+    // returns None if 'mask' isn't within the range of 0 to 7
+    /* pub fn new_qr_mask(w: usize, h: usize, pattern: u8) -> Option<Self> {
+        let mut output = Img::new(w, h);
+
+        for y in 0..h {
+            for x in 0..w {
+                output.set_bit(
+                    x,
+                    y,
+                    match pattern {
+                        0 => (x + y) % 2,
+                        1 => y % 2,
+                        2 => x % 3,
+                        3 => (x + y) % 3,
+                        4 => (x / 3 + y / 2) % 2,
+                        5 => (x * y) % 2 + (x * y) % 3,
+                        6 => ((x * y) % 3 + x * y) % 2,
+                        7 => ((x * y) % 3 + x + y) % 2,
+                        _ => return None,
+                    } == 0,
+                );
+            }
+        }
+        Some(output)
+    } */
+
+    // xor one of the qr masking patterns over the bitmap
+    // i wrote this on the first try just before bedtime. go me
+    pub fn qr_xor(&mut self, pattern: u8) {
+        for vec_index in 0..self.bits.len() {
+            let mut mask_byte = 0u8;
+            for bit_index in (0..8).rev() {
+                mask_byte <<= 1;
+                if let Some((x, y)) = index_to_xy(vec_index, bit_index, self.width, self.height) {
+                    mask_byte |= (match pattern {
+                        0 => (x + y) % 2,
+                        1 => y % 2,
+                        2 => x % 3,
+                        3 => (x + y) % 3,
+                        4 => (x / 3 + y / 2) % 2,
+                        5 => (x * y) % 2 + (x * y) % 3,
+                        6 => ((x * y) % 3 + x * y) % 2,
+                        7 => ((x * y) % 3 + x + y) % 2,
+                        _ => panic!(),
+                    } == 0) as u8;
+                }
+            }
+            self.bits[vec_index] ^= mask_byte;
+        }
+    }
+
     // returns "false" if out-of-bounds
     pub fn set_bit(&mut self, x: usize, y: usize, bit: bool) -> bool {
         if let Some((n, i)) = xy_to_index(x, y, self.width, self.height) {
@@ -68,13 +120,10 @@ impl Img {
     }
 
     //returns a given row as the bits of a u128
-    pub fn get_row(&self, y: usize) -> u128 {
+    pub fn get_row(&self, y: usize) -> Option<u128> {
         if self.width > 128 {
             // won't fit
-            // placeholder
-            panic!()
-
-            // maybe handle this by using an enum that could be different-size tuples of u128's?
+            return None;
         }
 
         if let Some((vec_index_start, bit_index_start)) = xy_to_index(0, y, self.width, self.height)
@@ -110,7 +159,7 @@ impl Img {
             // if the row fits in one byte, we are done
             // this requires self.width <= 8, but idk if that's worth checking for
             if vec_index_start == vec_index_end {
-                last_byte as u128
+                Some(last_byte as u128)
             } else {
                 // first: remove bits of the previous row (if bit index is 7 (highest/leftmost bit), no shifting is needed)
                 // we basically smush the top bits up into nothingness and then lower the number back down
@@ -133,11 +182,11 @@ impl Img {
                 output <<= 8 - (bit_index_end);
                 output |= last_byte as u128;
 
-                output
+                Some(output)
             }
         } else {
             // error, do something good here
-            panic!()
+            return None;
         }
     }
 
@@ -174,6 +223,23 @@ impl Img {
 
     pub fn debug_indices(&self, x: usize, y: usize) -> Option<(usize, u8)> {
         xy_to_index(x, y, self.width, self.height)
+    }
+
+    pub fn debug_print_row(&self, y: usize, emoji: bool) -> Option<String> {
+        let row = self.get_row(y)?;
+        let mut output = String::new();
+        for j in (0..self.width).rev() {
+            if emoji {
+                output.push_str(if ((row >> j) % 2) == 1 {
+                    "⬛️"
+                } else {
+                    "⬜️"
+                })
+            } else {
+                output.push(if ((row >> j) % 2) == 1 { '1' } else { '0' })
+            };
+        }
+        Some(output)
     }
 }
 
@@ -214,6 +280,17 @@ fn xy_to_index(x: usize, y: usize, w: usize, h: usize) -> Option<(usize, u8)> {
     // i don't know why the "7 - (bit mod 8)" calculation
     // works, but it does seem to work, so...
     Some(((bit / 8) as usize, (7 - (bit % 8)) as u8))
+}
+
+fn index_to_xy(vec_index: usize, bit_index: u8, w: usize, h: usize) -> Option<(usize, usize)> {
+    let bit = (vec_index * 8) + (7 - bit_index) as usize;
+    let x = bit % w;
+    let y = (bit - x) / w;
+    if y >= h {
+        None
+    } else {
+        Some((x, y))
+    }
 }
 
 // this code below assumes data is saved in a way where the rows all start with
