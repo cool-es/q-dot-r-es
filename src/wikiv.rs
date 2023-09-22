@@ -1,12 +1,21 @@
 use core::panic;
+use std::{cmp, iter};
 
 // functions from the wikiversity "reed-solomon codes for coders" article
 const DEBUG: bool = false;
-
 // the qr-specific generator polynomial, 0b10100110111
 pub const QR_GEN: u32 = 0x537;
 // recurring polynomial in the wikiversity article, unsure of its significance
 pub const PRIM: u32 = 0x11d;
+
+// an element in a galois field
+type element = u32;
+// a polynomial over a galois field, ordered from highest power of x to lowest
+type polynomial = Vec<element>;
+// exp/log tables for the "table_*" functions
+type exp_log_luts = ([element; 256], [element; 256]);
+// lut for the reed-solomon generator polynomials
+type rsgen_lut = [polynomial; 64];
 
 // returns the remainder of fmt divided by g in GF(2^8), assuming fmt < 2^15
 // named "check format" because it returns qr format data:
@@ -109,7 +118,7 @@ pub fn qr_find_fmt(fcode: u32) -> Option<u32> {
 
 // carry-less multiplication in GF(2^8)
 // "cl_mul"
-pub fn carryless_multiply(x: u32, y: u32) -> u32 {
+pub fn carryless_multiply(x: element, y: element) -> element {
     let mut output = 0;
     // the (32 - y.leading_zeros()) is a silly
     // optimization, it can just as well be 32
@@ -124,7 +133,7 @@ pub fn carryless_multiply(x: u32, y: u32) -> u32 {
     output
 }
 
-pub fn galois_multiply(x: u32, y: u32, prime: u32) -> u32 {
+pub fn galois_multiply(x: element, y: element, prime: element) -> element {
     if prime > 0 {
         carryless_divide(carryless_multiply(x, y), prime)
     } else {
@@ -132,7 +141,7 @@ pub fn galois_multiply(x: u32, y: u32, prime: u32) -> u32 {
     }
 }
 
-pub fn qr_multiply(x: u32, y: u32) -> u32 {
+pub fn qr_multiply(x: element, y: element) -> element {
     galois_multiply(x, y, QR_GEN)
 }
 
@@ -143,7 +152,7 @@ pub fn bit_length(n: u32) -> u32 {
     }
 }
 
-pub fn carryless_divide(dividend: u32, divisor: u32) -> u32 {
+pub fn carryless_divide(dividend: element, divisor: element) -> element {
     if bit_length(dividend) < bit_length(divisor) {
         return dividend;
     }
@@ -191,12 +200,12 @@ pub fn test_gf() {
     a standard integer multiplication (no carry-less arithmetics nor modular reduction).
 */
 pub fn galois_multiply_peasant_full(
-    x: u32,
-    y: u32,
-    prime: u32,
+    x: element,
+    y: element,
+    prime: element,
     field_charac_full: u32,
     carryless: bool,
-) -> u32 {
+) -> element {
     let mut x = x;
     let mut y = y;
     let mut output = 0;
@@ -216,7 +225,7 @@ pub fn galois_multiply_peasant_full(
 
 // attempting to make a nicer peasant multiply...
 // not sure what the field character is supposed to be, but i'm guessing 256
-pub fn galois_multiply_peasant_qr(x: u32, y: u32) -> u32 {
+pub fn galois_multiply_peasant_qr(x: element, y: element) -> element {
     galois_multiply_peasant_full(x, y, QR_GEN, 256, true)
 }
 
@@ -224,13 +233,13 @@ pub fn galois_multiply_peasant_qr(x: u32, y: u32) -> u32 {
 
 // "init_tables", freely interpreted
 // i don't understand why this function would reach all entries in log...
-pub fn generate_exp_log_tables(tables: &mut ([u32; 256], [u32; 256]), prime: u32) {
+pub fn generate_exp_log_tables(tables: &mut exp_log_luts, prime: element) {
     let (exp, log) = tables;
     let mut x: usize = 1;
     for i in 0..256 {
-        exp[i] = x as u32;
-        log[x % 256] = i as u32;
-        x = (galois_multiply(x as u32, 2, prime)) as usize;
+        exp[i] = x as element;
+        log[x % 256] = i as element;
+        x = (galois_multiply(x as element, 2, prime)) as usize;
     }
 }
 
@@ -242,17 +251,18 @@ fn i(x: u32) -> usize {
 }
 
 // "gf_mul"
-pub fn table_multiply(x: u32, y: u32, tables: &([u32; 256], [u32; 256])) -> u32 {
+pub fn table_multiply(x: element, y: element, tables: &exp_log_luts) -> element {
     if x == 0 || y == 0 {
         0
     } else {
         let (exp, log) = tables;
+        // exp(log(x) + log(y))
         exp[i(log[i(x)] + log[i(y)])]
     }
 }
 
 // "gf_div"
-pub fn table_divide(x: u32, y: u32, tables: &([u32; 256], [u32; 256])) -> u32 {
+pub fn table_divide(x: element, y: element, tables: &exp_log_luts) -> element {
     if y == 0 {
         panic!();
     }
@@ -261,12 +271,13 @@ pub fn table_divide(x: u32, y: u32, tables: &([u32; 256], [u32; 256])) -> u32 {
         0
     } else {
         let (exp, log) = tables;
+        // exp(log(x) - log(y))
         // again using 256 where the text uses 255
         exp[i(log[i(x)] + (256 - log[i(y)]))]
     }
 }
 
-pub fn table_pow(x: u32, power: u32, tables: &([u32; 256], [u32; 256])) -> u32 {
+pub fn table_pow(x: element, power: element, tables: &exp_log_luts) -> element {
     let (exp, log) = tables;
     exp[i(log[i(x)] * power)]
 }
@@ -276,14 +287,177 @@ pub fn table_pow(x: u32, power: u32, tables: &([u32; 256], [u32; 256])) -> u32 {
 // [a, b, c, d] = ax^3 + bx^2 + cx + d
 // (i personally don't think that's a good decision, but)
 
-pub fn polynomial_scale(poly: &Vec<u32>, x: u32, tables: &([u32; 256], [u32; 256])) -> Vec<u32> {
-    let mut output: Vec<u32> = Vec::new();
+pub fn polynomial_scale(poly: &polynomial, x: element, tables: &exp_log_luts) -> polynomial {
+    let mut output: polynomial = Vec::new();
     for &i in poly {
         output.push(table_multiply(i, x, tables));
     }
     output
 }
 
-pub fn gf_poly_add() {
+pub fn gf_poly_add(poly1: &polynomial, poly2: &polynomial) -> polynomial {
+    let mut output: polynomial = Vec::new();
+    // resize the vector to fit the higher-degree (longer) polynomial
+    let (p1_len, p2_len) = (poly1.len(), poly2.len());
+    let out_len = cmp::max(p1_len, p2_len);
+    output.resize(out_len + 1, 0);
+
+    for i in 0..p1_len {
+        output[i + out_len - p1_len] = poly1[i];
+    }
+    for i in 0..p2_len {
+        output[i + out_len - p2_len] ^= poly2[i];
+    }
+
+    output
+}
+
+// SUPPOSEDLY multiplies two polynomials over a galois field
+pub fn gf_poly_mul(poly1: &polynomial, poly2: &polynomial, tables: &exp_log_luts) -> polynomial {
+    let mut output: polynomial = Vec::new();
+    // out_len needs to be p1_len + p2_len - 1
+    // len() and resize() both count from 1, no fencepost error
+    output.resize(poly1.len() + poly2.len() - 1, 0);
+
+    for i in 0..poly2.len() {
+        for j in 0..poly1.len() {
+            // the tutorial claims that this line is:
+            // "equivalent to r[i + j] = gf_add(r[i+j], gf_mul(p[i], q[j]))"
+            output[i + j] ^= table_multiply(poly1[j], poly2[i], tables);
+        }
+    }
+    output
+}
+
+// evaluates a polynomial for a specific value of x
+// "based on horner's scheme for maximum efficiency"
+pub fn gf_poly_eval(poly: &polynomial, x: element, tables: &exp_log_luts) -> element {
+    let mut output = poly[0];
+    for i in 1..poly.len() {
+        output = table_multiply(output, x, tables) ^ poly[i];
+    }
+    output
+}
+
+// wow! this sucks!
+/*
+    def rs_generator_poly(nsym):
+        '''Generate an irreducible generator polynomial (necessary to encode a message into Reed-Solomon)'''
+        g = [1]
+        for i in range(0, nsym):
+            g = gf_poly_mul(g, [1, gf_pow(2, i)])
+        return g
+*/
+// symbol_amnt is the number of error correcting symbols
+pub fn rs_generator_poly(symbol_amnt: u32, tables: &exp_log_luts) -> polynomial {
+    let mut output: polynomial = vec![1];
+    for i in 0..symbol_amnt {
+        let multiplier: polynomial = vec![1, table_pow(2, i, tables)];
+        output = gf_poly_mul(&output, &multiplier, tables);
+    }
+    output
+}
+
+// adding this (not in the text) because recalculating the values over and over would be obscene
+pub fn generate_rsgen_table(gentable: &mut rsgen_lut, tables: &exp_log_luts) {
+    for i in 0..gentable.len() {
+        gentable[i] = rs_generator_poly(i as u32, tables);
+    }
+}
+
+// help!!
+/*
+def gf_poly_div(dividend, divisor):
+    '''Fast polynomial division by using Extended Synthetic Division and optimized for GF(2^p) computations
+    (doesn't work with standard polynomials outside of this galois field, see the Wikipedia article for generic algorithm).'''
+    # CAUTION: this function expects polynomials to follow the opposite convention at decoding:
+    # the terms must go from the biggest to lowest degree (while most other functions here expect
+    # a list from lowest to biggest degree). eg: 1 + 2x + 5x^2 = [5, 2, 1], NOT [1, 2, 5]
+
+    msg_out = list(dividend) # Copy the dividend
+    #normalizer = divisor[0] # precomputing for performance
+    for i in range(0, len(dividend) - (len(divisor)-1)):
+        #msg_out[i] /= normalizer # for general polynomial division (when polynomials are non-monic), the usual way of using
+                                  # synthetic division is to divide the divisor g(x) with its leading coefficient, but not needed here.
+        coef = msg_out[i] # precaching
+        if coef != 0: # log(0) is undefined, so we need to avoid that case explicitly (and it's also a good optimization).
+            for j in range(1, len(divisor)): # in synthetic division, we always skip the first coefficient of the divisior,
+                                              # because it's only used to normalize the dividend coefficient
+                if divisor[j] != 0: # log(0) is undefined
+                    msg_out[i + j] ^= gf_mul(divisor[j], coef) # equivalent to the more mathematically correct
+                                                               # (but xoring directly is faster): msg_out[i + j] += -divisor[j] * coef
+
+    # The resulting msg_out contains both the quotient and the remainder, the remainder being the size of the divisor
+    # (the remainder has necessarily the same degree as the divisor -- not length but degree == length-1 -- since it's
+    # what we couldn't divide from the dividend), so we compute the index where this separation is, and return the quotient and remainder.
+    separator = -(len(divisor)-1)
+    return msg_out[:separator], msg_out[separator:] # return quotient, remainder.
+*/
+pub fn gf_poly_div(
+    dividend: &polynomial,
+    divisor: &polynomial,
+    tables: &exp_log_luts,
+) -> (polynomial, polynomial) {
+    // man, idk
     todo!()
 }
+
+/*
+def rs_encode_msg(msg_in, nsym):
+    '''Reed-Solomon main encoding function'''
+    gen = rs_generator_poly(nsym)
+
+    # Pad the message, then divide it by the irreducible generator polynomial
+    _, remainder = gf_poly_div(msg_in + [0] * (len(gen)-1), gen)
+    # The remainder is our RS code! Just append it to our original message to get our full codeword (this represents a polynomial of max 256 terms)
+    msg_out = msg_in + remainder
+    # Return the codeword
+    return msg_out
+*/
+pub fn rs_encode_msg(msg_in: polynomial, symbol_amnt: u32, tables: &exp_log_luts) -> polynomial {
+    let gen = rs_generator_poly(symbol_amnt, tables);
+
+    // i don't know what i'm doing
+    let mut output = msg_in.clone();
+    output.extend(iter::repeat(0).take(gen.len() - 1));
+
+    // i do not know what i am doing.
+    let mut remainder = gf_poly_div(&output, &gen, tables).1;
+    output.append(&mut remainder);
+    output
+}
+
+// "Simple, isn't it?" get bent
+
+/*
+def rs_encode_msg(msg_in, nsym):
+    '''Reed-Solomon main encoding function, using polynomial division (algorithm Extended Synthetic Division)'''
+    if (len(msg_in) + nsym) > 255: raise ValueError("Message is too long (%i when max is 255)" % (len(msg_in)+nsym))
+    gen = rs_generator_poly(nsym)
+    # Init msg_out with the values inside msg_in and pad with len(gen)-1 bytes (which is the number of ecc symbols).
+    msg_out = [0] * (len(msg_in) + len(gen)-1)
+    # Initializing the Synthetic Division with the dividend (= input message polynomial)
+    msg_out[:len(msg_in)] = msg_in
+
+    # Synthetic division main loop
+    for i in range(len(msg_in)):
+        # Note that it's msg_out here, not msg_in. Thus, we reuse the updated value at each iteration
+        # (this is how Synthetic Division works: instead of storing in a temporary register the intermediate values,
+        # we directly commit them to the output).
+        coef = msg_out[i]
+
+        # log(0) is undefined, so we need to manually check for this case. There's no need to check
+        # the divisor here because we know it can't be 0 since we generated it.
+        if coef != 0:
+            # in synthetic division, we always skip the first coefficient of the divisior, because it's only used to normalize the dividend coefficient (which is here useless since the divisor, the generator polynomial, is always monic)
+            for j in range(1, len(gen)):
+                msg_out[i+j] ^= gf_mul(gen[j], coef) # equivalent to msg_out[i+j] += gf_mul(gen[j], coef)
+
+    # At this point, the Extended Synthetic Divison is done, msg_out contains the quotient in msg_out[:len(msg_in)]
+    # and the remainder in msg_out[len(msg_in):]. Here for RS encoding, we don't need the quotient but only the remainder
+    # (which represents the RS code), so we can just overwrite the quotient with the input message, so that we get
+    # our complete codeword composed of the message + code.
+    msg_out[:len(msg_in)] = msg_in
+
+    return msg_out
+*/
