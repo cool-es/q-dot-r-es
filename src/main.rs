@@ -1,7 +1,7 @@
 mod bitmask;
 mod export;
 mod image_type;
-mod wikiv;
+mod rdsm;
 mod zigzag;
 
 // program flow:
@@ -21,7 +21,11 @@ mod zigzag;
 // a list of bytes, like 0f a6 42 etc.
 
 fn main() {
-    wikiv::test_gf();
+    // time to generate a qr code (clueless)
+
+    let a: rdsm::polynomial = Vec::from(rdsm::TEST_MSG);
+
+    //wikiv::test_gf();
 
     /* for k in 0..5 {
         let i = 1 << k;
@@ -46,7 +50,7 @@ fn main() {
             format,
             wikiv::qr_check_fcode(format)
         ); */
-        /* print!("{:2}: ", i);
+    /* print!("{:2}: ", i);
         for j in 0..i {
             print!("{} ", (codes[i] ^ codes[j]) ^ codes[i ^ j]);
             /* if (codes[i] ^ codes[j]).count_ones() > 8 {
@@ -57,14 +61,14 @@ fn main() {
                     (codes[i] ^ codes[j]).count_ones()
                 );
             } */
-        } 
+        }
     } */
 }
 
 // tests qr format check, assuming debug printing is enabled
 fn test_checkfmt() {
     for i in 10..20 {
-        wikiv::qr_check_fcode((2u32.pow(15) - 20) + i);
+        rdsm::qr_check_fcode((2u32.pow(15) - 20) + i);
         println!();
     }
 }

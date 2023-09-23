@@ -1,3 +1,6 @@
+// reed-solomon / galois field operations from wikiversity:
+// https://en.wikiversity.org/wiki/Reed%E2%80%93Solomon_codes_for_coders
+
 use core::panic;
 use std::{cmp, iter};
 
@@ -9,13 +12,20 @@ pub const QR_GEN: u32 = 0x537;
 pub const PRIM: u32 = 0x11d;
 
 // an element in a galois field
-type element = u32;
+pub type element = u32;
 // a polynomial over a galois field, ordered from highest power of x to lowest
-type polynomial = Vec<element>;
+pub type polynomial = Vec<element>;
 // exp/log tables for the "table_*" functions
-type exp_log_luts = ([element; 256], [element; 256]);
+pub type exp_log_luts = ([element; 256], [element; 256]);
 // lut for the reed-solomon generator polynomials
-type rsgen_lut = [polynomial; 64];
+pub type rsgen_lut = [polynomial; 64];
+
+// from the tutorial: uses PRIM as its generator polynomial
+// rs_encode_msg(TEST_MSG, 10) = TEST_MSG + TEST_RESULT
+pub const TEST_MSG: &[element] = &[
+    0x40, 0xd2, 0x75, 0x47, 0x76, 0x17, 0x32, 0x06, 0x27, 0x26, 0x96, 0xc6, 0xc6, 0x96, 0x70, 0xec,
+];
+pub const TEST_RESULT: &[element] = &[0xbc, 0x2a, 0x90, 0x13, 0x6b, 0xaf, 0xef, 0xfd, 0x4b, 0xe0];
 
 // returns the remainder of fmt divided by g in GF(2^8), assuming fmt < 2^15
 // named "check format" because it returns qr format data:
@@ -36,28 +46,9 @@ pub fn qr_check_fcode(fcode: u32) -> u32 {
     let qr_gen = 0x537; // 0b10100110111
     let mut output = fcode;
 
-    if DEBUG {
-        println!("!! check format debug:   {:#032b} ({})", output, output);
-    }
     for i in (0..=4).rev() {
-        if DEBUG {
-            println!("!!! loop, i = {}", i);
-            println!("!! format =              {:#032b}", output);
-            println!("!! (1 << (i + 10))) =    {:#032b}", (1 << (i + 10)));
-            println!(
-                "!! bitwise and:          {:#032b}",
-                (output & (1 << (i + 10)))
-            );
-        }
         if (1 << (i + 10)) & output != 0 {
             // the 2^(i+10) bit of fmt is 1
-
-            if DEBUG {
-                println!("-- \"0 !=\" condition met!");
-                println!("-- format =              {:#032b}", output);
-                println!("-- g << i =              {:#032b}", qr_gen << i);
-                println!("-- format = bitwise xor: {:#032b}", output ^ (qr_gen << i));
-            }
 
             // add (without carry) g shifted by i
             // because g has a 1 in the highest, 2^10, bit,
@@ -66,10 +57,6 @@ pub fn qr_check_fcode(fcode: u32) -> u32 {
             // on the 2^14 to 2^10 bits, from high to low
             output ^= qr_gen << i;
         }
-    }
-    if DEBUG {
-        println!("!! finished:");
-        println!("!! check format output:  {:#032b} ({})", output, output);
     }
     output
 }
@@ -398,21 +385,20 @@ pub fn gf_poly_div(
 ) -> (polynomial, polynomial) {
     // man, idk
 
-    let mut msg_out = dividend.clone();
+    let mut output = dividend.clone();
     for i in 0..(dividend.len() - (divisor.len() - 1)) {
-        let coef = msg_out[i];
+        let coef = output[i];
         if coef != 0 {
             for j in 1..divisor.len() {
                 if divisor[j] != 0 {
-                    msg_out[i + j] ^= table_multiply(divisor[j], coef, tables);
+                    output[i + j] ^= table_multiply(divisor[j], coef, tables);
                 }
             }
         }
     }
-    
-    let separator = divisor.len()-1;
-    let (quotient,remainder) = msg_out.split_at(separator);
-    (quotient.to_vec(),remainder.to_vec())
+
+    let (quotient, remainder) = output.split_at(divisor.len() - 1);
+    (quotient.to_vec(), remainder.to_vec())
 }
 
 /*
