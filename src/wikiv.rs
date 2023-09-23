@@ -375,10 +375,8 @@ def gf_poly_div(dividend, divisor):
     # a list from lowest to biggest degree). eg: 1 + 2x + 5x^2 = [5, 2, 1], NOT [1, 2, 5]
 
     msg_out = list(dividend) # Copy the dividend
-    #normalizer = divisor[0] # precomputing for performance
+
     for i in range(0, len(dividend) - (len(divisor)-1)):
-        #msg_out[i] /= normalizer # for general polynomial division (when polynomials are non-monic), the usual way of using
-                                  # synthetic division is to divide the divisor g(x) with its leading coefficient, but not needed here.
         coef = msg_out[i] # precaching
         if coef != 0: # log(0) is undefined, so we need to avoid that case explicitly (and it's also a good optimization).
             for j in range(1, len(divisor)): # in synthetic division, we always skip the first coefficient of the divisior,
@@ -399,7 +397,22 @@ pub fn gf_poly_div(
     tables: &exp_log_luts,
 ) -> (polynomial, polynomial) {
     // man, idk
-    todo!()
+
+    let mut msg_out = dividend.clone();
+    for i in 0..(dividend.len() - (divisor.len() - 1)) {
+        let coef = msg_out[i];
+        if coef != 0 {
+            for j in 1..divisor.len() {
+                if divisor[j] != 0 {
+                    msg_out[i + j] ^= table_multiply(divisor[j], coef, tables);
+                }
+            }
+        }
+    }
+    
+    let separator = divisor.len()-1;
+    let (quotient,remainder) = msg_out.split_at(separator);
+    (quotient.to_vec(),remainder.to_vec())
 }
 
 /*
@@ -414,50 +427,20 @@ def rs_encode_msg(msg_in, nsym):
     # Return the codeword
     return msg_out
 */
-pub fn rs_encode_msg(msg_in: polynomial, symbol_amnt: u32, tables: &exp_log_luts) -> polynomial {
+pub fn rs_encode_msg(msg_in: &polynomial, symbol_amnt: u32, tables: &exp_log_luts) -> polynomial {
     let gen = rs_generator_poly(symbol_amnt, tables);
 
     // i don't know what i'm doing
-    let mut output = msg_in.clone();
-    output.extend(iter::repeat(0).take(gen.len() - 1));
+    let mut msg_in_padded = msg_in.clone();
+    msg_in_padded.extend(iter::repeat(0).take(gen.len() - 1));
 
     // i do not know what i am doing.
-    let mut remainder = gf_poly_div(&output, &gen, tables).1;
-    output.append(&mut remainder);
+    let remainder = gf_poly_div(&msg_in_padded, &gen, tables).1;
+    let mut output = msg_in.clone();
+    output.extend(remainder.iter());
     output
 }
 
 // "Simple, isn't it?" get bent
 
-/*
-def rs_encode_msg(msg_in, nsym):
-    '''Reed-Solomon main encoding function, using polynomial division (algorithm Extended Synthetic Division)'''
-    if (len(msg_in) + nsym) > 255: raise ValueError("Message is too long (%i when max is 255)" % (len(msg_in)+nsym))
-    gen = rs_generator_poly(nsym)
-    # Init msg_out with the values inside msg_in and pad with len(gen)-1 bytes (which is the number of ecc symbols).
-    msg_out = [0] * (len(msg_in) + len(gen)-1)
-    # Initializing the Synthetic Division with the dividend (= input message polynomial)
-    msg_out[:len(msg_in)] = msg_in
-
-    # Synthetic division main loop
-    for i in range(len(msg_in)):
-        # Note that it's msg_out here, not msg_in. Thus, we reuse the updated value at each iteration
-        # (this is how Synthetic Division works: instead of storing in a temporary register the intermediate values,
-        # we directly commit them to the output).
-        coef = msg_out[i]
-
-        # log(0) is undefined, so we need to manually check for this case. There's no need to check
-        # the divisor here because we know it can't be 0 since we generated it.
-        if coef != 0:
-            # in synthetic division, we always skip the first coefficient of the divisior, because it's only used to normalize the dividend coefficient (which is here useless since the divisor, the generator polynomial, is always monic)
-            for j in range(1, len(gen)):
-                msg_out[i+j] ^= gf_mul(gen[j], coef) # equivalent to msg_out[i+j] += gf_mul(gen[j], coef)
-
-    # At this point, the Extended Synthetic Divison is done, msg_out contains the quotient in msg_out[:len(msg_in)]
-    # and the remainder in msg_out[len(msg_in):]. Here for RS encoding, we don't need the quotient but only the remainder
-    # (which represents the RS code), so we can just overwrite the quotient with the input message, so that we get
-    # our complete codeword composed of the message + code.
-    msg_out[:len(msg_in)] = msg_in
-
-    return msg_out
-*/
+// in theory i should have the full capability to create a qr code now
