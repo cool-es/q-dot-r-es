@@ -1,11 +1,11 @@
 // reed-solomon / galois field operations from wikiversity:
 // https://en.wikiversity.org/wiki/Reed%E2%80%93Solomon_codes_for_coders
 
+
 use core::panic;
-use std::{cmp, iter};
+
 
 // functions from the wikiversity "reed-solomon codes for coders" article
-const DEBUG: bool = false;
 // the qr-specific generator polynomial, 0b10100110111
 pub const QR_GEN: u32 = 0x537;
 // recurring polynomial in the wikiversity article, unsure of its significance
@@ -13,10 +13,13 @@ pub const PRIM: u32 = 0x11d;
 
 // from the tutorial: uses PRIM as its generator polynomial
 // rs_encode_msg(TEST_MSG, 10) == TEST_MSG + TEST_RESULT == FULL_TEST_RESULT
+// length 16
 pub const TEST_MSG: &[Element] = &[
     0x40, 0xd2, 0x75, 0x47, 0x76, 0x17, 0x32, 0x06, 0x27, 0x26, 0x96, 0xc6, 0xc6, 0x96, 0x70, 0xec,
 ];
+// length 10
 pub const TEST_RESULT: &[Element] = &[0xbc, 0x2a, 0x90, 0x13, 0x6b, 0xaf, 0xef, 0xfd, 0x4b, 0xe0];
+// length 26
 pub const FULL_TEST_RESULT: &[Element] = &[
     0x40, 0xd2, 0x75, 0x47, 0x76, 0x17, 0x32, 0x06, 0x27, 0x26, 0x96, 0xc6, 0xc6, 0x96, 0x70, 0xec,
     0xbc, 0x2a, 0x90, 0x13, 0x6b, 0xaf, 0xef, 0xfd, 0x4b, 0xe0,
@@ -241,7 +244,8 @@ pub fn generate_exp_log_tables(tables: &mut ExpLogLUTs, prime: Element) {
 // NOTE: the text uses modulo 255 rather than 256, which is a complete mystery to me
 // i've elected to keep going with 256 anyway, but if i encounter bugs this might be why
 fn i(x: u32) -> usize {
-    (x % 256) as usize
+    //(x % 256) as usize
+    (x % 255) as usize
 }
 
 // "gf_mul"
@@ -253,6 +257,11 @@ pub fn table_multiply(x: Element, y: Element, tables: &ExpLogLUTs) -> Element {
         // exp(log(x) + log(y))
         exp[i(log[i(x)] + log[i(y)])]
     }
+}
+
+//fake function, debug: has the same signature as table_multiply but doesn't use tables
+pub fn ftable_multiply(x: Element, y: Element, _tables: &ExpLogLUTs) -> Element {
+    galois_multiply(x, y, PRIM)
 }
 
 // "gf_div"
@@ -267,13 +276,23 @@ pub fn table_divide(x: Element, y: Element, tables: &ExpLogLUTs) -> Element {
         let (exp, log) = tables;
         // exp(log(x) - log(y))
         // again using 256 where the text uses 255
-        exp[i(log[i(x)] + (256 - log[i(y)]))]
+        // exp[i(log[i(x)] + (256 - log[i(y)]))]
+        exp[i(log[i(x)] + (255 - log[i(y)]))]
     }
 }
 
-pub fn table_pow(x: Element, power: Element, tables: &ExpLogLUTs) -> Element {
+pub fn table_pow(x: Element, power: u32, tables: &ExpLogLUTs) -> Element {
     let (exp, log) = tables;
     exp[i(log[i(x)] * power)]
+}
+
+// another fake "table" debug function
+pub fn ftable_pow(x: Element, power: u32, _tables: &ExpLogLUTs) -> Element {
+    let mut output = 1;
+    for i in 0..power {
+        output = galois_multiply(output, x, PRIM);
+    }
+    output
 }
 
 // "polynomials" section starts below
@@ -289,11 +308,11 @@ pub fn polynomial_scale(poly: &Polynomial, x: Element, tables: &ExpLogLUTs) -> P
     output
 }
 
-pub fn gf_poly_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
+pub fn polynomial_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
     let mut output: Polynomial = Vec::new();
     // resize the vector to fit the higher-degree (longer) polynomial
     let (p1_len, p2_len) = (poly1.len(), poly2.len());
-    let out_len = cmp::max(p1_len, p2_len);
+    let out_len = std::cmp::max(p1_len, p2_len);
     output.resize(out_len + 1, 0);
 
     for i in 0..p1_len {
@@ -307,7 +326,11 @@ pub fn gf_poly_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
 }
 
 // SUPPOSEDLY multiplies two polynomials over a galois field
-pub fn gf_poly_mul(poly1: &Polynomial, poly2: &Polynomial, tables: &ExpLogLUTs) -> Polynomial {
+pub fn polynomial_multiply(
+    poly1: &Polynomial,
+    poly2: &Polynomial,
+    tables: &ExpLogLUTs,
+) -> Polynomial {
     let mut output: Polynomial = Vec::new();
     // out_len needs to be p1_len + p2_len - 1
     // len() and resize() both count from 1, no fencepost error
@@ -325,7 +348,7 @@ pub fn gf_poly_mul(poly1: &Polynomial, poly2: &Polynomial, tables: &ExpLogLUTs) 
 
 // evaluates a polynomial for a specific value of x
 // "based on horner's scheme for maximum efficiency"
-pub fn gf_poly_eval(poly: &Polynomial, x: Element, tables: &ExpLogLUTs) -> Element {
+pub fn polynomial_evaluate(poly: &Polynomial, x: Element, tables: &ExpLogLUTs) -> Element {
     let mut output = poly[0];
     for i in 1..poly.len() {
         output = table_multiply(output, x, tables) ^ poly[i];
@@ -342,12 +365,12 @@ pub fn gf_poly_eval(poly: &Polynomial, x: Element, tables: &ExpLogLUTs) -> Eleme
             g = gf_poly_mul(g, [1, gf_pow(2, i)])
         return g
 */
-// symbol_amnt is the number of error correcting symbols
-pub fn rs_generator_poly(symbol_amnt: u32, tables: &ExpLogLUTs) -> Polynomial {
+// ec_symbols is the number of error correcting symbols
+pub fn make_rdsm_generator_polynomial(ec_symbols: u32, tables: &ExpLogLUTs) -> Polynomial {
     let mut output: Polynomial = vec![1];
-    for i in 0..symbol_amnt {
+    for i in 0..ec_symbols {
         let multiplier: Polynomial = vec![1, table_pow(2, i, tables)];
-        output = gf_poly_mul(&output, &multiplier, tables);
+        output = polynomial_multiply(&output, &multiplier, tables);
     }
     output
 }
@@ -356,7 +379,7 @@ pub fn rs_generator_poly(symbol_amnt: u32, tables: &ExpLogLUTs) -> Polynomial {
 // lacks implementations and any practical use
 pub fn _generate_rsgen_table(gentable: &mut _RSGenLUT, tables: &ExpLogLUTs) {
     for i in 0..gentable.len() {
-        gentable[i] = rs_generator_poly(i as u32, tables);
+        gentable[i] = make_rdsm_generator_polynomial(i as u32, tables);
     }
 }
 
@@ -386,7 +409,7 @@ def gf_poly_div(dividend, divisor):
     separator = -(len(divisor)-1)
     return msg_out[:separator], msg_out[separator:] # return quotient, remainder.
 */
-pub fn gf_poly_div(
+pub fn polynomial_divide(
     dividend: &Polynomial,
     divisor: &Polynomial,
     tables: &ExpLogLUTs,
@@ -421,15 +444,15 @@ def rs_encode_msg(msg_in, nsym):
     # Return the codeword
     return msg_out
 */
-pub fn rs_encode_msg(msg_in: &Polynomial, symbol_amnt: u32, tables: &ExpLogLUTs) -> Polynomial {
-    let gen = rs_generator_poly(symbol_amnt, tables);
+pub fn encode_message(msg_in: &Polynomial, ec_symbols: u32, tables: &ExpLogLUTs) -> Polynomial {
+    let gen = make_rdsm_generator_polynomial(ec_symbols, tables);
 
     // i don't know what i'm doing
     let mut msg_in_padded = msg_in.clone();
-    msg_in_padded.extend(iter::repeat(0).take(gen.len() - 1));
+    msg_in_padded.extend(std::iter::repeat(0).take(gen.len() - 1));
 
     // i do not know what i am doing.
-    let remainder = gf_poly_div(&msg_in_padded, &gen, tables).1;
+    let remainder = polynomial_divide(&msg_in_padded, &gen, tables).1;
     let mut output = msg_in.clone();
     output.extend(remainder.iter());
     output
@@ -438,3 +461,6 @@ pub fn rs_encode_msg(msg_in: &Polynomial, symbol_amnt: u32, tables: &ExpLogLUTs)
 // "Simple, isn't it?" get bent
 
 // in theory i should have the full capability to create a qr code now
+// nope it don't work
+
+pub fn debug_check_tables(tables: &ExpLogLUTs) {}

@@ -1,5 +1,3 @@
-use rdsm::BLANK_EXP_LOG_LUTS;
-
 mod bitmask;
 mod export;
 mod image_type;
@@ -23,13 +21,6 @@ mod zigzag;
 // a list of bytes, like 0f a6 42 etc.
 
 fn main() {
-    // time to generate a qr code (clueless)
-    let mut lookup_tables = BLANK_EXP_LOG_LUTS;
-    rdsm::generate_exp_log_tables(&mut lookup_tables, rdsm::PRIM);
-    let input: rdsm::Polynomial = Vec::from(rdsm::TEST_MSG);
-    let control: rdsm::Polynomial = Vec::from(rdsm::FULL_TEST_RESULT);
-    let output = rdsm::rs_encode_msg(&input, 10, &lookup_tables);
-    assert!(output == control);
 
     //wikiv::test_gf();
 
@@ -77,4 +68,30 @@ fn test_checkfmt() {
         rdsm::qr_check_fcode((2u32.pow(15) - 20) + i);
         println!();
     }
+}
+
+fn test_reed_solomon() {
+    // time to generate a qr code (clueless)
+    let mut lookup_tables = rdsm::BLANK_EXP_LOG_LUTS;
+    rdsm::generate_exp_log_tables(&mut lookup_tables, rdsm::PRIM);
+    let input: rdsm::Polynomial = Vec::from(rdsm::TEST_MSG);
+    let mut control: rdsm::Polynomial = Vec::from(rdsm::FULL_TEST_RESULT);
+    let mut output = rdsm::encode_message(&input, 10, &lookup_tables);
+    //assert!(output == control);
+    println!("output:\n{:?}\ncontrol:\n{:?}", &output, &control);
+
+    let len = std::cmp::max(output.len(), control.len());
+    control.resize(len, 0);
+    output.resize(len, 0);
+    println!("difference:");
+    for i in 0..len {
+        if i == 16 {
+            println!();
+        }
+        print!("{}", output[i] as i32 - control[i] as i32);
+        if i != len - 1 {
+            print!(", ");
+        }
+    }
+    println!();
 }
