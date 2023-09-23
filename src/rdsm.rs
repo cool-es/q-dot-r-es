@@ -11,21 +11,28 @@ pub const QR_GEN: u32 = 0x537;
 // recurring polynomial in the wikiversity article, unsure of its significance
 pub const PRIM: u32 = 0x11d;
 
-// an element in a galois field
-pub type element = u32;
-// a polynomial over a galois field, ordered from highest power of x to lowest
-pub type polynomial = Vec<element>;
-// exp/log tables for the "table_*" functions
-pub type exp_log_luts = ([element; 256], [element; 256]);
-// lut for the reed-solomon generator polynomials
-pub type rsgen_lut = [polynomial; 64];
-
 // from the tutorial: uses PRIM as its generator polynomial
-// rs_encode_msg(TEST_MSG, 10) = TEST_MSG + TEST_RESULT
-pub const TEST_MSG: &[element] = &[
+// rs_encode_msg(TEST_MSG, 10) == TEST_MSG + TEST_RESULT == FULL_TEST_RESULT
+pub const TEST_MSG: &[Element] = &[
     0x40, 0xd2, 0x75, 0x47, 0x76, 0x17, 0x32, 0x06, 0x27, 0x26, 0x96, 0xc6, 0xc6, 0x96, 0x70, 0xec,
 ];
-pub const TEST_RESULT: &[element] = &[0xbc, 0x2a, 0x90, 0x13, 0x6b, 0xaf, 0xef, 0xfd, 0x4b, 0xe0];
+pub const TEST_RESULT: &[Element] = &[0xbc, 0x2a, 0x90, 0x13, 0x6b, 0xaf, 0xef, 0xfd, 0x4b, 0xe0];
+pub const FULL_TEST_RESULT: &[Element] = &[
+    0x40, 0xd2, 0x75, 0x47, 0x76, 0x17, 0x32, 0x06, 0x27, 0x26, 0x96, 0xc6, 0xc6, 0x96, 0x70, 0xec,
+    0xbc, 0x2a, 0x90, 0x13, 0x6b, 0xaf, 0xef, 0xfd, 0x4b, 0xe0,
+];
+
+// an element in a galois field
+pub type Element = u32;
+// a polynomial over a galois field, ordered from highest power of x to lowest
+pub type Polynomial = Vec<Element>;
+// exp/log tables for the "table_*" functions
+pub type ExpLogLUTs = ([Element; 256], [Element; 256]);
+// lut for the reed-solomon generator polynomials (not fit for use atm)
+pub type _RSGenLUT = [Polynomial; 64];
+
+// blank tables to make initialization easier
+pub const BLANK_EXP_LOG_LUTS: ExpLogLUTs = ([0; 256], [0; 256]);
 
 // returns the remainder of fmt divided by g in GF(2^8), assuming fmt < 2^15
 // named "check format" because it returns qr format data:
@@ -105,7 +112,7 @@ pub fn qr_find_fmt(fcode: u32) -> Option<u32> {
 
 // carry-less multiplication in GF(2^8)
 // "cl_mul"
-pub fn carryless_multiply(x: element, y: element) -> element {
+pub fn carryless_multiply(x: Element, y: Element) -> Element {
     let mut output = 0;
     // the (32 - y.leading_zeros()) is a silly
     // optimization, it can just as well be 32
@@ -120,7 +127,7 @@ pub fn carryless_multiply(x: element, y: element) -> element {
     output
 }
 
-pub fn galois_multiply(x: element, y: element, prime: element) -> element {
+pub fn galois_multiply(x: Element, y: Element, prime: Element) -> Element {
     if prime > 0 {
         carryless_divide(carryless_multiply(x, y), prime)
     } else {
@@ -128,7 +135,7 @@ pub fn galois_multiply(x: element, y: element, prime: element) -> element {
     }
 }
 
-pub fn qr_multiply(x: element, y: element) -> element {
+pub fn qr_multiply(x: Element, y: Element) -> Element {
     galois_multiply(x, y, QR_GEN)
 }
 
@@ -139,7 +146,7 @@ pub fn bit_length(n: u32) -> u32 {
     }
 }
 
-pub fn carryless_divide(dividend: element, divisor: element) -> element {
+pub fn carryless_divide(dividend: Element, divisor: Element) -> Element {
     if bit_length(dividend) < bit_length(divisor) {
         return dividend;
     }
@@ -187,12 +194,12 @@ pub fn test_gf() {
     a standard integer multiplication (no carry-less arithmetics nor modular reduction).
 */
 pub fn galois_multiply_peasant_full(
-    x: element,
-    y: element,
-    prime: element,
+    x: Element,
+    y: Element,
+    prime: Element,
     field_charac_full: u32,
     carryless: bool,
-) -> element {
+) -> Element {
     let mut x = x;
     let mut y = y;
     let mut output = 0;
@@ -212,7 +219,7 @@ pub fn galois_multiply_peasant_full(
 
 // attempting to make a nicer peasant multiply...
 // not sure what the field character is supposed to be, but i'm guessing 256
-pub fn galois_multiply_peasant_qr(x: element, y: element) -> element {
+pub fn galois_multiply_peasant_qr(x: Element, y: Element) -> Element {
     galois_multiply_peasant_full(x, y, QR_GEN, 256, true)
 }
 
@@ -220,13 +227,13 @@ pub fn galois_multiply_peasant_qr(x: element, y: element) -> element {
 
 // "init_tables", freely interpreted
 // i don't understand why this function would reach all entries in log...
-pub fn generate_exp_log_tables(tables: &mut exp_log_luts, prime: element) {
+pub fn generate_exp_log_tables(tables: &mut ExpLogLUTs, prime: Element) {
     let (exp, log) = tables;
     let mut x: usize = 1;
     for i in 0..256 {
-        exp[i] = x as element;
-        log[x % 256] = i as element;
-        x = (galois_multiply(x as element, 2, prime)) as usize;
+        exp[i] = x as Element;
+        log[x % 256] = i as Element;
+        x = (galois_multiply(x as Element, 2, prime)) as usize;
     }
 }
 
@@ -238,7 +245,7 @@ fn i(x: u32) -> usize {
 }
 
 // "gf_mul"
-pub fn table_multiply(x: element, y: element, tables: &exp_log_luts) -> element {
+pub fn table_multiply(x: Element, y: Element, tables: &ExpLogLUTs) -> Element {
     if x == 0 || y == 0 {
         0
     } else {
@@ -249,7 +256,7 @@ pub fn table_multiply(x: element, y: element, tables: &exp_log_luts) -> element 
 }
 
 // "gf_div"
-pub fn table_divide(x: element, y: element, tables: &exp_log_luts) -> element {
+pub fn table_divide(x: Element, y: Element, tables: &ExpLogLUTs) -> Element {
     if y == 0 {
         panic!();
     }
@@ -264,7 +271,7 @@ pub fn table_divide(x: element, y: element, tables: &exp_log_luts) -> element {
     }
 }
 
-pub fn table_pow(x: element, power: element, tables: &exp_log_luts) -> element {
+pub fn table_pow(x: Element, power: Element, tables: &ExpLogLUTs) -> Element {
     let (exp, log) = tables;
     exp[i(log[i(x)] * power)]
 }
@@ -274,16 +281,16 @@ pub fn table_pow(x: element, power: element, tables: &exp_log_luts) -> element {
 // [a, b, c, d] = ax^3 + bx^2 + cx + d
 // (i personally don't think that's a good decision, but)
 
-pub fn polynomial_scale(poly: &polynomial, x: element, tables: &exp_log_luts) -> polynomial {
-    let mut output: polynomial = Vec::new();
+pub fn polynomial_scale(poly: &Polynomial, x: Element, tables: &ExpLogLUTs) -> Polynomial {
+    let mut output: Polynomial = Vec::new();
     for &i in poly {
         output.push(table_multiply(i, x, tables));
     }
     output
 }
 
-pub fn gf_poly_add(poly1: &polynomial, poly2: &polynomial) -> polynomial {
-    let mut output: polynomial = Vec::new();
+pub fn gf_poly_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
+    let mut output: Polynomial = Vec::new();
     // resize the vector to fit the higher-degree (longer) polynomial
     let (p1_len, p2_len) = (poly1.len(), poly2.len());
     let out_len = cmp::max(p1_len, p2_len);
@@ -300,8 +307,8 @@ pub fn gf_poly_add(poly1: &polynomial, poly2: &polynomial) -> polynomial {
 }
 
 // SUPPOSEDLY multiplies two polynomials over a galois field
-pub fn gf_poly_mul(poly1: &polynomial, poly2: &polynomial, tables: &exp_log_luts) -> polynomial {
-    let mut output: polynomial = Vec::new();
+pub fn gf_poly_mul(poly1: &Polynomial, poly2: &Polynomial, tables: &ExpLogLUTs) -> Polynomial {
+    let mut output: Polynomial = Vec::new();
     // out_len needs to be p1_len + p2_len - 1
     // len() and resize() both count from 1, no fencepost error
     output.resize(poly1.len() + poly2.len() - 1, 0);
@@ -318,7 +325,7 @@ pub fn gf_poly_mul(poly1: &polynomial, poly2: &polynomial, tables: &exp_log_luts
 
 // evaluates a polynomial for a specific value of x
 // "based on horner's scheme for maximum efficiency"
-pub fn gf_poly_eval(poly: &polynomial, x: element, tables: &exp_log_luts) -> element {
+pub fn gf_poly_eval(poly: &Polynomial, x: Element, tables: &ExpLogLUTs) -> Element {
     let mut output = poly[0];
     for i in 1..poly.len() {
         output = table_multiply(output, x, tables) ^ poly[i];
@@ -336,17 +343,18 @@ pub fn gf_poly_eval(poly: &polynomial, x: element, tables: &exp_log_luts) -> ele
         return g
 */
 // symbol_amnt is the number of error correcting symbols
-pub fn rs_generator_poly(symbol_amnt: u32, tables: &exp_log_luts) -> polynomial {
-    let mut output: polynomial = vec![1];
+pub fn rs_generator_poly(symbol_amnt: u32, tables: &ExpLogLUTs) -> Polynomial {
+    let mut output: Polynomial = vec![1];
     for i in 0..symbol_amnt {
-        let multiplier: polynomial = vec![1, table_pow(2, i, tables)];
+        let multiplier: Polynomial = vec![1, table_pow(2, i, tables)];
         output = gf_poly_mul(&output, &multiplier, tables);
     }
     output
 }
 
 // adding this (not in the text) because recalculating the values over and over would be obscene
-pub fn generate_rsgen_table(gentable: &mut rsgen_lut, tables: &exp_log_luts) {
+// lacks implementations and any practical use
+pub fn _generate_rsgen_table(gentable: &mut _RSGenLUT, tables: &ExpLogLUTs) {
     for i in 0..gentable.len() {
         gentable[i] = rs_generator_poly(i as u32, tables);
     }
@@ -379,10 +387,10 @@ def gf_poly_div(dividend, divisor):
     return msg_out[:separator], msg_out[separator:] # return quotient, remainder.
 */
 pub fn gf_poly_div(
-    dividend: &polynomial,
-    divisor: &polynomial,
-    tables: &exp_log_luts,
-) -> (polynomial, polynomial) {
+    dividend: &Polynomial,
+    divisor: &Polynomial,
+    tables: &ExpLogLUTs,
+) -> (Polynomial, Polynomial) {
     // man, idk
 
     let mut output = dividend.clone();
@@ -413,7 +421,7 @@ def rs_encode_msg(msg_in, nsym):
     # Return the codeword
     return msg_out
 */
-pub fn rs_encode_msg(msg_in: &polynomial, symbol_amnt: u32, tables: &exp_log_luts) -> polynomial {
+pub fn rs_encode_msg(msg_in: &Polynomial, symbol_amnt: u32, tables: &ExpLogLUTs) -> Polynomial {
     let gen = rs_generator_poly(symbol_amnt, tables);
 
     // i don't know what i'm doing

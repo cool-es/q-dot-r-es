@@ -1,3 +1,5 @@
+use rdsm::BLANK_EXP_LOG_LUTS;
+
 mod bitmask;
 mod export;
 mod image_type;
@@ -22,8 +24,12 @@ mod zigzag;
 
 fn main() {
     // time to generate a qr code (clueless)
-
-    let a: rdsm::polynomial = Vec::from(rdsm::TEST_MSG);
+    let mut lookup_tables = BLANK_EXP_LOG_LUTS;
+    rdsm::generate_exp_log_tables(&mut lookup_tables, rdsm::PRIM);
+    let input: rdsm::Polynomial = Vec::from(rdsm::TEST_MSG);
+    let control: rdsm::Polynomial = Vec::from(rdsm::FULL_TEST_RESULT);
+    let output = rdsm::rs_encode_msg(&input, 10, &lookup_tables);
+    assert!(output == control);
 
     //wikiv::test_gf();
 
