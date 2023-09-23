@@ -190,6 +190,13 @@ impl Img {
         }
         Some(output)
     }
+
+    // "stamp" function, to copy a smaller bitmap onto a bigger one
+    // (e.g. a qr alignment square onto a qr code). the x/y coords
+    // are aligned to the stamp's top left corner
+    pub fn rubberstamp(&mut self, stamp: &Self, x: usize, y: usize) {
+        todo!()
+    }
 }
 
 // functions pertaining to the qr standard specifically
