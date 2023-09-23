@@ -1,3 +1,5 @@
+use rdsm::{galois_multiply, table_divide, table_multiply, Element, PRIM};
+
 mod bitmask;
 mod export;
 mod image_type;
@@ -21,7 +23,7 @@ mod zigzag;
 // a list of bytes, like 0f a6 42 etc.
 
 fn main() {
-
+    test_reed_solomon(0b1000);
     //wikiv::test_gf();
 
     /* for k in 0..5 {
@@ -70,28 +72,108 @@ fn test_checkfmt() {
     }
 }
 
-fn test_reed_solomon() {
+fn test_reed_solomon(test: u8) {
     // time to generate a qr code (clueless)
     let mut lookup_tables = rdsm::BLANK_EXP_LOG_LUTS;
     rdsm::generate_exp_log_tables(&mut lookup_tables, rdsm::PRIM);
-    let input: rdsm::Polynomial = Vec::from(rdsm::TEST_MSG);
-    let mut control: rdsm::Polynomial = Vec::from(rdsm::FULL_TEST_RESULT);
-    let mut output = rdsm::encode_message(&input, 10, &lookup_tables);
-    //assert!(output == control);
-    println!("output:\n{:?}\ncontrol:\n{:?}", &output, &control);
 
-    let len = std::cmp::max(output.len(), control.len());
-    control.resize(len, 0);
-    output.resize(len, 0);
-    println!("difference:");
-    for i in 0..len {
-        if i == 16 {
+    if test & 0b1 != 0 {
+        println!("\n\n{:?}\n{:?}\n\n", lookup_tables.0,lookup_tables.1);
+    }
+
+    if test & 0b10 != 0 {
+        let input: rdsm::Polynomial = Vec::from(rdsm::TEST_MSG);
+        let mut control: rdsm::Polynomial = Vec::from(rdsm::FULL_TEST_RESULT);
+        let mut output = rdsm::encode_message(&input, 10, &lookup_tables);
+        //assert!(output == control);
+        println!("output:\n{:?}\ncontrol:\n{:?}", &output, &control);
+
+        let len = std::cmp::max(output.len(), control.len());
+        control.resize(len, 0);
+        output.resize(len, 0);
+        println!("difference:");
+        for i in 0..len {
+            if i == 16 {
+                println!();
+            }
+            print!("{}", output[i] as i32 - control[i] as i32);
+            if i != len - 1 {
+                print!(", ");
+            }
+        }
+        println!();
+    }
+
+    if test & 0b100 != 0 {
+        for i in 1..255 {
+            print!("{:3}:", i);
+            for j in 1..255 {
+                let mul1 = galois_multiply(i as Element, j as Element, PRIM);
+                let mul2 = table_multiply(i as Element, j as Element, &lookup_tables);
+
+                // let div2 = table_divide(i as Element, j as Element, &lookup_tables);
+
+                // let mut status: u8 = 0;
+
+                if i as Element
+                    != galois_multiply(
+                        table_divide(i as Element, j as Element, &lookup_tables),
+                        j as Element,
+                        PRIM,
+                    )
+                {
+                    print!("x");
+                }
+                // if div1 != div2 {
+                //     status += 2;
+                // }
+
+                // print!("{}", status);
+                //     if mul1 != mul2 {
+                //         all_good = false;
+                //         println!(
+                //             "\n{:#08b} * {:#08b} =\n{:#08b}\n{:#08b}\n",
+                //             i, j, mul1, mul2
+                //         );
+                //     }
+                //     if div1 != div2 {
+                //         all_good = false;
+                //         println!(
+                //             "\n{:#08b} / {:#08b} = \n{:#08b}\n{:#08b}\n",
+                //             i, j, div1, div2
+                //         );
+                //     }
+            }
             println!();
         }
-        print!("{}", output[i] as i32 - control[i] as i32);
-        if i != len - 1 {
-            print!(", ");
-        }
     }
-    println!();
+
+    if test & 0b1000 != 0 {
+        // prints a table of the powers of 2 mod PRIM, in decimal
+        let nice = false;
+
+        if nice {
+            print!("-----");
+            for n in 0..(256 / 16) {
+                print!("--{:2}", n);
+            }
+        }
+
+        for i in 0..256 {
+            if i % 16 == 0 {
+                println!();
+                if nice {
+                    print!("{:3} - ", i);
+                }
+            }
+            print!("{:3} ", lookup_tables.0[i]);
+        }
+        println!();
+    }
+
+    if test & 0b10000 != 0 {
+        println!("{:?}", &(lookup_tables.0)[..256]);
+    }
+
+    if test & 0b100000 != 0 {}
 }
