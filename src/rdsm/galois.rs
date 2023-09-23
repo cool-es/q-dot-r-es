@@ -1,4 +1,3 @@
-
 // functions from the wikiversity "reed-solomon codes for coders" article
 // the qr-specific generator polynomial, 0b10100110111
 pub const QR_GEN: Element = 0x537;
@@ -20,7 +19,7 @@ pub const FULL_TEST_RESULT: &[Element] = &[
 ];
 
 // an element in a galois field
-pub type Element = u16;
+pub type Element = u32;
 // a polynomial over a galois field, ordered from highest power of x to lowest
 pub type Polynomial = Vec<Element>;
 // exp/log tables for the "table_*" functions
@@ -157,29 +156,6 @@ pub fn carryless_divide(dividend: Element, divisor: Element) -> Element {
         }
     }
     dnd
-}
-
-// just the example taken from the tutorial
-// returns 0001010001111010 and 0000000011000011 (correct)
-pub fn test_gf() {
-    /*
-        >>> a = 0b10001001
-        >>> b = 0b00101010
-        >>> print bin(gf_mult_noLUT(a, b, 0)) # multiplication only
-        0b1010001111010
-        >>> print bin(gf_mult_noLUT(a, b, 0x11d)) # multiplication + modular reduction
-        0b11000011
-    */
-    let a = 0b10001001;
-    let b = 0b00101010;
-    println!("{:016b}", galois_multiply(a, b, 0));
-    println!("{:016b}", galois_multiply(a, b, 0x11d));
-
-    println!("{:016b}", galois_multiply_peasant_full(a, b, 0, 256, true));
-    println!(
-        "{:016b}",
-        galois_multiply_peasant_full(a, b, 0x11d, 256, true)
-    );
 }
 
 // uses russian peasant multiplication

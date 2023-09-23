@@ -1,4 +1,4 @@
-use rdsm::{galois_multiply, table_divide, table_multiply, Element, PRIM};
+use rdsm::*;
 
 mod bitmask;
 mod export;
@@ -6,21 +6,10 @@ mod image_type;
 mod rdsm;
 mod zigzag;
 
-// program flow:
-// generate blank matrix
-// write a message to it
-//   (what format is the message??)
-// along with error correction bits
-//   (are those included in the message,
-//    or separate?)
-// write format information to it
-//   (at what step, what format?)
-// apply bitmask
-//   (which mask????)
-// output
-
-// re: format of the message, i want it to be
-// a list of bytes, like 0f a6 42 etc.
+// what we know:
+// 1. table-based operations are correct, seemingly regarless of if you use mod 255 or mod 256
+// 2. qr_gen has a mysteriously short cycle, 2^15 = 1
+// 3. prim has a cycle of length 255
 
 fn main() {
     test_reed_solomon(0b1000);
@@ -67,24 +56,47 @@ fn main() {
 // tests qr format check, assuming debug printing is enabled
 fn test_checkfmt() {
     for i in 10..20 {
-        rdsm::qr_check_fcode((2u32.pow(15) - 20) + i);
+        qr_check_fcode((2u32.pow(15) - 20) + i);
         println!();
     }
 }
 
+// just the example taken from the tutorial
+// returns 0001010001111010 and 0000000011000011 (correct)
+pub fn test_gf() {
+    /*
+        >>> a = 0b10001001
+        >>> b = 0b00101010
+        >>> print bin(gf_mult_noLUT(a, b, 0)) # multiplication only
+        0b1010001111010
+        >>> print bin(gf_mult_noLUT(a, b, 0x11d)) # multiplication + modular reduction
+        0b11000011
+    */
+    let a = 0b10001001;
+    let b = 0b00101010;
+    println!("{:016b}", galois_multiply(a, b, 0));
+    println!("{:016b}", galois_multiply(a, b, 0x11d));
+
+    println!("{:016b}", galois_multiply_peasant_full(a, b, 0, 256, true));
+    println!(
+        "{:016b}",
+        galois_multiply_peasant_full(a, b, 0x11d, 256, true)
+    );
+}
+
 fn test_reed_solomon(test: u8) {
     // time to generate a qr code (clueless)
-    let mut lookup_tables = rdsm::BLANK_EXP_LOG_LUTS;
-    rdsm::generate_exp_log_tables(&mut lookup_tables, rdsm::PRIM);
+    let mut lookup_tables = BLANK_EXP_LOG_LUTS;
+    generate_exp_log_tables(&mut lookup_tables, PRIM);
 
     if test & 0b1 != 0 {
-        println!("\n\n{:?}\n{:?}\n\n", lookup_tables.0,lookup_tables.1);
+        println!("\n\n{:?}\n{:?}\n\n", lookup_tables.0, lookup_tables.1);
     }
 
     if test & 0b10 != 0 {
-        let input: rdsm::Polynomial = Vec::from(rdsm::TEST_MSG);
-        let mut control: rdsm::Polynomial = Vec::from(rdsm::FULL_TEST_RESULT);
-        let mut output = rdsm::encode_message(&input, 10, &lookup_tables);
+        let input: Polynomial = Vec::from(TEST_MSG);
+        let mut control: Polynomial = Vec::from(FULL_TEST_RESULT);
+        let mut output = encode_message(&input, 10, &lookup_tables);
         //assert!(output == control);
         println!("output:\n{:?}\ncontrol:\n{:?}", &output, &control);
 
