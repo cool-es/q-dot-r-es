@@ -4,21 +4,9 @@ mod image_type;
 mod rdsm;
 mod zigzag;
 
-// program flow:
-// generate blank matrix
-// write a message to it
-//   (what format is the message??)
-// along with error correction bits
-//   (are those included in the message,
-//    or separate?)
-// write format information to it
-//   (at what step, what format?)
-// apply bitmask
-//   (which mask????)
-// output
-
-// re: format of the message, i want it to be
-// a list of bytes, like 0f a6 42 etc.
+// branch to implement various qr standard-specific
+// routines without getting in the way of debugging
+// the galois field operations
 
 fn main() {
 
