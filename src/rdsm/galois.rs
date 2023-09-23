@@ -1,9 +1,9 @@
 
 // functions from the wikiversity "reed-solomon codes for coders" article
 // the qr-specific generator polynomial, 0b10100110111
-pub const QR_GEN: u32 = 0x537;
+pub const QR_GEN: Element = 0x537;
 // recurring polynomial in the wikiversity article, unsure of its significance
-pub const PRIM: u32 = 0x11d;
+pub const PRIM: Element = 0x11d;
 
 // from the tutorial: uses PRIM as its generator polynomial
 // rs_encode_msg(TEST_MSG, 10) == TEST_MSG + TEST_RESULT == FULL_TEST_RESULT
@@ -20,7 +20,7 @@ pub const FULL_TEST_RESULT: &[Element] = &[
 ];
 
 // an element in a galois field
-pub type Element = u32;
+pub type Element = u16;
 // a polynomial over a galois field, ordered from highest power of x to lowest
 pub type Polynomial = Vec<Element>;
 // exp/log tables for the "table_*" functions
@@ -136,7 +136,7 @@ pub fn qr_multiply(x: Element, y: Element) -> Element {
     galois_multiply(x, y, QR_GEN)
 }
 
-pub fn bit_length(n: u32) -> u32 {
+pub fn bit_length(n: Element) -> u32 {
     match n {
         0 => 0,
         _ => n.ilog2() + 1,
@@ -207,7 +207,7 @@ pub fn galois_multiply_peasant_full(
         }
         y >>= 1;
         x <<= 1;
-        if prime > 0 && x & field_charac_full != 0 {
+        if prime > 0 && x & (field_charac_full as Element) != 0 {
             x = x ^ prime;
         }
     }
@@ -227,9 +227,9 @@ pub fn galois_multiply_peasant_qr(x: Element, y: Element) -> Element {
 pub fn generate_exp_log_tables(tables: &mut ExpLogLUTs, prime: Element) {
     let (exp, log) = tables;
     let mut x: usize = 1;
-    for i in 0..255 {
+    for i in 0..256 {
         exp[i] = x as Element;
-        log[x] = i as Element;
+        log[x % 256] = i as Element;
         x = (galois_multiply(x as Element, 2, prime)) as usize;
     }
 }
@@ -237,9 +237,9 @@ pub fn generate_exp_log_tables(tables: &mut ExpLogLUTs, prime: Element) {
 // table index helper function
 // NOTE: the text uses modulo 255 rather than 256, which is a complete mystery to me
 // i've elected to keep going with 256 anyway, but if i encounter bugs this might be why
-fn i(x: u32) -> usize {
+fn i(x: Element) -> usize {
     //(x % 256) as usize
-    (x % 255) as usize
+    (x % 256) as usize
 }
 
 // "gf_mul"
@@ -277,7 +277,7 @@ pub fn table_divide(x: Element, y: Element, tables: &ExpLogLUTs) -> Element {
 
 pub fn table_pow(x: Element, power: u32, tables: &ExpLogLUTs) -> Element {
     let (exp, log) = tables;
-    exp[i(log[i(x)] * power)]
+    exp[i(log[i(x)] * power as Element)]
 }
 
 // another fake "table" debug function
