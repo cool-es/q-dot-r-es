@@ -8,18 +8,18 @@ pub struct Img {
 
 // general format-specific methods
 impl Img {
-    pub fn new(w: usize, h: usize) -> Self {
-        let mut vec: Vec<u8> = Vec::new();
+    pub fn new(width: usize, height: usize) -> Self {
+        let mut bits: Vec<u8> = Vec::new();
 
         // resize vector to contain the maximum needed amount of
         // elements – that is, the index of the byte containing the last pixel
         // risk of fencepost error: resize() counts from 1, xy_to_index from 0
-        vec.resize(xy_to_index(w - 1, h - 1, w, h).unwrap().0 + 1, 0);
+        bits.resize(xy_to_index(width - 1, height - 1, width, height).unwrap().0 + 1, 0);
 
         Img {
-            width: w,
-            height: h,
-            bits: vec,
+            width,
+            height,
+            bits,
         }
     }
 
@@ -194,6 +194,10 @@ impl Img {
     // (e.g. a qr alignment square onto a qr code). the x/y coords
     // are aligned to the stamp's top left corner
     pub fn rubberstamp(&mut self, stamp: &Self, x: usize, y: usize) {
+        todo!()
+    }
+
+    pub fn make_rowaligned(self) -> super::rowaligned::ImgRowAligned {
         todo!()
     }
 }

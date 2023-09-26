@@ -9,7 +9,11 @@ mod zigzag;
 // the galois field operations
 
 fn main() {
-
+    let x = image_type::rowaligned::ImgRowAligned::from_xbm_debug();
+    let y = x.make_continuous();
+    for i in 0..y.height {
+        println!("{}", y.debug_print_row(i, true).unwrap());
+    }
     //wikiv::test_gf();
 
     /* for k in 0..5 {

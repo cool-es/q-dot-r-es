@@ -7,18 +7,21 @@ pub struct ImgRowAligned {
 
 impl ImgRowAligned {
     // copied wholesale from Img
-    pub fn new(w: usize, h: usize) -> Self {
-        let mut vec: Vec<u8> = Vec::new();
+    pub fn new(width: usize, height: usize) -> Self {
+        let mut bits: Vec<u8> = Vec::new();
 
         // resize vector to contain the maximum needed amount of
         // elements – that is, the index of the byte containing the last pixel
         // risk of fencepost error: resize() counts from 1, xy_to_index from 0
-        vec.resize(xy_to_index(w - 1, h - 1, w, h).unwrap().0 + 1, 0);
+        bits.resize(
+            xy_to_index(width - 1, height - 1, width, height).unwrap().0 + 1,
+            0,
+        );
 
         ImgRowAligned {
-            width: w,
-            height: h,
-            bits: vec,
+            width,
+            height,
+            bits,
         }
     }
 
@@ -44,6 +47,25 @@ impl ImgRowAligned {
     // copied wholesale from Img
     pub fn debug_indices(&self, x: usize, y: usize) -> Option<(usize, u8)> {
         xy_to_index(x, y, self.width, self.height)
+    }
+
+    pub fn make_continuous(self) -> super::continuous::Img {
+        let ImgRowAligned {
+            width,
+            height,
+            mut bits,
+        } = self;
+        if self.width % 8 == 0 {
+            // nothing needs to be done
+            // note that the fields match up but the types don't!
+            return super::continuous::Img {
+                width,
+                height,
+                bits,
+            };
+        }
+
+        todo!()
     }
 
     // functions to input/output XBM data
@@ -95,7 +117,9 @@ impl ImgRowAligned {
             })
         }
      */
+
     // same as previous function but with (incomplete) error handling
+    // the code here isn't great but it's passable
     pub fn from_xbm(input: &str) -> Result<Self, &str> {
         // note that XBM uses reverse byte order (leftmost pixel is the 2^0 bit)
 
@@ -132,14 +156,34 @@ impl ImgRowAligned {
             .split(|x| !char::is_alphanumeric(x))
         {
             if byte.len() != 0 {
-                bits.push(byte.trim().parse::<u8>().map_err(|_| "wuh")?.reverse_bits());
+                bits.push(
+                    {
+                        // debugging code, prints offending characters
+                        let z = u8::from_str_radix(byte.trim().split_once('x').unwrap().1, 16);
+                        if z.is_err() {
+                            println!("{}", byte);
+                        }
+                        z
+                    }
+                    .map_err(|_| "wuh")?
+                    .reverse_bits(),
+                );
             }
         }
 
+        /* bytes
+        .trim()
+        .split(|x| !char::is_alphanumeric(x))
+        .map(|byte| {
+            if byte.len() != 0 {
+                (bits.push(byte.trim().parse::<u8>().map_err(|_| "wuh")?.reverse_bits()));
+            }
+        }); */
+
         Ok(ImgRowAligned {
-            width: width,
-            height: height,
-            bits: bits,
+            width,
+            height,
+            bits,
         })
     }
 
@@ -151,17 +195,21 @@ impl ImgRowAligned {
         output.push_str("static unsigned char test_bits[] = {");
         for n in 0..self.bits.len() {
             if n % 12 == 0 {
-                output.push_str("\n    ");
+                output.push_str("\n   ");
             }
-            output.push_str(format!("[{:#02}]", self.bits[n].reverse_bits()).as_str());
+            output.push_str(format!(" [{:#02}]", self.bits[n].reverse_bits()).as_str());
 
             if n < self.bits.len() - 1 {
-                output.push_str(", ");
+                output.push_str(",");
             } else {
-                output.push_str("};");
+                output.push_str(" };");
             }
         }
         output
+    }
+
+    pub fn from_xbm_debug() -> Self {
+        Self::from_xbm(XBM_EXAMPLE).unwrap()
     }
 }
 
