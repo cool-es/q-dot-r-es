@@ -1,3 +1,5 @@
+use image_type::Bitmap;
+
 mod bitmask;
 mod export;
 mod image_type;
@@ -10,7 +12,9 @@ mod zigzag;
 
 fn main() {
     test_xbm("es.xbm");
-    
+
+    test_xbm_output();
+
     //wikiv::test_gf();
 
     /* for k in 0..5 {
@@ -49,6 +53,40 @@ fn main() {
             } */
         }
     } */
+}
+
+fn debug_print_row<T: Bitmap>(input: T, y: usize, emoji: bool) -> Option<String> {
+    let row = input.get_row(y)?;
+    let mut output = String::new();
+    for j in (0..input.dims().0).rev() {
+        if emoji {
+            output.push_str(if ((row >> j) % 2) == 1 {
+                "⬛️"
+            } else {
+                "⬜️"
+            })
+        } else {
+            output.push(if ((row >> j) % 2) == 1 { '1' } else { '0' })
+        };
+    }
+    Some(output)
+}
+
+fn test_xbm_output() {
+    println!(
+        "{}",
+        image_type::rowaligned::ImgRowAligned::as_xbm(
+            &{
+                let mut x = image_type::rowaligned::ImgRowAligned::from_xbm(
+                    std::fs::read_to_string("es.xbm").unwrap().as_str(),
+                )
+                .unwrap();
+                // x.invert();
+                x
+            },
+            "cool",
+        )
+    );
 }
 
 fn test_xbm(path: &str) {

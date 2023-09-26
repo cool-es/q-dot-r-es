@@ -1,8 +1,10 @@
+use super::Bitmap;
+
 // image format with gaps in its byte data: start of rows are byte aligned
 pub struct ImgRowAligned {
     pub width: usize,
     pub height: usize,
-    bits: Vec<u8>,
+    pub(super) bits: Vec<u8>,
 }
 
 impl ImgRowAligned {
@@ -35,10 +37,10 @@ impl ImgRowAligned {
     }
 
     // copied wholesale from Img
-    pub fn dims(&self) -> (usize, usize) {
-        (self.width, self.height)
-    }
-
+    /*     pub fn dims(&self) -> (usize, usize) {
+           (self.width, self.height)
+       }
+    */
     // copied wholesale from Img
     pub fn debug_bits(&self) -> Vec<u8> {
         self.bits.clone()
@@ -49,23 +51,56 @@ impl ImgRowAligned {
         xy_to_index(x, y, self.width, self.height)
     }
 
+    // returns "false" if out-of-bounds
+    pub fn set_bit(&mut self, x: usize, y: usize, bit: bool) -> bool {
+        if let Some((n, i)) = xy_to_index(x, y, self.width, self.height) {
+            if bit {
+                // set a 1 (bitwise 'or' w/ 1)
+                self.bits[n] |= 1 << i;
+            } else {
+                //set a 0 (bitwise 'and' w/ 0)
+                self.bits[n] &= !(1 << i);
+            }
+            true
+        } else {
+            /* println!(
+                "out-of-bounds write (x={} y={} w={} h={})",
+                x, y, self.width, self.height
+            ); */
+            false
+        }
+    }
+
+    pub fn get_bit(&self, x: usize, y: usize) -> Option<bool> {
+        if let Some((n, i)) = xy_to_index(x, y, self.width, self.height) {
+            Some(((self.bits[n] >> i) & 1) == 1)
+        } else {
+            None
+        }
+    }
+
     pub fn make_continuous(self) -> super::continuous::Img {
-        let ImgRowAligned {
-            width,
-            height,
-            mut bits,
-        } = self;
+        let (width, height) = Bitmap::dims(&self);
         if self.width % 8 == 0 {
             // nothing needs to be done
             // note that the fields match up but the types don't!
             return super::continuous::Img {
                 width,
                 height,
-                bits,
+                bits: self.bits,
             };
         }
 
-        todo!()
+        //  really awful implementation here, but,
+        let mut output = super::continuous::Img::new(width, height);
+
+        for y in 0..self.height {
+            for x in 0..self.width {
+                output.set_bit(x, y, Bitmap::get_bit(&self, x, y).unwrap());
+            }
+        }
+
+        output
     }
 
     // functions to input/output XBM data
@@ -124,7 +159,7 @@ impl ImgRowAligned {
         // note that XBM uses reverse byte order (leftmost pixel is the 2^0 bit)
 
         //split at the start of the byte data
-        let (dims, bytes) = input.split_once('{').ok_or("could not split at {")?;
+        let (dims, bytes) = input.split_once('{').ok_or("could not split at {{")?;
 
         let mut dimensions = dims.lines().map(|x| {
             if x.starts_with("#define") {
@@ -192,17 +227,17 @@ impl ImgRowAligned {
             "#define {}_width {}\n#define {}_height {}\n",
             name, self.width, name, self.height
         );
-        output.push_str("static unsigned char test_bits[] = {");
+        output.push_str(format!("static unsigned char {}_bits[] = {{", name).as_str());
         for n in 0..self.bits.len() {
             if n % 12 == 0 {
-                output.push_str("\n   ");
+                output.push_str("\n  ");
             }
-            output.push_str(format!(" [{:#02}]", self.bits[n].reverse_bits()).as_str());
+            output.push_str(format!(" 0x{:02x}", self.bits[n].reverse_bits()).as_str());
 
             if n < self.bits.len() - 1 {
                 output.push_str(",");
             } else {
-                output.push_str(" };");
+                output.push_str(" }};");
             }
         }
         output
@@ -213,10 +248,16 @@ impl ImgRowAligned {
     }
 }
 
+impl From<super::continuous::Img> for ImgRowAligned {
+    fn from(value: super::continuous::Img) -> Self {
+        todo!()
+    }
+}
+
 // this code below assumes data is saved in a way where the rows all start with
 // a new byte, which leaves empty space in the last byte of every row
 // if the width isn't a multiple of 8
-pub(super) fn xy_to_index(x: usize, y: usize, w: usize, h: usize) -> Option<((usize, u8))> {
+pub(super) fn xy_to_index(x: usize, y: usize, w: usize, h: usize) -> Option<(usize, u8)> {
     // converts xy coordinates to the pixel's vector/bit indices:
     // Some(n, i) => bit i in vec[n]
     // returns None when coords are out of bounds
@@ -240,7 +281,14 @@ pub(super) fn index_to_xy(
     w: usize,
     h: usize,
 ) -> Option<(usize, usize)> {
-    todo!()
+    let row_bytes = if w % 8 == 0 { w / 8 } else { w / 8 + 1 };
+
+    let x = (vec_index % row_bytes) * 8 + bit_index as usize;
+    let y = vec_index / row_bytes;
+    if x >= w || y >= h {
+        return None;
+    }
+    Some((x, y))
 }
 
 const XBM_EXAMPLE: &str = "#define test_width 16
@@ -250,3 +298,36 @@ static unsigned char test_bits[] = {
    0x40, 0x00, 0x80, 0x00, 0xfe, 0xff, 0xfd, 0xff, 0xfb, 0xff, 0xf7, 0xff,
    0xef, 0xff, 0xdf, 0xff, 0xbf, 0xff, 0x7f, 0xff };
 ";
+
+impl Bitmap for ImgRowAligned {
+    fn dims(&self) -> (usize, usize) {
+        (self.width, self.height)
+    }
+
+    fn new(width: usize, height: usize) -> Self {
+        Self::new(width, height)
+    }
+
+    fn get_bit(&self, x: usize, y: usize) -> Option<bool> {
+        self.get_bit(x, y)
+    }
+
+    fn set_bit(&mut self, x: usize, y: usize, bit: bool) -> bool {
+        if let Some((n, i)) = xy_to_index(x, y, self.width, self.height) {
+            if bit {
+                // set a 1 (bitwise 'or' w/ 1)
+                self.bits[n] |= 1 << i;
+            } else {
+                //set a 0 (bitwise 'and' w/ 0)
+                self.bits[n] &= !(1 << i);
+            }
+            true
+        } else {
+            /* println!(
+                "out-of-bounds write (x={} y={} w={} h={})",
+                x, y, self.width, self.height
+            ); */
+            false
+        }
+    }
+}

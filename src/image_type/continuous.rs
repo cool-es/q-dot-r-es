@@ -1,3 +1,4 @@
+use super::Bitmap;
 use std::ops::BitXorAssign;
 // 2-dimensional one bit data type, stored in a vector of u8's
 pub struct Img {
@@ -14,7 +15,10 @@ impl Img {
         // resize vector to contain the maximum needed amount of
         // elements – that is, the index of the byte containing the last pixel
         // risk of fencepost error: resize() counts from 1, xy_to_index from 0
-        bits.resize(xy_to_index(width - 1, height - 1, width, height).unwrap().0 + 1, 0);
+        bits.resize(
+            xy_to_index(width - 1, height - 1, width, height).unwrap().0 + 1,
+            0,
+        );
 
         Img {
             width,
@@ -198,7 +202,45 @@ impl Img {
     }
 
     pub fn make_rowaligned(self) -> super::rowaligned::ImgRowAligned {
-        todo!()
+        let (width, height) = self.dims();
+        if self.width % 8 == 0 {
+            // nothing needs to be done
+            // note that the fields match up but the types don't!
+            return super::rowaligned::ImgRowAligned {
+                width,
+                height,
+                bits: self.bits,
+            };
+        }
+
+        //  really awful implementation here, but,
+        let mut output = super::rowaligned::ImgRowAligned::new(width, height);
+
+        for y in 0..self.height {
+            for x in 0..self.width {
+                output.set_bit(x, y, self.get_bit(x, y).unwrap());
+            }
+        }
+
+        output
+    }
+}
+
+impl Bitmap for Img {
+    fn new(width: usize, height: usize) -> Self {
+        Self::new(width, height)
+    }
+    fn dims(&self) -> (usize, usize) {
+        self.dims()
+    }
+    fn get_bit(&self, x: usize, y: usize) -> Option<bool> {
+        self.get_bit(x, y)
+    }
+    fn get_row(&self, y: usize) -> Option<u128> {
+        self.get_row(y)
+    }
+    fn set_bit(&mut self, x: usize, y: usize, bit: bool) -> bool {
+        self.set_bit(x, y, bit)
     }
 }
 
@@ -227,6 +269,11 @@ impl Clone for Img {
     }
 }
 
+impl From<super::rowaligned::ImgRowAligned> for Img {
+    fn from(value: super::rowaligned::ImgRowAligned) -> Self {
+        todo!()
+    }
+}
 // this implementation packs all the image data into one continuous
 // stream of bits, without gaps, so some bytes will have data from multiple
 // rows in them if the width isn't a multiple of 8
