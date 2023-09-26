@@ -9,11 +9,8 @@ mod zigzag;
 // the galois field operations
 
 fn main() {
-    let x = image_type::rowaligned::ImgRowAligned::from_xbm_debug();
-    let y = x.make_continuous();
-    for i in 0..y.height {
-        println!("{}", y.debug_print_row(i, true).unwrap());
-    }
+    test_xbm("es.xbm");
+    
     //wikiv::test_gf();
 
     /* for k in 0..5 {
@@ -52,6 +49,15 @@ fn main() {
             } */
         }
     } */
+}
+
+fn test_xbm(path: &str) {
+    let input = std::fs::read_to_string(path).unwrap();
+    let x = image_type::rowaligned::ImgRowAligned::from_xbm(&input).unwrap();
+    let y = x.make_continuous();
+    for i in 0..y.height {
+        println!("{}", y.debug_print_row(i, true).unwrap());
+    }
 }
 
 // tests qr format check, assuming debug printing is enabled
