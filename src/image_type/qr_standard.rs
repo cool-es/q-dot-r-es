@@ -8,8 +8,8 @@ pub fn version_to_size(version: u32) -> Option<u32> {
     }
 }
 
-// methods pertaining to the qr standard specifically
-impl super::Img {
+// Img methods pertaining to the qr standard specifically
+impl super::continuous::Img {
     // generates a new bitmap overlaid with a bit pattern - VERY inefficient
     // adapted from the code in qr/src/bitmask.rs
     // returns None if 'mask' isn't within the range of 0 to 7
