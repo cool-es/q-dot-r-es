@@ -171,7 +171,7 @@ pub(super) fn index_to_xy(
 ) -> Option<(usize, usize)> {
     let row_bytes = if w % 8 == 0 { w / 8 } else { w / 8 + 1 };
 
-    let x = (vec_index % row_bytes) * 8 + bit_index as usize;
+    let x = (vec_index % row_bytes) * 8 + (7-bit_index) as usize;
     let y = vec_index / row_bytes;
     if x >= w || y >= h {
         return None;

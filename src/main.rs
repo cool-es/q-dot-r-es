@@ -14,9 +14,11 @@ mod rdsm;
 fn main() {
     // test_xbm("hellocode.xbm");
     // test_reed_solomon(0b1000);
-
     test_format_parsing();
+    // check_format_pattern();
     // test_xbm_output();
+
+    // print_qr_mask_patterns();
 
     //wikiv::test_gf();
 
@@ -58,18 +60,40 @@ fn main() {
     } */
 }
 
-fn test_format_parsing() {
-    let xbm_string = std::fs::read_to_string("hellocode.xbm").unwrap();
-    let xbm_bitmap = image_type::rowaligned::ImgRowAligned::from_xbm(&xbm_string).unwrap();
-    let fcode = image_type::qr_standard::get_format(&xbm_bitmap, 1, (2, 2)).unwrap();
-    println!("{:?}", fcode);
-    println!(
-        "{:#x}\n{:#x}",
-        qr_fcode_remainder(fcode.1 as u32),
-        qr_fcode_remainder((fcode.1.reverse_bits() >> 1) as u32)
-    );
+fn print_qr_mask_patterns() {
+    let x = image_type::rowaligned::ImgRowAligned::new(25, 25);
+    // let x = image_type::continuous::Img::new(25,25);
+    for i in 0..8 {
+        let mut masky = x.clone();
+        masky.qr_mask_xor(i);
+        println!();
+        debug_print(&masky);
+    }
+}
 
-    if false {
+fn check_format_pattern() {
+    let mut test_img = image_type::rowaligned::ImgRowAligned::new(25, 25);
+    let qr = xbm_path_convert("hellocode.xbm");
+
+    for i in 0..=14 {
+        let ((a, b), (c, d)) = image_type::qr_standard::format_info_coords(1, i).unwrap();
+        test_img.set_bit(a + 2, b + 2, true);
+        test_img.set_bit(c + 2, d + 2, true);
+    }
+
+    debug_print(&test_img);
+    println!();
+    debug_print(&qr);
+}
+
+fn test_format_parsing() {
+    let xbm_string = std::fs::read_to_string("hellocode_smol.xbm").unwrap();
+    let xbm_bitmap = image_type::rowaligned::ImgRowAligned::from_xbm(&xbm_string).unwrap();
+    let fcode = image_type::qr_standard::get_format(&xbm_bitmap, 1, (0, 0)).unwrap();
+    println!("{:#b}\n{:#b}", fcode.0, fcode.1);
+    println!("remainder {:#b}", qr_fcode_remainder(fcode.1 as u32),);
+
+    {
         let (correction, mask) = image_type::qr_standard::interpret_format(fcode.0).unwrap();
 
         println!("error correction {}", {
@@ -91,6 +115,12 @@ fn test_format_parsing() {
         for i in 0..goop.dims().1 {
             println!("{}", debug_print_row(&goop, i, true).unwrap());
         }
+    }
+}
+
+fn debug_print<T: Bitmap>(input: &T) {
+    for y in 0..input.dims().1 {
+        println!("{}", debug_print_row(input, y, true).unwrap())
     }
 }
 
@@ -146,6 +176,10 @@ fn test_xbm(path: &str) {
     }
 }
 
+fn xbm_path_convert(path: &str) -> image_type::rowaligned::ImgRowAligned {
+    let input = std::fs::read_to_string(path).unwrap();
+    image_type::rowaligned::ImgRowAligned::from_xbm(&input).unwrap()
+}
 // tests qr format check, assuming debug printing is enabled
 fn test_checkfmt() {
     for i in 10..20 {

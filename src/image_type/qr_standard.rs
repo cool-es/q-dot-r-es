@@ -95,7 +95,7 @@ fn penalty<T: super::Bitmap>(input: &T) -> u32 {
 // format data in a ~qr symbol~ is replicated in two positions:
 // this function gives pairs of coordinates (x1, y1), (x2, y2)
 // relative to top left module of the finder pattern
-fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize, usize))> {
+pub fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize, usize))> {
     if !(1..=40).contains(&version) || bit > 14 {
         // undefined
         return None;
@@ -132,11 +132,11 @@ pub fn get_format<T: super::Bitmap>(
     for bit in (0..=14).rev() {
         let ((x1, y1), (x2, y2)) = format_info_coords(version, bit)?;
 
-        output1 += u16::from(input.get_bit(x1 + ox, y1 + oy)?);
         output1 <<= 1;
+        output1 += u16::from(input.get_bit(x1 + ox, y1 + oy)?);
 
-        output2 += u16::from(input.get_bit(x2 + ox, y2 + oy)?);
         output2 <<= 1;
+        output2 += u16::from(input.get_bit(x2 + ox, y2 + oy)?);
     }
 
     // mask value for format codes, 0x5412
@@ -150,9 +150,9 @@ pub fn get_format<T: super::Bitmap>(
 
 // returns error correction level and mask pattern
 pub fn interpret_format(fcode: u16) -> Option<(u8, u8)> {
-    // if !crate::rdsm::qr_fcode_is_good(fcode) {
-    //     return None;
-    // }
+    if !crate::rdsm::qr_fcode_is_good(fcode) {
+        return None;
+    }
 
     // L, M, Q, H
     let mut correction = match 0b11 & (fcode >> 13) {
