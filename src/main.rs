@@ -1,4 +1,5 @@
 use rdsm::*;
+use image_type::Bitmap;
 
 mod bitmask;
 mod export;
@@ -11,8 +12,15 @@ mod zigzag;
 // 2. qr_gen has a mysteriously short cycle, 2^15 = 1
 // 3. prim has a cycle of length 255
 
+// branch to implement various qr standard-specific
+// routines without getting in the way of debugging
+// the galois field operations
+
 fn main() {
-    test_reed_solomon(0b1000);
+    test_xbm("hellocode.xbm");
+
+    // test_xbm_output();
+
     //wikiv::test_gf();
 
     /* for k in 0..5 {
@@ -51,6 +59,58 @@ fn main() {
             } */
         }
     } */
+}
+
+fn debug_print_row<T: Bitmap>(input: &T, y: usize, emoji: bool) -> Option<String> {
+    let row = input.get_row(y)?;
+    let mut output = String::new();
+    for j in (0..input.dims().0).rev() {
+        if emoji {
+            output.push_str(if ((row >> j) % 2) == 1 {
+                "⬛️"
+            } else {
+                "⬜️"
+            })
+        } else {
+            output.push(if ((row >> j) % 2) == 1 { '1' } else { '0' })
+        };
+    }
+    Some(output)
+}
+
+fn test_xbm_output() {
+    println!(
+        "{}",
+        image_type::rowaligned::ImgRowAligned::as_xbm(
+            &{
+                let mut x = image_type::rowaligned::ImgRowAligned::from_xbm(
+                    std::fs::read_to_string("es.xbm").unwrap().as_str(),
+                )
+                .unwrap();
+                // x.invert();
+                x
+            },
+            "cool",
+        )
+    );
+}
+
+fn test_xbm(path: &str) {
+    let input = std::fs::read_to_string(path).unwrap();
+    let x = image_type::rowaligned::ImgRowAligned::from_xbm(&input).unwrap();
+    let mut vector: Vec<image_type::rowaligned::ImgRowAligned> = Vec::new();
+    vector.push(x.clone());
+    for i in 0..=7 {
+        let mut masked = x.clone();
+        masked.qr_mask_xor(i);
+        vector.push(masked);
+    }
+    for x in vector {
+        for i in 0..x.dims().1 {
+            println!("{}", debug_print_row(&x, i, true).unwrap());
+        }
+        println!();
+    }
 }
 
 // tests qr format check, assuming debug printing is enabled
