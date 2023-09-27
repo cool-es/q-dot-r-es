@@ -6,6 +6,9 @@ pub struct Img {
     pub(super) width: usize,
     pub(super) height: usize,
     pub(super) bits: Vec<u8>,
+
+    // hindsight is 20/20
+    // pub(super) rowaligned: bool,
 }
 
 // general format-specific methods

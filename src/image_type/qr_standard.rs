@@ -10,35 +10,6 @@ pub fn version_to_size(version: u32) -> Option<u32> {
 
 // Img methods pertaining to the qr standard specifically
 impl super::continuous::Img {
-    // generates a new bitmap overlaid with a bit pattern - VERY inefficient
-    // adapted from the code in qr/src/bitmask.rs
-    // returns None if 'mask' isn't within the range of 0 to 7
-    /*
-    pub fn _new_qr_mask(w: usize, h: usize, pattern: u8) -> Option<Self> {
-        let mut output = Self::new(w, h);
-
-        for y in 0..h {
-            for x in 0..w {
-                output.set_bit(
-                    x,
-                    y,
-                    match pattern {
-                        0 => (x + y) % 2,
-                        1 => y % 2,
-                        2 => x % 3,
-                        3 => (x + y) % 3,
-                        4 => (x / 3 + y / 2) % 2,
-                        5 => (x * y) % 2 + (x * y) % 3,
-                        6 => ((x * y) % 3 + x * y) % 2,
-                        7 => ((x * y) % 3 + x + y) % 2,
-                        _ => return None,
-                    } == 0,
-                );
-            }
-        }
-        Some(output)
-    } */
-
     pub fn qr_mask_xor(&mut self, pattern: u8) {
         qr_mask_xor(self, pattern)
     }
