@@ -1,4 +1,4 @@
-use super::Bitmap;
+use super::{Bitmap, BitmapDebug};
 
 // image format with gaps in its byte data: start of rows are byte aligned
 pub struct ImgRowAligned {
@@ -346,5 +346,23 @@ impl Bitmap for ImgRowAligned {
         output >>= self.debug_indices(self.width - 1, y)?.1 as u128;
 
         Some(output)
+    }
+}
+
+impl BitmapDebug for ImgRowAligned {
+    fn debug_bits(&self) -> &Vec<u8> {
+        &self.bits
+    }
+
+    fn debug_bits_mut(&mut self) -> &mut Vec<u8> {
+        &mut self.bits
+    }
+
+    fn debug_index_to_xy(&self, vec_index: usize, bit_index: u8) -> Option<(usize, usize)> {
+        index_to_xy(vec_index, bit_index, self.width, self.height)
+    }
+
+    fn debug_xy_to_index(&self, x: usize, y: usize) -> Option<(usize, u8)> {
+        xy_to_index(x, y, self.width, self.height)
     }
 }

@@ -11,7 +11,7 @@ mod zigzag;
 // the galois field operations
 
 fn main() {
-    test_xbm("es.xbm");
+    test_xbm("hellocode.xbm");
 
     // test_xbm_output();
 

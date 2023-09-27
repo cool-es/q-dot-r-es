@@ -1,4 +1,4 @@
-use super::Bitmap;
+use super::{Bitmap, BitmapDebug};
 use std::ops::BitXorAssign;
 // 2-dimensional one bit data type, stored in a vector of u8's
 pub struct Img {
@@ -242,6 +242,21 @@ impl Bitmap for Img {
     }
     fn set_bit(&mut self, x: usize, y: usize, bit: bool) -> bool {
         self.set_bit(x, y, bit)
+    }
+}
+
+impl BitmapDebug for Img {
+    fn debug_bits(&self) -> &Vec<u8> {
+        &self.bits
+    }
+    fn debug_bits_mut(&mut self) -> &mut Vec<u8> {
+        &mut self.bits
+    }
+    fn debug_index_to_xy(&self, vec_index: usize, bit_index: u8) -> Option<(usize,usize)> {
+        index_to_xy(vec_index, bit_index, self.width, self.height)
+    }
+    fn debug_xy_to_index(&self, x: usize, y: usize) -> Option<(usize, u8)> {
+        xy_to_index(x, y, self.width, self.height)
     }
 }
 
