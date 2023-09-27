@@ -45,8 +45,8 @@ pub const BLANK_EXP_LOG_LUTS: ExpLogLUTs = ([0; 512], [0; 256]);
     This process is demonstrated for the format information
     in the example code (000111101011001) below.
 */
-pub fn qr_check_fcode(fcode: u32) -> u32 {
-    let qr_gen = 0x537; // 0b10100110111
+pub fn qr_fcode_remainder(fcode: u32) -> u32 {
+    let format_prime = 0x537; // 0b10100110111
     let mut output = fcode;
 
     for i in (0..=4).rev() {
@@ -58,10 +58,14 @@ pub fn qr_check_fcode(fcode: u32) -> u32 {
             // this will always erase that bit of fmt.
             // in essence we're doing like, "lights out"
             // on the 2^14 to 2^10 bits, from high to low
-            output ^= qr_gen << i;
+            output ^= format_prime << i;
         }
     }
     output
+}
+
+pub fn qr_fcode_is_good(fcode: u16) -> bool {
+    qr_fcode_remainder(fcode as u32) == 0
 }
 
 // generates a 15-bit code from a 5-bit number
@@ -81,7 +85,7 @@ pub fn qr_generate_fcode(fmt: u32) -> u32 {
     if fmt >= 32 {
         core::panic!();
     }
-    (fmt << 10) | qr_check_fcode(fmt << 10)
+    (fmt << 10) | qr_fcode_remainder(fmt << 10)
 }
 
 // earlier "qr_decode_format"

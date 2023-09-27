@@ -6,7 +6,7 @@ pub mod rowaligned;
 // but good enough for what i'm working with right now
 use secret::BitmapDebug;
 
-pub(crate) trait Bitmap: BitmapDebug {
+pub trait Bitmap: BitmapDebug {
     fn new(width: usize, height: usize) -> Self;
     fn dims(&self) -> (usize, usize);
 

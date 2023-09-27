@@ -118,3 +118,51 @@ fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize,
 
     Some((coord1, coord2))
 }
+
+pub fn get_format<T: super::Bitmap>(
+    input: &T,
+    version: u32,
+    offset: (usize, usize),
+) -> Option<(u16, u16)> {
+    // the coordinates of the top left module; in hellocode, it's (2,2)
+    let (ox, oy) = offset;
+    let mut output1 = 0;
+    let mut output2 = 0;
+
+    for bit in (0..=14).rev() {
+        let ((x1, y1), (x2, y2)) = format_info_coords(version, bit)?;
+
+        output1 += u16::from(input.get_bit(x1 + ox, y1 + oy)?);
+        output1 <<= 1;
+
+        output2 += u16::from(input.get_bit(x2 + ox, y2 + oy)?);
+        output2 <<= 1;
+    }
+
+    // mask value for format codes, 0x5412
+    let mask = 0b0101_0100_0001_0010;
+
+    output1 ^= mask;
+    output2 ^= mask;
+
+    Some((output1, output2))
+}
+
+// returns error correction level and mask pattern
+pub fn interpret_format(fcode: u16) -> Option<(u8, u8)> {
+    // if !crate::rdsm::qr_fcode_is_good(fcode) {
+    //     return None;
+    // }
+
+    // L, M, Q, H
+    let mut correction = match 0b11 & (fcode >> 13) {
+        0b01 => 1,
+        0b00 => 2,
+        0b11 => 3,
+        0b10 | _ => 4,
+    };
+
+    let mut maskpat = (0b111 & (fcode >> 10)) as u8;
+
+    Some((correction, maskpat))
+}

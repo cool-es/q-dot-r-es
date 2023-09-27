@@ -1,10 +1,9 @@
-use rdsm::*;
 use image_type::Bitmap;
+use rdsm::*;
 
 mod export;
 mod image_type;
 mod rdsm;
-
 
 // galois-field debugging:
 // what we know:
@@ -13,9 +12,10 @@ mod rdsm;
 // 3. prim has a cycle of length 255
 
 fn main() {
-    test_xbm("hellocode.xbm");
-    test_reed_solomon(0b1000);
+    // test_xbm("hellocode.xbm");
+    // test_reed_solomon(0b1000);
 
+    test_format_parsing();
     // test_xbm_output();
 
     //wikiv::test_gf();
@@ -56,6 +56,42 @@ fn main() {
             } */
         }
     } */
+}
+
+fn test_format_parsing() {
+    let xbm_string = std::fs::read_to_string("hellocode.xbm").unwrap();
+    let xbm_bitmap = image_type::rowaligned::ImgRowAligned::from_xbm(&xbm_string).unwrap();
+    let fcode = image_type::qr_standard::get_format(&xbm_bitmap, 1, (2, 2)).unwrap();
+    println!("{:?}", fcode);
+    println!(
+        "{:#x}\n{:#x}",
+        qr_fcode_remainder(fcode.1 as u32),
+        qr_fcode_remainder((fcode.1.reverse_bits() >> 1) as u32)
+    );
+
+    if false {
+        let (correction, mask) = image_type::qr_standard::interpret_format(fcode.0).unwrap();
+
+        println!("error correction {}", {
+            match correction {
+                1 => 'L',
+                2 => 'M',
+                3 => 'Q',
+                4 | _ => 'H',
+            }
+        });
+        println!("masking pattern {:#05b}", mask);
+
+        let mut goop = xbm_bitmap.clone();
+        for i in 0..goop.dims().1 {
+            println!("{}", debug_print_row(&goop, i, true).unwrap());
+        }
+        println!();
+        goop.qr_mask_xor(mask);
+        for i in 0..goop.dims().1 {
+            println!("{}", debug_print_row(&goop, i, true).unwrap());
+        }
+    }
 }
 
 fn debug_print_row<T: Bitmap>(input: &T, y: usize, emoji: bool) -> Option<String> {
@@ -113,7 +149,7 @@ fn test_xbm(path: &str) {
 // tests qr format check, assuming debug printing is enabled
 fn test_checkfmt() {
     for i in 10..20 {
-        qr_check_fcode((2u32.pow(15) - 20) + i);
+        qr_fcode_remainder((2u32.pow(15) - 20) + i);
         println!();
     }
 }
