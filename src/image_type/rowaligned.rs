@@ -16,7 +16,7 @@ impl ImgRowAligned {
             self.bits[i] ^= 0xff;
         }
     }
-    
+
     pub fn make_continuous(self) -> super::continuous::Img {
         let (width, height) = Bitmap::dims(&self);
         if self.width % 8 == 0 {
@@ -186,6 +186,18 @@ static unsigned char test_bits[] = {
    0x40, 0x00, 0x80, 0x00, 0xfe, 0xff, 0xfd, 0xff, 0xfb, 0xff, 0xf7, 0xff,
    0xef, 0xff, 0xdf, 0xff, 0xbf, 0xff, 0x7f, 0xff };
 ";
+
+// implementing clone()
+impl Clone for ImgRowAligned {
+    // returns a carbon copy of the original, including inaccessible bits
+    fn clone(&self) -> Self {
+        ImgRowAligned {
+            width: self.width,
+            height: self.height,
+            bits: self.bits.clone(),
+        }
+    }
+}
 
 impl Bitmap for ImgRowAligned {
     fn new(width: usize, height: usize) -> Self {

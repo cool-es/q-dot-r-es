@@ -92,8 +92,18 @@ fn test_xbm_output() {
 fn test_xbm(path: &str) {
     let input = std::fs::read_to_string(path).unwrap();
     let x = image_type::rowaligned::ImgRowAligned::from_xbm(&input).unwrap();
-    for i in 0..x.dims().1 {
-        println!("{}", debug_print_row(&x, i, true).unwrap());
+    let mut vector: Vec<image_type::rowaligned::ImgRowAligned> = Vec::new();
+    vector.push(x.clone());
+    for i in 0..=7 {
+        let mut masked = x.clone();
+        masked.qr_mask_xor(i);
+        vector.push(masked);
+    }
+    for x in vector {
+        for i in 0..x.dims().1 {
+            println!("{}", debug_print_row(&x, i, true).unwrap());
+        }
+        println!();
     }
 }
 
