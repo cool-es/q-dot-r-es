@@ -13,7 +13,7 @@ mod zigzag;
 fn main() {
     test_xbm("es.xbm");
 
-    test_xbm_output();
+    // test_xbm_output();
 
     //wikiv::test_gf();
 
@@ -55,7 +55,7 @@ fn main() {
     } */
 }
 
-fn debug_print_row<T: Bitmap>(input: T, y: usize, emoji: bool) -> Option<String> {
+fn debug_print_row<T: Bitmap>(input: &T, y: usize, emoji: bool) -> Option<String> {
     let row = input.get_row(y)?;
     let mut output = String::new();
     for j in (0..input.dims().0).rev() {
@@ -92,9 +92,8 @@ fn test_xbm_output() {
 fn test_xbm(path: &str) {
     let input = std::fs::read_to_string(path).unwrap();
     let x = image_type::rowaligned::ImgRowAligned::from_xbm(&input).unwrap();
-    let y = x.make_continuous();
-    for i in 0..y.height {
-        println!("{}", y.debug_print_row(i, true).unwrap());
+    for i in 0..x.dims().1 {
+        println!("{}", debug_print_row(&x, i, true).unwrap());
     }
 }
 

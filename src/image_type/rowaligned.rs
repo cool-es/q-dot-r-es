@@ -2,8 +2,9 @@ use super::Bitmap;
 
 // image format with gaps in its byte data: start of rows are byte aligned
 pub struct ImgRowAligned {
-    pub width: usize,
-    pub height: usize,
+    // width, height fields are private so that they can't be mutated
+    pub(super) width: usize,
+    pub(super) height: usize,
     pub(super) bits: Vec<u8>,
 }
 
@@ -329,5 +330,21 @@ impl Bitmap for ImgRowAligned {
             ); */
             false
         }
+    }
+
+    fn get_row(&self, y: usize) -> Option<u128> {
+        if y >= self.height {
+            return None;
+        }
+        let mut output: u128 = 0;
+
+        for i in self.debug_indices(0, y)?.0..=self.debug_indices(self.width - 1, y)?.0 {
+            output <<= 8;
+            output += self.bits[i] as u128;
+        }
+
+        output >>= self.debug_indices(self.width - 1, y)?.1 as u128;
+
+        Some(output)
     }
 }

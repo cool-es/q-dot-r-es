@@ -2,8 +2,9 @@ use super::Bitmap;
 use std::ops::BitXorAssign;
 // 2-dimensional one bit data type, stored in a vector of u8's
 pub struct Img {
-    pub width: usize,
-    pub height: usize,
+    // width, height fields are private so that they can't be mutated
+    pub(super) width: usize,
+    pub(super) height: usize,
     pub(super) bits: Vec<u8>,
 }
 
