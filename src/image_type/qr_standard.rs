@@ -90,3 +90,31 @@ fn penalty<T: super::Bitmap>(input: &T) -> u32 {
 
     (3 + test1) + (3 * (test2.0 - 1) * (test2.1 - 1)) + (40 * test3) + (10 * test4)
 }
+
+// raw data for format writing/reading operations
+// format data in a ~qr symbol~ is replicated in two positions:
+// this function gives pairs of coordinates (x1, y1), (x2, y2)
+// relative to top left module of the finder pattern
+fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize, usize))> {
+    if !(1..=40).contains(&version) || bit > 14 {
+        // undefined
+        return None;
+    }
+
+    // max offset from origin: width - 1
+    let max = (16 + 4 * version) as usize;
+    let bit = bit as usize;
+
+    let coord1 = match bit {
+        0..=5 => (8, bit),
+        6..=7 => (8, bit + 1),
+        8 => (7, 8),
+        _ => (14 - bit, 8),
+    };
+    let coord2 = match bit {
+        0..=7 => (max - bit, 8),
+        _ => (8, bit + (max - 14)),
+    };
+
+    Some((coord1, coord2))
+}
