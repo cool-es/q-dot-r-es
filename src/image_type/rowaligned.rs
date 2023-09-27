@@ -9,77 +9,14 @@ pub struct ImgRowAligned {
 }
 
 impl ImgRowAligned {
-    // copied wholesale from Img
-    pub fn new(width: usize, height: usize) -> Self {
-        let mut bits: Vec<u8> = Vec::new();
-
-        // resize vector to contain the maximum needed amount of
-        // elements – that is, the index of the byte containing the last pixel
-        // risk of fencepost error: resize() counts from 1, xy_to_index from 0
-        bits.resize(
-            xy_to_index(width - 1, height - 1, width, height).unwrap().0 + 1,
-            0,
-        );
-
-        ImgRowAligned {
-            width,
-            height,
-            bits,
-        }
-    }
-
-    // copied wholesale from Img
-    // very easy to implement, why not add it
+    
     pub fn invert(&mut self) {
         // note that this doesn't leave inaccessible bits as 0, so you can't generally rely on that being true
         for i in 0..self.bits.len() {
             self.bits[i] ^= 0xff;
         }
     }
-
-    // copied wholesale from Img
-    /*     pub fn dims(&self) -> (usize, usize) {
-           (self.width, self.height)
-       }
-    */
-    // copied wholesale from Img
-    pub fn debug_bits(&self) -> Vec<u8> {
-        self.bits.clone()
-    }
-
-    // copied wholesale from Img
-    pub fn debug_indices(&self, x: usize, y: usize) -> Option<(usize, u8)> {
-        xy_to_index(x, y, self.width, self.height)
-    }
-
-    // returns "false" if out-of-bounds
-    pub fn set_bit(&mut self, x: usize, y: usize, bit: bool) -> bool {
-        if let Some((n, i)) = xy_to_index(x, y, self.width, self.height) {
-            if bit {
-                // set a 1 (bitwise 'or' w/ 1)
-                self.bits[n] |= 1 << i;
-            } else {
-                //set a 0 (bitwise 'and' w/ 0)
-                self.bits[n] &= !(1 << i);
-            }
-            true
-        } else {
-            /* println!(
-                "out-of-bounds write (x={} y={} w={} h={})",
-                x, y, self.width, self.height
-            ); */
-            false
-        }
-    }
-
-    pub fn get_bit(&self, x: usize, y: usize) -> Option<bool> {
-        if let Some((n, i)) = xy_to_index(x, y, self.width, self.height) {
-            Some(((self.bits[n] >> i) & 1) == 1)
-        } else {
-            None
-        }
-    }
-
+    
     pub fn make_continuous(self) -> super::continuous::Img {
         let (width, height) = Bitmap::dims(&self);
         if self.width % 8 == 0 {
@@ -103,56 +40,6 @@ impl ImgRowAligned {
 
         output
     }
-
-    // functions to input/output XBM data
-    // &str for sake of being used with constant strings
-    /*
-    pub fn from_xbm(input: &str) -> Option<Self> {
-            // note that XBM uses reverse byte order (leftmost pixel is the 2^0 bit)
-
-            //split at the start of the byte data
-            let (dims, bytes) = input.split_once('{')?;
-
-            let mut dimensions = dims.lines().map(|x| {
-                if x.starts_with('#') {
-                    x.trim()
-                        .split_whitespace()
-                        .rev()
-                        .next()?
-                        .parse::<usize>()
-                        .ok()
-                } else {
-                    None
-                }
-            });
-            // .map(|x| Some(x.split_whitespace().rev().next()?.parse::<usize>().ok()?));
-
-            let width = dimensions.next()??;
-            let height = dimensions.next()??;
-
-            let mut bits = Vec::new();
-
-            // remove whitespace, remove final bracket (returns None if unsuccessful),
-            // unwrap or use the aforementioned value, split on commas
-            for byte in bytes
-                .trim()
-                // .strip_suffix("};")
-                // .unwrap_or(bytes.trim())
-                // .split(", ")
-                .split(|x| !char::is_alphanumeric(x))
-            {
-                if byte.len() != 0 {
-                    bits.push(byte.trim().parse::<u8>().ok()?.reverse_bits());
-                }
-            }
-
-            Some(ImgRowAligned {
-                width: width,
-                height: height,
-                bits: bits,
-            })
-        }
-     */
 
     // same as previous function but with (incomplete) error handling
     // the code here isn't great but it's passable
@@ -301,16 +188,26 @@ static unsigned char test_bits[] = {
 ";
 
 impl Bitmap for ImgRowAligned {
+    fn new(width: usize, height: usize) -> Self {
+        let mut bits: Vec<u8> = Vec::new();
+
+        // resize vector to contain the maximum needed amount of
+        // elements – that is, the index of the byte containing the last pixel
+        // risk of fencepost error: resize() counts from 1, xy_to_index from 0
+        bits.resize(
+            xy_to_index(width - 1, height - 1, width, height).unwrap().0 + 1,
+            0,
+        );
+
+        ImgRowAligned {
+            width: width,
+            height: height,
+            bits,
+        }
+    }
+
     fn dims(&self) -> (usize, usize) {
         (self.width, self.height)
-    }
-
-    fn new(width: usize, height: usize) -> Self {
-        Self::new(width, height)
-    }
-
-    fn get_bit(&self, x: usize, y: usize) -> Option<bool> {
-        self.get_bit(x, y)
     }
 
     fn set_bit(&mut self, x: usize, y: usize, bit: bool) -> bool {
@@ -332,18 +229,26 @@ impl Bitmap for ImgRowAligned {
         }
     }
 
+    fn get_bit(&self, x: usize, y: usize) -> Option<bool> {
+        if let Some((n, i)) = xy_to_index(x, y, self.width, self.height) {
+            Some(((self.bits[n] >> i) & 1) == 1)
+        } else {
+            None
+        }
+    }
+
     fn get_row(&self, y: usize) -> Option<u128> {
         if y >= self.height {
             return None;
         }
         let mut output: u128 = 0;
 
-        for i in self.debug_indices(0, y)?.0..=self.debug_indices(self.width - 1, y)?.0 {
+        for i in self.debug_xy_to_index(0, y)?.0..=self.debug_xy_to_index(self.width - 1, y)?.0 {
             output <<= 8;
             output += self.bits[i] as u128;
         }
 
-        output >>= self.debug_indices(self.width - 1, y)?.1 as u128;
+        output >>= self.debug_xy_to_index(self.width - 1, y)?.1 as u128;
 
         Some(output)
     }

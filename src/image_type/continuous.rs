@@ -6,14 +6,83 @@ pub struct Img {
     pub(super) width: usize,
     pub(super) height: usize,
     pub(super) bits: Vec<u8>,
-
-    // hindsight is 20/20
-    // pub(super) rowaligned: bool,
 }
 
 // general format-specific methods
 impl Img {
-    pub fn new(width: usize, height: usize) -> Self {
+    // apply 'pattern' to the image, but only the
+    // bits specified by 'mask'
+    pub fn mask_set(&mut self, pattern: &Img, mask: &Img) {
+        if self.dims() != pattern.dims() || self.dims() != mask.dims() {
+            // size mismatch
+            panic!()
+        }
+
+        for i in 0..self.bits.len() {
+            // (P & M) | (S & !M)
+            // if M is 1, output is == P
+            // if M is 0, output is == S
+            self.bits[i] = (pattern.bits[i] & mask.bits[i]) | (self.bits[i] & !mask.bits[i]);
+        }
+    }
+
+    // ... very tricky to optimize
+    // lazy solution for now: use set_bit
+    pub fn set_row(&mut self, y: usize, row: u128) {
+        if y < self.height {
+            for x in 0..(self.width - 1) {
+                self.set_bit(x, y, ((row >> ((self.width - 1) - x)) % 2) == 1);
+            }
+        } else {
+            println!(
+                "out-of-bounds write (y={} w={} h={})",
+                y, self.width, self.height
+            );
+        }
+    }
+
+    // very easy to implement, why not add it
+    pub fn invert(&mut self) {
+        // note that this doesn't leave inaccessible bits as 0, so you can't generally rely on that being true
+        for i in 0..self.bits.len() {
+            self.bits[i] ^= 0xff;
+        }
+    }
+
+    // "stamp" function, to copy a smaller bitmap onto a bigger one
+    // (e.g. a qr alignment square onto a qr code). the x/y coords
+    // are aligned to the stamp's top left corner
+    pub fn rubberstamp(&mut self, stamp: &Self, x: usize, y: usize) {
+        todo!()
+    }
+
+    pub fn make_rowaligned(self) -> super::rowaligned::ImgRowAligned {
+        let (width, height) = self.dims();
+        if self.width % 8 == 0 {
+            // nothing needs to be done
+            // note that the fields match up but the types don't!
+            return super::rowaligned::ImgRowAligned {
+                width,
+                height,
+                bits: self.bits,
+            };
+        }
+
+        //  really awful implementation here, but,
+        let mut output = super::rowaligned::ImgRowAligned::new(width, height);
+
+        for y in 0..self.height {
+            for x in 0..self.width {
+                output.set_bit(x, y, self.get_bit(x, y).unwrap());
+            }
+        }
+
+        output
+    }
+}
+
+impl Bitmap for Img {
+    fn new(width: usize, height: usize) -> Self {
         let mut bits: Vec<u8> = Vec::new();
 
         // resize vector to contain the maximum needed amount of
@@ -25,14 +94,18 @@ impl Img {
         );
 
         Img {
-            width,
-            height,
+            width: width,
+            height: height,
             bits,
         }
     }
 
+    fn dims(&self) -> (usize, usize) {
+        (self.width, self.height)
+    }
+
     // returns "false" if out-of-bounds
-    pub fn set_bit(&mut self, x: usize, y: usize, bit: bool) -> bool {
+    fn set_bit(&mut self, x: usize, y: usize, bit: bool) -> bool {
         if let Some((n, i)) = xy_to_index(x, y, self.width, self.height) {
             if bit {
                 // set a 1 (bitwise 'or' w/ 1)
@@ -51,32 +124,17 @@ impl Img {
         }
     }
 
-    pub fn get_bit(&self, x: usize, y: usize) -> Option<bool> {
-        if let Some((n, i)) = xy_to_index(x, y, self.width, self.height) {
-            Some(((self.bits[n] >> i) & 1) == 1)
+    fn get_bit(&self, x: usize, y: usize) -> Option<bool> {
+        let ref this = self;
+        if let Some((n, i)) = xy_to_index(x, y, this.width, this.height) {
+            Some(((this.bits[n] >> i) & 1) == 1)
         } else {
             None
         }
     }
 
-    // apply 'pattern' to the image, but only the
-    // bits specified by 'mask'
-    pub fn mask_set(&mut self, pattern: &Img, mask: &Img) {
-        if self.dims() != pattern.dims() || self.dims() != mask.dims() {
-            // size mismatch
-            panic!()
-        }
-
-        for i in 0..self.bits.len() {
-            // (P & M) | (S & !M)
-            // if M is 1, output is == P
-            // if M is 0, output is == S
-            self.bits[i] = (pattern.bits[i] & mask.bits[i]) | (self.bits[i] & !mask.bits[i]);
-        }
-    }
-
     //returns a given row as the bits of a u128
-    pub fn get_row(&self, y: usize) -> Option<u128> {
+    fn get_row(&self, y: usize) -> Option<u128> {
         if self.width > 128 {
             // won't fit
             return None;
@@ -145,107 +203,6 @@ impl Img {
             return None;
         }
     }
-
-    // ... very tricky to optimize
-    // lazy solution for now: use set_bit
-    pub fn set_row(&mut self, y: usize, row: u128) {
-        if y < self.height {
-            for x in 0..(self.width - 1) {
-                self.set_bit(x, y, ((row >> ((self.width - 1) - x)) % 2) == 1);
-            }
-        } else {
-            println!(
-                "out-of-bounds write (y={} w={} h={})",
-                y, self.width, self.height
-            );
-        }
-    }
-
-    // very easy to implement, why not add it
-    pub fn invert(&mut self) {
-        // note that this doesn't leave inaccessible bits as 0, so you can't generally rely on that being true
-        for i in 0..self.bits.len() {
-            self.bits[i] ^= 0xff;
-        }
-    }
-
-    pub fn dims(&self) -> (usize, usize) {
-        (self.width, self.height)
-    }
-
-    pub fn debug_bits(&self) -> Vec<u8> {
-        self.bits.clone()
-    }
-
-    pub fn debug_indices(&self, x: usize, y: usize) -> Option<(usize, u8)> {
-        xy_to_index(x, y, self.width, self.height)
-    }
-
-    pub fn debug_print_row(&self, y: usize, emoji: bool) -> Option<String> {
-        let row = self.get_row(y)?;
-        let mut output = String::new();
-        for j in (0..self.width).rev() {
-            if emoji {
-                output.push_str(if ((row >> j) % 2) == 1 {
-                    "⬛️"
-                } else {
-                    "⬜️"
-                })
-            } else {
-                output.push(if ((row >> j) % 2) == 1 { '1' } else { '0' })
-            };
-        }
-        Some(output)
-    }
-
-    // "stamp" function, to copy a smaller bitmap onto a bigger one
-    // (e.g. a qr alignment square onto a qr code). the x/y coords
-    // are aligned to the stamp's top left corner
-    pub fn rubberstamp(&mut self, stamp: &Self, x: usize, y: usize) {
-        todo!()
-    }
-
-    pub fn make_rowaligned(self) -> super::rowaligned::ImgRowAligned {
-        let (width, height) = self.dims();
-        if self.width % 8 == 0 {
-            // nothing needs to be done
-            // note that the fields match up but the types don't!
-            return super::rowaligned::ImgRowAligned {
-                width,
-                height,
-                bits: self.bits,
-            };
-        }
-
-        //  really awful implementation here, but,
-        let mut output = super::rowaligned::ImgRowAligned::new(width, height);
-
-        for y in 0..self.height {
-            for x in 0..self.width {
-                output.set_bit(x, y, self.get_bit(x, y).unwrap());
-            }
-        }
-
-        output
-    }
-}
-
-impl Bitmap for Img {
-    fn new(width: usize, height: usize) -> Self {
-        Self::new(width, height)
-    }
-    fn dims(&self) -> (usize, usize) {
-        self.dims()
-    }
-    fn get_bit(&self, x: usize, y: usize) -> Option<bool> {
-        self.get_bit(x, y)
-    }
-    fn get_row(&self, y: usize) -> Option<u128> {
-        self.get_row(y)
-    }
-    fn set_bit(&mut self, x: usize, y: usize, bit: bool) -> bool {
-        self.set_bit(x, y, bit)
-    }
 }
 
 impl BitmapDebug for Img {
@@ -255,11 +212,11 @@ impl BitmapDebug for Img {
     fn debug_bits_mut(&mut self) -> &mut Vec<u8> {
         &mut self.bits
     }
-    fn debug_index_to_xy(&self, vec_index: usize, bit_index: u8) -> Option<(usize,usize)> {
-        index_to_xy(vec_index, bit_index, self.width, self.height)
-    }
     fn debug_xy_to_index(&self, x: usize, y: usize) -> Option<(usize, u8)> {
         xy_to_index(x, y, self.width, self.height)
+    }
+    fn debug_index_to_xy(&self, vec_index: usize, bit_index: u8) -> Option<(usize, usize)> {
+        index_to_xy(vec_index, bit_index, self.width, self.height)
     }
 }
 
