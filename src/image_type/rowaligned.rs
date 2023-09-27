@@ -9,7 +9,6 @@ pub struct ImgRowAligned {
 }
 
 impl ImgRowAligned {
-    
     pub fn invert(&mut self) {
         // note that this doesn't leave inaccessible bits as 0, so you can't generally rely on that being true
         for i in 0..self.bits.len() {
@@ -18,7 +17,7 @@ impl ImgRowAligned {
     }
 
     pub fn make_continuous(self) -> super::continuous::Img {
-        let (width, height) = Bitmap::dims(&self);
+        let (width, height) = self.dims();
         if self.width % 8 == 0 {
             // nothing needs to be done
             // note that the fields match up but the types don't!
@@ -33,8 +32,9 @@ impl ImgRowAligned {
         let mut output = super::continuous::Img::new(width, height);
 
         for y in 0..self.height {
+            let row = self.get_row(y).unwrap();
             for x in 0..self.width {
-                output.set_bit(x, y, Bitmap::get_bit(&self, x, y).unwrap());
+                output.set_bit(x, y, (row >> (width - (x + 1))) & 1 == 1);
             }
         }
 
@@ -138,7 +138,7 @@ impl ImgRowAligned {
 
 impl From<super::continuous::Img> for ImgRowAligned {
     fn from(value: super::continuous::Img) -> Self {
-        todo!()
+        value.make_rowaligned()
     }
 }
 

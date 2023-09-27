@@ -72,8 +72,9 @@ impl Img {
         let mut output = super::rowaligned::ImgRowAligned::new(width, height);
 
         for y in 0..self.height {
+            let row = self.get_row(y).unwrap();
             for x in 0..self.width {
-                output.set_bit(x, y, self.get_bit(x, y).unwrap());
+                output.set_bit(x, y, (row >> (width - (x + 1))) & 1 == 1);
             }
         }
 
@@ -247,7 +248,7 @@ impl Clone for Img {
 
 impl From<super::rowaligned::ImgRowAligned> for Img {
     fn from(value: super::rowaligned::ImgRowAligned) -> Self {
-        todo!()
+        value.make_continuous()
     }
 }
 // this implementation packs all the image data into one continuous

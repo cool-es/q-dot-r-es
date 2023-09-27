@@ -1,23 +1,20 @@
 use rdsm::*;
 use image_type::Bitmap;
 
-mod bitmask;
 mod export;
 mod image_type;
 mod rdsm;
-mod zigzag;
 
+
+// galois-field debugging:
 // what we know:
 // 1. table-based operations are correct, seemingly regarless of if you use mod 255 or mod 256
 // 2. qr_gen has a mysteriously short cycle, 2^15 = 1
 // 3. prim has a cycle of length 255
 
-// branch to implement various qr standard-specific
-// routines without getting in the way of debugging
-// the galois field operations
-
 fn main() {
     test_xbm("hellocode.xbm");
+    test_reed_solomon(0b1000);
 
     // test_xbm_output();
 
