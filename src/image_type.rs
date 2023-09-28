@@ -36,7 +36,7 @@ pub trait Bitmap: BitmapDebug {
             None
         }
     }
-   // very very inefficient and basic, but it works (in theory. i haven't tested it)
+    // very very inefficient and basic, but it works (in theory. i haven't tested it)
     fn get_row(&self, y: usize) -> Option<u128> {
         let (width, height) = self.dims();
 

@@ -126,6 +126,7 @@ fn penalty<T: super::Bitmap>(input: &T) -> u32 {
 // format data in a ~qr symbol~ is replicated in two positions:
 // this function gives pairs of coordinates (x1, y1), (x2, y2)
 // relative to top left module of the finder pattern
+// from LSB (0) to MSB (14) (see pg. 60)
 fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize, usize))> {
     if !(1..=40).contains(&version) || bit > 14 {
         // undefined
@@ -151,7 +152,7 @@ fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize,
 }
 
 // ref. pg. 60
-pub fn get_format<T: super::Bitmap>(
+pub fn get_fcode<T: super::Bitmap>(
     input: &T,
     version: u32,
     offset: (usize, usize),
@@ -178,9 +179,7 @@ pub fn get_format<T: super::Bitmap>(
     // mask value for format codes, 0x5412
     let mask = 0b0101_0100_0001_0010;
 
-    output1 ^= mask;
-
-    Some(output1)
+    Some(output1 ^ mask)
 }
 
 // returns error correction level and mask pattern (pg. 59)
@@ -190,19 +189,45 @@ pub fn interpret_format(fcode: u16) -> Option<(u8, u8)> {
     }
 
     // L, M, Q, H
-    let mut correction = match 0b11 & (fcode >> 13) {
-        0b01 => 1,
-        0b00 => 2,
-        0b11 => 3,
-        0b10 | _ => 4,
-    };
+    // let mut correction = match 0b11 & (fcode >> 13) {
+    //     0b01 => 1,
+    //     0b00 => 2,
+    //     0b11 => 3,
+    //     0b10 | _ => 4,
+    // };
+    let correction = (0b11 & (fcode >> 13)) as u8;
 
-    let mut maskpat = (0b111 & (fcode >> 10)) as u8;
+    let maskpat = (0b111 & (fcode >> 10)) as u8;
 
     Some((correction, maskpat))
 }
 
-// return the coordniates of a given byte in a qr code
+pub fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u16> {
+    if correction_level > 3 || mask_pattern > 7 {
+        return None;
+    }
+
+    crate::rdsm::qr_generate_fcode((correction_level << 3) | mask_pattern)
+}
+
+pub fn set_fcode<T: super::Bitmap>(
+    input: &mut T,
+    version: u32,
+    offset: (usize, usize),
+    fcode: u16,
+) {
+    let (ox, oy) = offset;
+    let mask = 0b0101_0100_0001_0010u16;
+
+    for bit in 0..=14 {
+        let ((x1, y1), (x2, y2)) = format_info_coords(version, bit).unwrap();
+        let value = (fcode ^ mask) & (1 << bit) != 0;
+        input.set_bit(x1 + ox, y1 + oy, value);
+        input.set_bit(x2 + ox, y2 + oy, value);
+    }
+}
+
+// return the coordinates of a given byte in a qr code
 fn qr_data_coords(byte: u32, bit: u8, version: u32) -> Option<(usize, usize)> {
     // for now
     if version != 1 {

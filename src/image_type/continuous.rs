@@ -55,7 +55,9 @@ impl Img {
             // (P & M) | (S & !M)
             // if M is 1, output is == P
             // if M is 0, output is == S
-            self.bits[i] = (pattern.bits[i] & mask.bits[i]) | (self.bits[i] & !mask.bits[i]);
+
+            // changed - had the opposite behavior from what was intended
+            self.bits[i] = (pattern.bits[i] & !mask.bits[i]) | (self.bits[i] & mask.bits[i]);
         }
     }
 

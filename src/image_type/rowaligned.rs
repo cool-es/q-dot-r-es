@@ -19,10 +19,12 @@ impl ImgRowAligned {
             // (P & M) | (S & !M)
             // if M is 1, output is == P
             // if M is 0, output is == S
-            self.bits[i] = (pattern.bits[i] & mask.bits[i]) | (self.bits[i] & !mask.bits[i]);
+
+            // changed - had the opposite behavior from what was intended
+            self.bits[i] = (pattern.bits[i] & !mask.bits[i]) | (self.bits[i] & mask.bits[i]);
         }
     }
-    
+
     pub fn invert(&mut self) {
         // note that this doesn't leave inaccessible bits as 0, so you can't generally rely on that being true
         for i in 0..self.bits.len() {
@@ -186,7 +188,7 @@ pub(super) fn index_to_xy(
 ) -> Option<(usize, usize)> {
     let row_bytes = if w % 8 == 0 { w / 8 } else { w / 8 + 1 };
 
-    let x = (vec_index % row_bytes) * 8 + (7-bit_index) as usize;
+    let x = (vec_index % row_bytes) * 8 + (7 - bit_index) as usize;
     let y = vec_index / row_bytes;
     if x >= w || y >= h {
         return None;

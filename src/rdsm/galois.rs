@@ -47,7 +47,7 @@ pub const BLANK_EXP_LOG_LUTS: ExpLogLUTs = ([0; 512], [0; 256]);
     in the example code (000111101011001) below.
 */
 pub fn qr_fcode_remainder(fcode: u32) -> u32 {
-    let format_prime = 0x537; // 0b10100110111
+    // 0b10100110111
     let mut output = fcode;
 
     for i in (0..=4).rev() {
@@ -59,7 +59,7 @@ pub fn qr_fcode_remainder(fcode: u32) -> u32 {
             // this will always erase that bit of fmt.
             // in essence we're doing like, "lights out"
             // on the 2^14 to 2^10 bits, from high to low
-            output ^= format_prime << i;
+            output ^= QR_FORMAT_GEN << i;
         }
     }
     output
@@ -82,24 +82,26 @@ pub fn qr_fcode_is_good(fcode: u16) -> bool {
 // not sure of the significance of this...
 
 // fmt * 2^10 + remainder of (fmt * 2^10) / g
-pub fn qr_generate_fcode(fmt: u32) -> u32 {
+pub fn qr_generate_fcode(fmt: u8) -> Option<u16> {
     if fmt >= 32 {
-        core::panic!();
+        return None;
     }
-    (fmt << 10) | qr_fcode_remainder(fmt << 10)
+
+    // i'm aware that this code is ridiculous
+    Some(((fmt as u16) << 10) | (qr_fcode_remainder((fmt as u32) << 10)) as u16)
 }
 
 // earlier "qr_decode_format"
-pub fn qr_find_fmt(fcode: u32) -> Option<u32> {
+pub fn qr_find_fmt(fcode: u16) -> Option<u8> {
     // looks complex, is actually very simple:
     // try every format, generate its format code,
     // check the format code against the input
     // (lowest difference wins). returns None
     // if there's a tie
-    let mut best_fmt: Option<u32> = None;
+    let mut best_fmt: Option<u8> = None;
     let mut best_dist = 15;
     for try_fmt in 0..32 {
-        let try_fcode = qr_generate_fcode(try_fmt);
+        let try_fcode = qr_generate_fcode(try_fmt)?;
         let try_dist = (fcode ^ try_fcode).count_ones();
         if try_dist < best_dist {
             best_dist = try_dist;

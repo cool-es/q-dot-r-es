@@ -1,4 +1,4 @@
-use image_type::Bitmap;
+use image_type::{continuous::Img, qr_standard::*, rowaligned::ImgRowAligned, *};
 use rdsm::*;
 
 mod export;
@@ -12,56 +12,38 @@ mod rdsm;
 // 3. prim has a cycle of length 255
 
 fn main() {
-    // test_xbm("hellocode.xbm");
-    // test_reed_solomon(0b1000);
-    println!("'hello!':");
-    test_format_parsing("hellocode_smol.xbm");
-    // println!("'hello.':");
-    // test_format_parsing("hellocode2_smol.xbm");
+    let code = xbm_filepath_into_bitmap("hellocode_smol.xbm");
 
-    // check_format_pattern();
-    // test_xbm_output();
-
-    // print_qr_mask_patterns();
-
-    //wikiv::test_gf();
-
-    /* for k in 0..5 {
-        let i = 1 << k;
-        println!("{:05b} -> {:015b} ({})", i, wikiv::encode_format(i), i);
-    } */
-
-    //test_checkfmt();
-    /* let mut codes: Vec<u32> = Vec::new();
-    codes.resize(32, 0);
-
-    println!("test encode:");
-    for i in 0..32 {
-        codes[i as usize] = wikiv::qr_generate_fcode(i);
-        println!("{:05b} -> {:015b} ({})", i, codes[i as usize], i);
-    }
+    debug_print(&code);
     println!();
-    for i in 0..32 {
-        let format = wikiv::qr_generate_fcode(i);
-        println!(
-            "{:2}: format {:015b}, rem. {}",
-            i,
-            format,
-            wikiv::qr_check_fcode(format)
-        ); */
-    /* print!("{:2}: ", i);
-        for j in 0..i {
-            print!("{} ", (codes[i] ^ codes[j]) ^ codes[i ^ j]);
-            /* if (codes[i] ^ codes[j]).count_ones() > 8 {
-                println!(
-                    "{:2} vs {:2}: distance {}",
-                    i,
-                    j,
-                    (codes[i] ^ codes[j]).count_ones()
-                );
-            } */
+    let i = 0;
+    for i in 0..=7 {
+        if let Some(code2) = qr_remask_v1_code(&code, i) {
+            println!("mask {}", i);
+            debug_print(&code2);
         }
-    } */
+        println!("\n");
+    }
+}
+
+fn qr_remask_v1_code(input: &ImgRowAligned, mask_pattern: u8) -> Option<ImgRowAligned> {
+    let old_fcode = get_fcode(input, 1, (0, 0))?;
+    let (correction_level, old_mask_pattern) = interpret_format(old_fcode)?;
+    if mask_pattern == old_mask_pattern {
+        return None;
+    };
+
+    let pixelmask = xbm_filepath_into_bitmap("hellomask_smol.xbm");
+
+    let mut image = input.clone();
+    image.qr_mask_xor(old_mask_pattern);
+    image.qr_mask_xor(mask_pattern);
+    image.mask_set(input, &pixelmask);
+    let fcode = data_to_fcode(correction_level, mask_pattern).unwrap();
+    // println!("fcode\n{:015b}\n\nold fcode\n{:015b}\n", fcode, old_fcode);
+    set_fcode(&mut image, 1, (0, 0), fcode);
+
+    Some(image)
 }
 
 fn print_qr_mask_patterns() {
@@ -93,7 +75,7 @@ fn print_qr_mask_patterns() {
 fn test_format_parsing(path: &str) {
     let xbm_string = std::fs::read_to_string(path).unwrap();
     let xbm_bitmap = image_type::rowaligned::ImgRowAligned::from_xbm(&xbm_string).unwrap();
-    let fcode = image_type::qr_standard::get_format(&xbm_bitmap, 1, (0, 0)).unwrap();
+    let fcode = image_type::qr_standard::get_fcode(&xbm_bitmap, 1, (0, 0)).unwrap();
     println!("{:#b}", fcode);
     println!("remainder {:#b}", qr_fcode_remainder(fcode as u32),);
 
@@ -110,32 +92,34 @@ fn test_format_parsing(path: &str) {
         });
         println!("masking pattern {:#05b}", mask);
         debug_print(&xbm_bitmap);
-/* for mask in  0..=7 */{
-        let mut code_for_masking = xbm_bitmap.clone();
-        let pixelmask = {
-            let mut x = xbm_path_convert("hellomask_smol.xbm");
-            x.invert();
-            x
-        };
-        let xor_mask_pattern = {
-            let (width, height) = code_for_masking.dims();
-            let mut x = image_type::rowaligned::ImgRowAligned::new(width, height);
-            x.qr_mask_xor(mask);
-            x
-        };
+        /* for mask in  0..=7 */
+        {
+            let mut code_for_masking = xbm_bitmap.clone();
+            let pixelmask = {
+                let mut x = xbm_filepath_into_bitmap("hellomask_smol.xbm");
+                x.invert();
+                x
+            };
+            let xor_mask_pattern = {
+                let (width, height) = code_for_masking.dims();
+                let mut x = image_type::rowaligned::ImgRowAligned::new(width, height);
+                x.qr_mask_xor(mask);
+                x
+            };
 
-        // debug_print(&code_for_masking);
-        println!();
-        code_for_masking.qr_mask_xor(mask);
-        // for i in 0..goop.dims().1 {
-        //     println!("{}", debug_print_row(&goop, i, true).unwrap());
-        // }
-        // println!();
-        code_for_masking.mask_set(&xbm_bitmap, &pixelmask);
-        println!("mask {}:",mask);
-        debug_print(&xor_mask_pattern);
-        println!();
-        debug_print(&code_for_masking);}
+            // debug_print(&code_for_masking);
+            println!();
+            code_for_masking.qr_mask_xor(mask);
+            // for i in 0..goop.dims().1 {
+            //     println!("{}", debug_print_row(&goop, i, true).unwrap());
+            // }
+            // println!();
+            code_for_masking.mask_set(&xbm_bitmap, &pixelmask);
+            println!("mask {}:", mask);
+            debug_print(&xor_mask_pattern);
+            println!();
+            debug_print(&code_for_masking);
+        }
     }
 }
 
@@ -197,7 +181,7 @@ fn test_xbm(path: &str) {
     }
 }
 
-fn xbm_path_convert(path: &str) -> image_type::rowaligned::ImgRowAligned {
+fn xbm_filepath_into_bitmap(path: &str) -> image_type::rowaligned::ImgRowAligned {
     let input = std::fs::read_to_string(path).unwrap();
     image_type::rowaligned::ImgRowAligned::from_xbm(&input).unwrap()
 }
