@@ -14,7 +14,11 @@ mod rdsm;
 fn main() {
     // test_xbm("hellocode.xbm");
     // test_reed_solomon(0b1000);
-    test_format_parsing();
+    println!("'hello!':");
+    test_format_parsing("hellocode_smol.xbm");
+    // println!("'hello.':");
+    // test_format_parsing("hellocode2_smol.xbm");
+
     // check_format_pattern();
     // test_xbm_output();
 
@@ -86,8 +90,8 @@ fn print_qr_mask_patterns() {
 //     debug_print(&qr);
 // }
 
-fn test_format_parsing() {
-    let xbm_string = std::fs::read_to_string("hellocode_smol.xbm").unwrap();
+fn test_format_parsing(path: &str) {
+    let xbm_string = std::fs::read_to_string(path).unwrap();
     let xbm_bitmap = image_type::rowaligned::ImgRowAligned::from_xbm(&xbm_string).unwrap();
     let fcode = image_type::qr_standard::get_format(&xbm_bitmap, 1, (0, 0)).unwrap();
     println!("{:#b}", fcode);
@@ -105,33 +109,33 @@ fn test_format_parsing() {
             }
         });
         println!("masking pattern {:#05b}", mask);
-
-        let mut goop = xbm_bitmap.clone();
-        let mux = {
+        debug_print(&xbm_bitmap);
+/* for mask in  0..=7 */{
+        let mut code_for_masking = xbm_bitmap.clone();
+        let pixelmask = {
             let mut x = xbm_path_convert("hellomask_smol.xbm");
             x.invert();
             x
         };
-        let muxy = {
-            let (width, height) = goop.dims();
+        let xor_mask_pattern = {
+            let (width, height) = code_for_masking.dims();
             let mut x = image_type::rowaligned::ImgRowAligned::new(width, height);
             x.qr_mask_xor(mask);
             x
         };
 
-      debug_print(&goop);
+        // debug_print(&code_for_masking);
         println!();
-        goop.qr_mask_xor(mask);
+        code_for_masking.qr_mask_xor(mask);
         // for i in 0..goop.dims().1 {
         //     println!("{}", debug_print_row(&goop, i, true).unwrap());
         // }
         // println!();
-        goop.mask_set(&xbm_bitmap, &mux);
+        code_for_masking.mask_set(&xbm_bitmap, &pixelmask);
+        println!("mask {}:",mask);
+        debug_print(&xor_mask_pattern);
         println!();
-        debug_print(&muxy);
-        println!();
-        debug_print(&goop);
-
+        debug_print(&code_for_masking);}
     }
 }
 
@@ -231,7 +235,7 @@ pub fn test_gf() {
 fn test_reed_solomon(test: u8) {
     // time to generate a qr code (clueless)
     let mut lookup_tables = BLANK_EXP_LOG_LUTS;
-    generate_exp_log_tables(&mut lookup_tables, PRIM);
+    generate_exp_log_tables(&mut lookup_tables, QR_CODEWORD_GEN);
 
     if test & 0b1 != 0 {
         println!("\n\n{:?}\n{:?}\n\n", lookup_tables.0, lookup_tables.1);
@@ -264,7 +268,7 @@ fn test_reed_solomon(test: u8) {
         for i in 1..255 {
             print!("{:3}:", i);
             for j in 1..255 {
-                let mul1 = galois_multiply(i as Element, j as Element, PRIM);
+                let mul1 = galois_multiply(i as Element, j as Element, QR_CODEWORD_GEN);
                 let mul2 = table_multiply(i as Element, j as Element, &lookup_tables);
 
                 // let div2 = table_divide(i as Element, j as Element, &lookup_tables);
@@ -275,7 +279,7 @@ fn test_reed_solomon(test: u8) {
                     != galois_multiply(
                         table_divide(i as Element, j as Element, &lookup_tables),
                         j as Element,
-                        PRIM,
+                        QR_CODEWORD_GEN,
                     )
                 {
                     print!("x");

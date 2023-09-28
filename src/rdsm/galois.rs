@@ -1,8 +1,9 @@
 // functions from the wikiversity "reed-solomon codes for coders" article
-// the qr-specific generator polynomial, 0b10100110111
-pub const QR_GEN: Element = 0x537;
-// recurring polynomial in the wikiversity article, unsure of its significance
-pub const PRIM: Element = 0x11d;
+
+// qr data generator/divisor polynomial, 0b100011101
+pub const QR_CODEWORD_GEN: Element = 0x11D;
+// qr format generator/divisor polynomial, 0b10100110111
+pub const QR_FORMAT_GEN: Element = 0x537;
 
 // from the tutorial: uses PRIM as its generator polynomial
 // rs_encode_msg(TEST_MSG, 10) == TEST_MSG + TEST_RESULT == FULL_TEST_RESULT
@@ -136,7 +137,7 @@ pub fn galois_multiply(x: Element, y: Element, prime: Element) -> Element {
 }
 
 pub fn qr_multiply(x: Element, y: Element) -> Element {
-    galois_multiply(x, y, QR_GEN)
+    galois_multiply(x, y, QR_CODEWORD_GEN)
 }
 
 pub fn bit_length(n: Element) -> u32 {
@@ -197,7 +198,7 @@ pub fn galois_multiply_peasant_full(
 // attempting to make a nicer peasant multiply...
 // not sure what the field character is supposed to be, but i'm guessing 256
 pub fn galois_multiply_peasant_qr(x: Element, y: Element) -> Element {
-    galois_multiply_peasant_full(x, y, QR_GEN, 256, true)
+    galois_multiply_peasant_full(x, y, QR_CODEWORD_GEN, 256, true)
 }
 
 // NEW ADDITIONS BELOW: section "multiplication with logarithms" starts here
@@ -235,7 +236,7 @@ pub fn table_multiply(x: Element, y: Element, tables: &ExpLogLUTs) -> Element {
 
 //fake function, debug: has the same signature as table_multiply but doesn't use tables
 pub fn ftable_multiply(x: Element, y: Element, _tables: &ExpLogLUTs) -> Element {
-    galois_multiply(x, y, PRIM)
+    galois_multiply(x, y, QR_CODEWORD_GEN)
 }
 
 // "gf_div"
@@ -264,7 +265,7 @@ pub fn table_pow(x: Element, power: u32, tables: &ExpLogLUTs) -> Element {
 pub fn ftable_pow(x: Element, power: u32, _tables: &ExpLogLUTs) -> Element {
     let mut output = 1;
     for i in 0..power {
-        output = galois_multiply(output, x, PRIM);
+        output = galois_multiply(output, x, QR_CODEWORD_GEN);
     }
     output
 }

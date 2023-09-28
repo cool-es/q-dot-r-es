@@ -1,3 +1,34 @@
+/*
+~~~ notes on qr decoding ~~~
+
+qr symbols contain a bitstream which is not aligned to its constituent 8-bit codewords (pg. 20)
+
+assuming byte / alphanumeric / numeric mode, version 1 (pg. 24),
+the bitstream consists of:
+• mode indicator, 4 bits (0100 / 0010 / 0001)
+• character count indicator (8 / 9 / 10)
+• data bit stream
+• terminator: 0000
+i believe the format allows for consecutive streams of different data spliced together
+
+byte mode is shift-jis (pg. 29), which i believe is ascii-adjacent
+
+codewords are aligned in columns of width 2,
+are always read right-to-left in rows either up or down,
+and all data has its MSB first (pg. 53)
+
+symbol structure refs: pg. 13 (layout), pg. 21 (version size / codeword capacity table),
+pg. 34 (error correction / data capacity table),
+
+error correction refs: pg. 41
+
+generator polynomials: pg. 73
+
+symbol encoding example: pg. 90
+
+~~~ notes end ~~~
+*/
+
 // returns the standard sizes for qr code symbols, indexed by version number
 // 21*21, 25*25, ..., 177*177
 pub fn version_to_size(version: u32) -> Option<u32> {
@@ -95,7 +126,7 @@ fn penalty<T: super::Bitmap>(input: &T) -> u32 {
 // format data in a ~qr symbol~ is replicated in two positions:
 // this function gives pairs of coordinates (x1, y1), (x2, y2)
 // relative to top left module of the finder pattern
- fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize, usize))> {
+fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize, usize))> {
     if !(1..=40).contains(&version) || bit > 14 {
         // undefined
         return None;
@@ -119,6 +150,7 @@ fn penalty<T: super::Bitmap>(input: &T) -> u32 {
     Some((coord1, coord2))
 }
 
+// ref. pg. 60
 pub fn get_format<T: super::Bitmap>(
     input: &T,
     version: u32,
@@ -151,7 +183,7 @@ pub fn get_format<T: super::Bitmap>(
     Some(output1)
 }
 
-// returns error correction level and mask pattern
+// returns error correction level and mask pattern (pg. 59)
 pub fn interpret_format(fcode: u16) -> Option<(u8, u8)> {
     if !crate::rdsm::qr_fcode_is_good(fcode) {
         return None;
@@ -170,3 +202,12 @@ pub fn interpret_format(fcode: u16) -> Option<(u8, u8)> {
     Some((correction, maskpat))
 }
 
+// return the coordniates of a given byte in a qr code
+fn qr_data_coords(byte: u32, bit: u8, version: u32) -> Option<(usize, usize)> {
+    // for now
+    if version != 1 {
+        return None;
+    }
+
+    todo!()
+}
