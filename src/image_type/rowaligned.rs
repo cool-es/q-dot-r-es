@@ -9,6 +9,20 @@ pub struct ImgRowAligned {
 }
 
 impl ImgRowAligned {
+    pub fn mask_set(&mut self, pattern: &ImgRowAligned, mask: &ImgRowAligned) {
+        if self.dims() != pattern.dims() || self.dims() != mask.dims() {
+            // size mismatch
+            panic!()
+        }
+
+        for i in 0..self.bits.len() {
+            // (P & M) | (S & !M)
+            // if M is 1, output is == P
+            // if M is 0, output is == S
+            self.bits[i] = (pattern.bits[i] & mask.bits[i]) | (self.bits[i] & !mask.bits[i]);
+        }
+    }
+    
     pub fn invert(&mut self) {
         // note that this doesn't leave inaccessible bits as 0, so you can't generally rely on that being true
         for i in 0..self.bits.len() {
@@ -110,6 +124,7 @@ impl ImgRowAligned {
         })
     }
 
+    // the curly brackets here really mess with my syntax highlighting... but the code itself is correct
     pub fn as_xbm(&self, name: &str) -> String {
         let mut output = format!(
             "#define {}_width {}\n#define {}_height {}\n",

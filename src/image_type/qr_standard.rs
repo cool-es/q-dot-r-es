@@ -95,7 +95,7 @@ fn penalty<T: super::Bitmap>(input: &T) -> u32 {
 // format data in a ~qr symbol~ is replicated in two positions:
 // this function gives pairs of coordinates (x1, y1), (x2, y2)
 // relative to top left module of the finder pattern
-pub fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize, usize))> {
+ fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize, usize))> {
     if !(1..=40).contains(&version) || bit > 14 {
         // undefined
         return None;
@@ -123,7 +123,7 @@ pub fn get_format<T: super::Bitmap>(
     input: &T,
     version: u32,
     offset: (usize, usize),
-) -> Option<(u16, u16)> {
+) -> Option<(u16)> {
     // the coordinates of the top left module; in hellocode, it's (2,2)
     let (ox, oy) = offset;
     let mut output1 = 0;
@@ -139,13 +139,16 @@ pub fn get_format<T: super::Bitmap>(
         output2 += u16::from(input.get_bit(x2 + ox, y2 + oy)?);
     }
 
+    if output1 != output2 {
+        return None;
+    }
+
     // mask value for format codes, 0x5412
     let mask = 0b0101_0100_0001_0010;
 
     output1 ^= mask;
-    output2 ^= mask;
 
-    Some((output1, output2))
+    Some(output1)
 }
 
 // returns error correction level and mask pattern
@@ -166,3 +169,4 @@ pub fn interpret_format(fcode: u16) -> Option<(u8, u8)> {
 
     Some((correction, maskpat))
 }
+

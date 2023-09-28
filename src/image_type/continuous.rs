@@ -10,50 +10,12 @@ pub struct Img {
 
 // general format-specific methods
 impl Img {
-    // apply 'pattern' to the image, but only the
-    // bits specified by 'mask'
-    pub fn mask_set(&mut self, pattern: &Img, mask: &Img) {
-        if self.dims() != pattern.dims() || self.dims() != mask.dims() {
-            // size mismatch
-            panic!()
-        }
-
-        for i in 0..self.bits.len() {
-            // (P & M) | (S & !M)
-            // if M is 1, output is == P
-            // if M is 0, output is == S
-            self.bits[i] = (pattern.bits[i] & mask.bits[i]) | (self.bits[i] & !mask.bits[i]);
-        }
-    }
-
-    // ... very tricky to optimize
-    // lazy solution for now: use set_bit
-    pub fn set_row(&mut self, y: usize, row: u128) {
-        if y < self.height {
-            for x in 0..(self.width - 1) {
-                self.set_bit(x, y, ((row >> ((self.width - 1) - x)) % 2) == 1);
-            }
-        } else {
-            println!(
-                "out-of-bounds write (y={} w={} h={})",
-                y, self.width, self.height
-            );
-        }
-    }
-
     // very easy to implement, why not add it
     pub fn invert(&mut self) {
         // note that this doesn't leave inaccessible bits as 0, so you can't generally rely on that being true
         for i in 0..self.bits.len() {
             self.bits[i] ^= 0xff;
         }
-    }
-
-    // "stamp" function, to copy a smaller bitmap onto a bigger one
-    // (e.g. a qr alignment square onto a qr code). the x/y coords
-    // are aligned to the stamp's top left corner
-    pub fn rubberstamp(&mut self, stamp: &Self, x: usize, y: usize) {
-        todo!()
     }
 
     pub fn make_rowaligned(self) -> super::rowaligned::ImgRowAligned {
@@ -79,6 +41,44 @@ impl Img {
         }
 
         output
+    }
+
+    // apply 'pattern' to the image, but only the
+    // bits specified by 'mask'
+    pub fn mask_set(&mut self, pattern: &Img, mask: &Img) {
+        if self.dims() != pattern.dims() || self.dims() != mask.dims() {
+            // size mismatch
+            panic!()
+        }
+
+        for i in 0..self.bits.len() {
+            // (P & M) | (S & !M)
+            // if M is 1, output is == P
+            // if M is 0, output is == S
+            self.bits[i] = (pattern.bits[i] & mask.bits[i]) | (self.bits[i] & !mask.bits[i]);
+        }
+    }
+
+    // "stamp" function, to copy a smaller bitmap onto a bigger one
+    // (e.g. a qr alignment square onto a qr code). the x/y coords
+    // are aligned to the stamp's top left corner
+    pub fn rubberstamp(&mut self, stamp: &Self, x: usize, y: usize) {
+        todo!()
+    }
+
+    // ... very tricky to optimize
+    // lazy solution for now: use set_bit
+    pub fn set_row(&mut self, y: usize, row: u128) {
+        if y < self.height {
+            for x in 0..(self.width - 1) {
+                self.set_bit(x, y, ((row >> ((self.width - 1) - x)) % 2) == 1);
+            }
+        } else {
+            println!(
+                "out-of-bounds write (y={} w={} h={})",
+                y, self.width, self.height
+            );
+        }
     }
 }
 

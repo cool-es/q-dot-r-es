@@ -71,30 +71,30 @@ fn print_qr_mask_patterns() {
     }
 }
 
-fn check_format_pattern() {
-    let mut test_img = image_type::rowaligned::ImgRowAligned::new(25, 25);
-    let qr = xbm_path_convert("hellocode.xbm");
+// fn check_format_pattern() {
+//     let mut test_img = image_type::rowaligned::ImgRowAligned::new(25, 25);
+//     let qr = xbm_path_convert("hellocode.xbm");
 
-    for i in 0..=14 {
-        let ((a, b), (c, d)) = image_type::qr_standard::format_info_coords(1, i).unwrap();
-        test_img.set_bit(a + 2, b + 2, true);
-        test_img.set_bit(c + 2, d + 2, true);
-    }
+//     for i in 0..=14 {
+//         let ((a, b), (c, d)) = image_type::qr_standard::format_info_coords(1, i).unwrap();
+//         test_img.set_bit(a + 2, b + 2, true);
+//         test_img.set_bit(c + 2, d + 2, true);
+//     }
 
-    debug_print(&test_img);
-    println!();
-    debug_print(&qr);
-}
+//     debug_print(&test_img);
+//     println!();
+//     debug_print(&qr);
+// }
 
 fn test_format_parsing() {
     let xbm_string = std::fs::read_to_string("hellocode_smol.xbm").unwrap();
     let xbm_bitmap = image_type::rowaligned::ImgRowAligned::from_xbm(&xbm_string).unwrap();
     let fcode = image_type::qr_standard::get_format(&xbm_bitmap, 1, (0, 0)).unwrap();
-    println!("{:#b}\n{:#b}", fcode.0, fcode.1);
-    println!("remainder {:#b}", qr_fcode_remainder(fcode.1 as u32),);
+    println!("{:#b}", fcode);
+    println!("remainder {:#b}", qr_fcode_remainder(fcode as u32),);
 
     {
-        let (correction, mask) = image_type::qr_standard::interpret_format(fcode.0).unwrap();
+        let (correction, mask) = image_type::qr_standard::interpret_format(fcode).unwrap();
 
         println!("error correction {}", {
             match correction {
@@ -107,14 +107,31 @@ fn test_format_parsing() {
         println!("masking pattern {:#05b}", mask);
 
         let mut goop = xbm_bitmap.clone();
-        for i in 0..goop.dims().1 {
-            println!("{}", debug_print_row(&goop, i, true).unwrap());
-        }
+        let mux = {
+            let mut x = xbm_path_convert("hellomask_smol.xbm");
+            x.invert();
+            x
+        };
+        let muxy = {
+            let (width, height) = goop.dims();
+            let mut x = image_type::rowaligned::ImgRowAligned::new(width, height);
+            x.qr_mask_xor(mask);
+            x
+        };
+
+      debug_print(&goop);
         println!();
         goop.qr_mask_xor(mask);
-        for i in 0..goop.dims().1 {
-            println!("{}", debug_print_row(&goop, i, true).unwrap());
-        }
+        // for i in 0..goop.dims().1 {
+        //     println!("{}", debug_print_row(&goop, i, true).unwrap());
+        // }
+        // println!();
+        goop.mask_set(&xbm_bitmap, &mux);
+        println!();
+        debug_print(&muxy);
+        println!();
+        debug_print(&goop);
+
     }
 }
 
