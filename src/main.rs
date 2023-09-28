@@ -1,7 +1,6 @@
 use image_type::{continuous::Img, qr_standard::*, rowaligned::ImgRowAligned, *};
 use rdsm::*;
 
-mod export;
 mod image_type;
 mod rdsm;
 
