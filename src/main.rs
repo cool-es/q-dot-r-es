@@ -12,21 +12,26 @@ mod rdsm;
 // 3. prim has a cycle of length 255
 
 fn main() {
+    // test_reed_solomon(0xff);
+    remasking_test();
+}
+
+fn remasking_test() {
     let code = xbm_filepath_into_bitmap("hellocode_smol.xbm");
 
-    debug_print(&code);
+    debug_print_qr(&code);
     println!();
     let i = 0;
     for i in 0..=7 {
-        if let Some(code2) = qr_remask_v1_code(&code, i) {
+        if let Some(code2) = qr_remask_v1_symbol(&code, i) {
             println!("mask {}", i);
-            debug_print(&code2);
+            debug_print_qr(&code2);
         }
         println!("\n");
     }
 }
 
-fn qr_remask_v1_code(input: &ImgRowAligned, mask_pattern: u8) -> Option<ImgRowAligned> {
+fn qr_remask_v1_symbol(input: &ImgRowAligned, mask_pattern: u8) -> Option<ImgRowAligned> {
     let old_fcode = get_fcode(input, 1, (0, 0))?;
     let (correction_level, old_mask_pattern) = interpret_format(old_fcode)?;
     if mask_pattern == old_mask_pattern {
@@ -127,6 +132,23 @@ fn debug_print<T: Bitmap>(input: &T) {
     for y in 0..input.dims().1 {
         println!("{}", debug_print_row(input, y, true).unwrap())
     }
+}
+
+fn debug_print_qr<T: Bitmap>(input: &T) {
+    let throwaway_hack = || {
+        for _i in 0..2 {
+            for _y in 0..input.dims().1 + 4 {
+                print!("⬜️");
+            }
+            println!()
+        }
+    };
+
+    throwaway_hack();
+    for y in 0..input.dims().1 {
+        println!("⬜️⬜️{}⬜️⬜️", debug_print_row(input, y, true).unwrap())
+    }
+    throwaway_hack();
 }
 
 fn debug_print_row<T: Bitmap>(input: &T, y: usize, emoji: bool) -> Option<String> {

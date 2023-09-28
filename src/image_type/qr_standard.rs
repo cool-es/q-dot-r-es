@@ -96,6 +96,11 @@ fn penalty<T: super::Bitmap>(input: &T) -> u32 {
     // Adjacent modules in row/column in same color
     let test1: u32 = {
         //  i is the amount by which the number of adjacent modules of the same color exceeds 5
+        let (width,_height) = input.dims();
+        for i in 0..width {
+            
+        }
+
         todo!()
     };
 
