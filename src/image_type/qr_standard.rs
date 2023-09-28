@@ -93,25 +93,40 @@ fn penalty<T: super::Bitmap>(input: &T) -> u32 {
         Although the masking operation is only performed on the encoding region of the symbol excluding the Format Information, the area to be evaluated is the complete symbol. The Mask Pattern which results in the lowest score shall be selected for the symbol.
     */
 
+    // i think surely, this can't be a question of an on/off thing... i guess it doesn't terribly matter since the code will scan anyway, even if the calculations are off
+    // i've decided to keep going based on this, so this would mean that:
+    // • every row or column with > 5 modules in it is penalized *individually*
+    // • ... and every block is, as well
+    // • ... and every 1:1:3:1:1 pattern is, as well
+    // • ... and the pattern weight is penalized once
+
     // Adjacent modules in row/column in same color
     let test1: u32 = {
+        // penalty: 3 + i
         //  i is the amount by which the number of adjacent modules of the same color exceeds 5
-        let (width,_height) = input.dims();
-        for i in 0..width {
-            
-        }
 
+        let (dimension, _height) = input.dims();
+        for n in 0..dimension {
+            // get row n
+            // use get_row here
+            todo!()
+
+            // get column n
+        }
         todo!()
     };
 
     // Block of modules in same color
     let test2: (u32, u32) = {
-        // Block size = m×n
+        // penalty: 3 * (m - 1) * (n - 1)
+        // where the block size = m * n
         todo!()
     };
 
     // 1:1:3:1:1 ratio (dark:light:dark:light:dark) pattern in row/column
     let test3: u32 = {
+        // penalty: 40
+
         // i'm very unsure if this is cumulative or just a binary...
         // this is meant to stop patterns that look like the qr alignment marks,
         // so i assume this must be cumulative - otherwise every qr code would be tied
@@ -120,11 +135,13 @@ fn penalty<T: super::Bitmap>(input: &T) -> u32 {
 
     // Proportion of dark modules in entire symbol
     let test4: u32 = {
+        // penalty: 10 * k
         // k is the rating of the deviation of the proportion of dark modules in the symbol from 50% in steps of 5%
         todo!()
     };
 
-    (3 + test1) + (3 * (test2.0 - 1) * (test2.1 - 1)) + (40 * test3) + (10 * test4)
+    todo!()
+    // (3 + test1) + (3 * (test2.0 - 1) * (test2.1 - 1)) + (40 * test3) + (10 * test4)
 }
 
 // raw data for format writing/reading operations

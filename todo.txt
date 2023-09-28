@@ -1,0 +1,3 @@
+finish penalty routine
+troubleshoot polynomial multiplication
+figure out if the "evaluate polynomial" function serves any purpose??
