@@ -1,3 +1,4 @@
-finish penalty routine
-troubleshoot polynomial multiplication
-figure out if the "evaluate polynomial" function serves any purpose??
+troubleshoot polynomial multiplication (rdsm.rs > encode_message)
+implement "data coordinate" function (qr_standard.rs > qr_data_coords)
+finish penalty routine (qr_standard.rs > penalty)
+figure out if the "evaluate polynomial" function serves any purpose?? (rdsm.rs > polynomial_evaluate)
