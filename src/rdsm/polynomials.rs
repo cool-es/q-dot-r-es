@@ -6,7 +6,7 @@ pub type Polynomial = Vec<Element>;
 // pub type _RSGenLUT = [Polynomial; 64];
 
 // from the tutorial: uses QR_CODEWORD_GEN as its generator polynomial
-// rs_encode_msg(TEST_MSG, 10) == TEST_MSG + TEST_RESULT == FULL_TEST_RESULT
+// encode_message(TEST_MSG, 10) == TEST_MSG + TEST_RESULT == FULL_TEST_RESULT
 // length 16
 pub const TEST_MSG: &[Element] = &[
     0x40, 0xd2, 0x75, 0x47, 0x76, 0x17, 0x32, 0x06, 0x27, 0x26, 0x96, 0xc6, 0xc6, 0x96, 0x70, 0xec,
@@ -24,10 +24,10 @@ pub const FULL_TEST_RESULT: &[Element] = &[
 // [a, b, c, d] = ax^3 + bx^2 + cx + d
 // (i personally don't think that's a good decision, but)
 
-pub fn polynomial_scale(poly: &Polynomial, x: Element, tables: &ExpLogLUTs) -> Polynomial {
+pub fn polynomial_scalar_multiply(poly: &Polynomial, scalar: Element, tables: &ExpLogLUTs) -> Polynomial {
     let mut output: Polynomial = Vec::new();
     for &i in poly {
-        output.push(table_multiply(i, x, tables));
+        output.push(table_multiply(i, scalar, Some(tables)));
     }
     output
 }
@@ -64,7 +64,7 @@ pub fn polynomial_multiply(
         for j in 0..poly1.len() {
             // the tutorial claims that this line is:
             // "equivalent to r[i + j] = gf_add(r[i+j], gf_mul(p[i], q[j]))"
-            output[i + j] ^= table_multiply(poly1[j], poly2[i], tables);
+            output[i + j] ^= table_multiply(poly1[j], poly2[i], Some(tables));
         }
     }
     output
@@ -75,7 +75,7 @@ pub fn polynomial_multiply(
 pub fn polynomial_evaluate(poly: &Polynomial, x: Element, tables: &ExpLogLUTs) -> Element {
     let mut output = poly[0];
     for i in 1..poly.len() {
-        output = table_multiply(output, x, tables) ^ poly[i];
+        output = table_multiply(output, x, Some(tables)) ^ poly[i];
     }
     output
 }
@@ -91,9 +91,13 @@ pub fn polynomial_evaluate(poly: &Polynomial, x: Element, tables: &ExpLogLUTs) -
 */
 // ec_symbols is the number of error correcting symbols
 pub fn make_rdsm_generator_polynomial(ec_symbols: u32, tables: &ExpLogLUTs) -> Polynomial {
+    // from what i can tell, the end result here is
+    // (x + 1)(x + a)(x + a^2)...(x + a^ec_symbols)
     let mut output: Polynomial = vec![1];
     for i in 0..ec_symbols {
-        let multiplier: Polynomial = vec![1, table_pow(2, i, tables)];
+        // this value is the polynomial x + a^i ... does this actually line up
+        // with the qr code standard? is a == 0000_0010 ?
+        let multiplier: Polynomial = vec![1, table_pow(2, i, Some(tables))];
         output = polynomial_multiply(&output, &multiplier, tables);
     }
     output
@@ -146,7 +150,7 @@ pub fn polynomial_divide(
         if coef != 0 {
             for j in 1..divisor.len() {
                 if divisor[j] != 0 {
-                    output[i + j] ^= table_multiply(divisor[j], coef, tables);
+                    output[i + j] ^= table_multiply(divisor[j], coef, Some(tables));
                 }
             }
         }
@@ -168,16 +172,16 @@ def rs_encode_msg(msg_in, nsym):
     # Return the codeword
     return msg_out
 */
-pub fn encode_message(msg_in: &Polynomial, ec_symbols: u32, tables: &ExpLogLUTs) -> Polynomial {
-    let gen = make_rdsm_generator_polynomial(ec_symbols, tables);
+pub fn encode_message(message: &Polynomial, ec_symbols: u32, tables: &ExpLogLUTs) -> Polynomial {
+    let generator_polynomial = make_rdsm_generator_polynomial(ec_symbols, tables);
 
     // i don't know what i'm doing
-    let mut msg_in_padded = msg_in.clone();
-    msg_in_padded.extend(std::iter::repeat(0).take(gen.len() - 1));
+    let mut message_padded = message.clone();
+    message_padded.extend(std::iter::repeat(0).take(generator_polynomial.len() - 1));
 
     // i do not know what i am doing.
-    let remainder = polynomial_divide(&msg_in_padded, &gen, tables).1;
-    let mut output = msg_in.clone();
+    let remainder = polynomial_divide(&message_padded, &generator_polynomial, tables).1;
+    let mut output = message.clone();
     output.extend(remainder.iter());
     output
 }

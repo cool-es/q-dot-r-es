@@ -5,8 +5,9 @@ use image::*;
 use rdsm::*;
 
 fn main() {
-    // test_reed_solomon(0xff);
-    remasking_test();
+_print_exp_log_tables();
+    // test_reed_solomon(0);
+    // remasking_test();
 }
 
 fn remasking_test() {
@@ -268,7 +269,7 @@ fn test_reed_solomon(test: u8) {
             print!("{:3}:", i);
             for j in 1..255 {
                 let mul1 = galois_multiply(i as Element, j as Element, QR_CODEWORD_GEN);
-                let mul2 = table_multiply(i as Element, j as Element, &lookup_tables);
+                let mul2 = table_multiply(i as Element, j as Element, Some(&lookup_tables));
 
                 // let div2 = table_divide(i as Element, j as Element, &lookup_tables);
 
@@ -276,7 +277,7 @@ fn test_reed_solomon(test: u8) {
 
                 if i as Element
                     != galois_multiply(
-                        table_divide(i as Element, j as Element, &lookup_tables),
+                        table_divide(i as Element, j as Element, Some(&lookup_tables)),
                         j as Element,
                         QR_CODEWORD_GEN,
                     )
