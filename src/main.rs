@@ -4,12 +4,6 @@ use rdsm::*;
 mod image_type;
 mod rdsm;
 
-// galois-field debugging:
-// what we know:
-// 1. table-based operations are correct, seemingly regarless of if you use mod 255 or mod 256
-// 2. qr_gen has a mysteriously short cycle, 2^15 = 1
-// 3. prim has a cycle of length 255
-
 fn main() {
     // test_reed_solomon(0xff);
     remasking_test();
@@ -172,7 +166,7 @@ fn test_xbm_output() {
         "{}",
         image_type::rowaligned::ImgRowAligned::as_xbm(
             &{
-                let mut x = image_type::rowaligned::ImgRowAligned::from_xbm(
+                let x = image_type::rowaligned::ImgRowAligned::from_xbm(
                     std::fs::read_to_string("es.xbm").unwrap().as_str(),
                 )
                 .unwrap();
@@ -230,17 +224,17 @@ pub fn test_gf() {
     println!("{:016b}", galois_multiply(a, b, 0));
     println!("{:016b}", galois_multiply(a, b, 0x11d));
 
-    println!("{:016b}", galois_multiply_peasant_full(a, b, 0, 256, true));
-    println!(
-        "{:016b}",
-        galois_multiply_peasant_full(a, b, 0x11d, 256, true)
-    );
+    // println!("{:016b}", galois_multiply_peasant_full(a, b, 0, 256, true));
+    // println!(
+    //     "{:016b}",
+    //     galois_multiply_peasant_full(a, b, 0x11d, 256, true)
+    // );
 }
 
 fn test_reed_solomon(test: u8) {
     // time to generate a qr code (clueless)
     let mut lookup_tables = BLANK_EXP_LOG_LUTS;
-    generate_exp_log_tables(&mut lookup_tables, QR_CODEWORD_GEN);
+    generate_exp_log_tables(&mut lookup_tables);
 
     if test & 0b1 != 0 {
         println!("\n\n{:?}\n{:?}\n\n", lookup_tables.0, lookup_tables.1);
