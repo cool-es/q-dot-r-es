@@ -221,24 +221,15 @@ pub fn generate_exp_log_tables(tables: &mut ExpLogLUTs) {
     }
 }
 
-// table index helper function
-// NOTE: the text uses modulo 255 rather than 256, which is a complete mystery to me
-// i've elected to keep going with 256 anyway, but if i encounter bugs this might be why
-// update: it's because the multiplicative group lacks the zero element -> one less.
-// update 2: i think this is wrong. it should be 256, albeit with the criterion that
-// log[0] is never accessed
-// fn i(x: Element) -> usize {
-//     (x % 256) as usize
-// }
-
-// helper functions, uses precomputed tables
+// helper function, uses precomputed tables
 pub fn exp(n: usize) -> Element {
     QR_EXP_LOG_TABLE.0[n % 255]
 }
 
+// ditto
 pub fn log(e: Element) -> usize {
-    if e == 0 {
-        panic!();
+    if e % 255 == 0 {
+        panic!()
     } else {
         QR_EXP_LOG_TABLE.1[((e - 1) % 255) as usize]
     }
@@ -249,44 +240,65 @@ pub fn table_multiply(x: Element, y: Element) -> Element {
     if x == 0 || y == 0 {
         return 0;
     }
-    /* if let Some((exp, log)) = tables {
-        // exp(log(x) + log(y))
-        exp[i((log[i(x)] + log[i(y)]) as Element)]
-    } else */
 
-    // use precomputed table
     exp(log(x) + log(y))
 }
 
 // "gf_div"
 pub fn table_divide(x: Element, y: Element) -> Element {
-    if x == 0 {
-        return 0;
-    }
     if y == 0 {
         panic!();
+    } else if x == 0 {
+        return 0;
     }
 
-    /* if let Some((exp, log)) = tables {
-        // exp(log(x) - log(y))
-        exp[i((log[i(x)] + (255 - log[i(y)])) as Element)]
-    } else  */
-
-    // use precomputed table
     exp(log(x) + (255 - log(y)))
 }
 
 pub fn table_pow(x: Element, power: u32) -> Element {
-    /* if let Some((exp, log)) = tables {
-        exp[i((log[i(x)] as Element) * (power as Element))]
-    } else  */
-
-    // use precomputed table
     exp(log(x) * power as usize)
 }
 
 // old versions of the table operations
-mod old {
+mod _old {
     use super::*;
 
+    // table index helper function
+    fn element_to_usize(e: Element) -> usize {
+        if e == 0 {
+            panic!();
+        } else {
+            ((e - 1) % 255) as usize
+        }
+    }
+
+    // "gf_mul"
+    pub fn table_multiply(x: Element, y: Element, tables: &ExpLogLUTs) -> Element {
+        if x == 0 || y == 0 {
+            return 0;
+        }
+
+        let (exp, log) = tables;
+        // exp(log(x) + log(y))
+        exp[(log[element_to_usize(x)] + log[element_to_usize(y)]) % 255]
+    }
+
+    // "gf_div"
+    pub fn table_divide(x: Element, y: Element, tables: &ExpLogLUTs) -> Element {
+        if y == 0 {
+            panic!();
+        }
+        if x == 0 {
+            return 0;
+        }
+
+        let (exp, log) = tables;
+        // exp(log(x) - log(y))
+        exp[(log[element_to_usize(x)] + (255 - log[element_to_usize(y)])) % 255]
+    }
+
+    pub fn table_pow(x: Element, power: u32, tables: &ExpLogLUTs) -> Element {
+        let (exp, log) = tables;
+        exp[((log[element_to_usize(x)]) * power as usize) % 255]
+    }
 }
