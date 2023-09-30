@@ -5,28 +5,10 @@ pub const QR_FORMAT_GEN: Element = 0x537;
 // qr data generator/divisor polynomial, 0b100011101
 pub const QR_CODEWORD_GEN: Element = 0x11D;
 
-// from the tutorial: uses PRIM as its generator polynomial
-// rs_encode_msg(TEST_MSG, 10) == TEST_MSG + TEST_RESULT == FULL_TEST_RESULT
-// length 16
-pub const TEST_MSG: &[Element] = &[
-    0x40, 0xd2, 0x75, 0x47, 0x76, 0x17, 0x32, 0x06, 0x27, 0x26, 0x96, 0xc6, 0xc6, 0x96, 0x70, 0xec,
-];
-// length 10
-pub const TEST_RESULT: &[Element] = &[0xbc, 0x2a, 0x90, 0x13, 0x6b, 0xaf, 0xef, 0xfd, 0x4b, 0xe0];
-// length 26
-pub const FULL_TEST_RESULT: &[Element] = &[
-    0x40, 0xd2, 0x75, 0x47, 0x76, 0x17, 0x32, 0x06, 0x27, 0x26, 0x96, 0xc6, 0xc6, 0x96, 0x70, 0xec,
-    0xbc, 0x2a, 0x90, 0x13, 0x6b, 0xaf, 0xef, 0xfd, 0x4b, 0xe0,
-];
-
 // an element in a galois field
 pub type Element = u32;
-// a polynomial over a galois field, ordered from highest power of x to lowest
-pub type Polynomial = Vec<Element>;
 // exp/log tables for the "table_*" functions
 pub type ExpLogLUTs = ([Element; 255], [Element; 255]);
-// lut for the reed-solomon generator polynomials (not fit for use at this time)
-pub type _RSGenLUT = [Polynomial; 64];
 
 // blank tables to make initialization easier
 pub const BLANK_EXP_LOG_LUTS: ExpLogLUTs = ([0; 255], [0; 255]);

@@ -1,6 +1,10 @@
-pub mod continuous;
-pub mod qr_standard;
-pub mod rowaligned;
+ mod continuous;
+ mod qr_standard;
+ mod rowaligned;
+
+pub use continuous::*;
+pub use qr_standard::*;
+pub use rowaligned::*;
 
 // workaround i got from That Website... feels unintentional
 // but good enough for what i'm working with right now
