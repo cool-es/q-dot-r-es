@@ -8,7 +8,7 @@ fn main() {
     test_polynomial_mult();
     // _print_exp_log_tables();
     // test_gf();
-    // test_reed_solomon(0);
+    // test_reed_solomon(0b10);
     // remasking_test();
 }
 
@@ -16,10 +16,21 @@ fn test_polynomial_mult() {
     // it works!!
     let cafebabe: Polynomial = Vec::from([0xca, 0xfe, 0xba, 0xbe]);
     let deadbeef: Polynomial = Vec::from([0xde, 0xad, 0xbe, 0xef]);
+    prettyprint(&cafebabe, false);
+    prettyprint(&deadbeef, false);
     println!("{:?}", polynomial_multiply(&cafebabe, &deadbeef));
     println!("{:?}", polynomial_multiply(&deadbeef, &cafebabe));
     println!("{:?}", es_polynomial_multiply(&cafebabe, &deadbeef));
     println!("{:?}", es_polynomial_multiply(&deadbeef, &cafebabe));
+}
+
+fn test_rdsm_generator() {
+    for i in [7, 10, 13, 15] {
+        let a = make_rdsm_generator_polynomial(i);
+        println!("{}:",i);
+        prettyprint(&a, false);
+        println!();
+    }
 }
 
 fn remasking_test() {

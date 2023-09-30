@@ -147,7 +147,7 @@ pub fn polynomial_evaluate(poly: &Polynomial, x: Element, tables: &ExpLogLUTs) -
         return g
 */
 // ec_symbols is the number of error correcting symbols
-pub fn make_rdsm_generator_polynomial(ec_symbols: u32, tables: &ExpLogLUTs) -> Polynomial {
+pub fn  make_rdsm_generator_polynomial(ec_symbols: u32) -> Polynomial {
     // from what i can tell, the end result here is
     // (x + 1)(x + a)(x + a^2)...(x + a^ec_symbols)
     let mut output: Polynomial = vec![1];
@@ -230,7 +230,7 @@ def rs_encode_msg(msg_in, nsym):
     return msg_out
 */
 pub fn encode_message(message: &Polynomial, ec_symbols: u32, tables: &ExpLogLUTs) -> Polynomial {
-    let generator_polynomial = make_rdsm_generator_polynomial(ec_symbols, tables);
+    let generator_polynomial = make_rdsm_generator_polynomial(ec_symbols);
 
     // i don't know what i'm doing
     let mut message_padded = message.clone();
@@ -247,3 +247,26 @@ pub fn encode_message(message: &Polynomial, ec_symbols: u32, tables: &ExpLogLUTs
 
 // in theory i should have the full capability to create a qr code now
 // nope it don't work
+
+// helper function
+pub fn degree(poly: &Polynomial) -> usize {
+    poly.len() - 1
+}
+
+pub fn prettyprint(poly: &Polynomial, data: bool) -> Option<String> {
+    let mut output = String::new();
+    for i in 0..poly.len() {
+        if poly[i] != 0 {
+            output.push_str(format!("a^{} x^{}", log(poly[i]), poly.len() - (i + 1)).as_str());
+            if i != poly.len() - 1 {
+                output.push_str(" + ");
+            }
+        }
+    }
+    if data {
+        Some(output)
+    } else {
+        println!("{}", output);
+        None
+    }
+}
