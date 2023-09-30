@@ -2,6 +2,7 @@ use super::galois::*;
 
 // a polynomial over a galois field, ordered from highest power of x to lowest
 pub type Polynomial = Vec<Element>;
+
 // lut for the reed-solomon generator polynomials (not fit for use at this time)
 // pub type _RSGenLUT = [Polynomial; 64];
 
@@ -147,7 +148,7 @@ pub fn polynomial_evaluate(poly: &Polynomial, x: Element, tables: &ExpLogLUTs) -
         return g
 */
 // ec_symbols is the number of error correcting symbols
-pub fn  make_rdsm_generator_polynomial(ec_symbols: u32) -> Polynomial {
+pub fn make_rdsm_generator_polynomial(ec_symbols: u32) -> Polynomial {
     // from what i can tell, the end result here is
     // (x + 1)(x + a)(x + a^2)...(x + a^ec_symbols)
     let mut output: Polynomial = vec![1];
@@ -197,7 +198,7 @@ def gf_poly_div(dividend, divisor):
 pub fn polynomial_divide(
     dividend: &Polynomial,
     divisor: &Polynomial,
-    tables: &ExpLogLUTs,
+    // tables: &ExpLogLUTs,
 ) -> (Polynomial, Polynomial) {
     // man, idk
 
@@ -215,6 +216,18 @@ pub fn polynomial_divide(
 
     let (quotient, remainder) = output.split_at(divisor.len() - 1);
     (quotient.to_vec(), remainder.to_vec())
+}
+
+pub fn polynomial_remainder(
+    dividend: &Polynomial,
+    divisor: &Polynomial,
+) -> (Polynomial, Polynomial) {
+    if dividend.len() < divisor.len() {
+        return (dividend.clone(), dividend.clone());
+    }
+    let mut output = divisor.clone();
+
+    todo!()
 }
 
 /*
@@ -237,7 +250,7 @@ pub fn encode_message(message: &Polynomial, ec_symbols: u32, tables: &ExpLogLUTs
     message_padded.extend(std::iter::repeat(0).take(generator_polynomial.len() - 1));
 
     // i do not know what i am doing.
-    let remainder = polynomial_divide(&message_padded, &generator_polynomial, tables).1;
+    let remainder = polynomial_divide(&message_padded, &generator_polynomial).1;
     let mut output = message.clone();
     output.extend(remainder.iter());
     output

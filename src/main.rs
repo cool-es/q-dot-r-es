@@ -5,7 +5,8 @@ use image::*;
 use rdsm::*;
 
 fn main() {
-    test_polynomial_mult();
+    // test_polynomial_mult();
+    test_polynomial_div();
     // _print_exp_log_tables();
     // test_gf();
     // test_reed_solomon(0b10);
@@ -24,10 +25,22 @@ fn test_polynomial_mult() {
     println!("{:?}", es_polynomial_multiply(&deadbeef, &cafebabe));
 }
 
+fn test_polynomial_div() {
+    let cafebabe: Polynomial = Vec::from([0xca, 0xfe, 0xba, 0xbe]);
+    let deadbeef: Polynomial = Vec::from([0xde, 0xad, 0xbe, 0xef]);
+    let a = polynomial_multiply(&cafebabe, &deadbeef);
+    prettyprint(&cafebabe, false);
+    prettyprint(&deadbeef, false);
+    let cfb = polynomial_divide(&a, &deadbeef).0;
+    let dbf = polynomial_divide(&a, &cafebabe).0;
+    prettyprint(&cfb, false);
+    prettyprint(&dbf, false);
+}
+
 fn test_rdsm_generator() {
     for i in [7, 10, 13, 15] {
         let a = make_rdsm_generator_polynomial(i);
-        println!("{}:",i);
+        println!("{}:", i);
         prettyprint(&a, false);
         println!();
     }
