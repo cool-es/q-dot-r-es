@@ -24,11 +24,7 @@ pub const FULL_TEST_RESULT: &[Element] = &[
 // [a, b, c, d] = ax^3 + bx^2 + cx + d
 // (i personally don't think that's a good decision, but)
 
-pub fn polynomial_scalar_multiply(
-    poly: &Polynomial,
-    scalar: Element,
-    tables: &ExpLogLUTs,
-) -> Polynomial {
+pub fn polynomial_scalar_multiply(poly: &Polynomial, scalar: Element) -> Polynomial {
     let mut output: Polynomial = Vec::new();
     for &i in poly {
         output.push(table_multiply(i, scalar));
@@ -41,7 +37,7 @@ pub fn polynomial_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
     // resize the vector to fit the higher-degree (longer) polynomial
     let (p1_len, p2_len) = (poly1.len(), poly2.len());
     let out_len = std::cmp::max(p1_len, p2_len);
-    output.resize(out_len + 1, 0);
+    output.resize(out_len, 0);
 
     for i in 0..p1_len {
         output[i + out_len - p1_len] = poly1[i];
@@ -54,16 +50,16 @@ pub fn polynomial_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
 }
 
 // SUPPOSEDLY multiplies two polynomials over a galois field
-pub fn polynomial_multiply(
-    poly1: &Polynomial,
-    poly2: &Polynomial,
-    tables: &ExpLogLUTs,
-) -> Polynomial {
+// need to dig into this - this seems very fishy
+pub fn polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
     let mut output: Polynomial = Vec::new();
-    // out_len needs to be p1_len + p2_len - 1
+    // since a polynomial's "length" is its degree + 1,
+    // output is degree d1+d2 => length (d1+1)+(d2+1)-1
     // len() and resize() both count from 1, no fencepost error
     output.resize(poly1.len() + poly2.len() - 1, 0);
 
+    // ... i+j won't reach the top coefficient?
+    // yes it will, it goes up to (l1+l2-1)-1
     for i in 0..poly2.len() {
         for j in 0..poly1.len() {
             // the tutorial claims that this line is:
@@ -71,6 +67,63 @@ pub fn polynomial_multiply(
             output[i + j] ^= table_multiply(poly1[j], poly2[i]);
         }
     }
+    output
+}
+
+// here's something i came up with...
+// it was simpler in my head.
+pub fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
+    let mut output: Polynomial = Vec::new();
+    let (deg1, deg2) = (poly1.len() - 1, poly2.len() - 1);
+    output.resize(deg1 + deg2 + 1, 0);
+
+    // for each degree value
+    /*     for deg_step in 0..(deg1 + deg2) {
+        let mut sum = 0;
+
+        // i + j = k
+
+        for i in 0..=deg_step {
+            let j = deg_step - i;
+            if i > deg1 || j > deg2 {
+                continue;
+            }
+            sum ^= table_multiply(poly1[i], poly2[j]);
+        }
+        output[deg_step] = sum;
+    } */
+
+    // imagine we write the polynomial product as a rectangle -
+    // then, all the coefficients of the same degree lie along diagonals.
+    // we sum all these coefficients before writing them to the output polynomial
+    for horiz_step in 0..deg1 {
+        let mut sum = 0;
+
+        for i in (0..=horiz_step).rev() {
+            let j = horiz_step - i;
+            if j > deg2 {
+                // out of bounds
+                break;
+            }
+            sum ^= table_multiply(poly1[i], poly2[j]);
+        }
+        output[horiz_step] = sum;
+    }
+
+    for vert_step in 0..=deg2 {
+        let mut sum = 0;
+
+        for j in vert_step..=(vert_step + deg1) {
+            let i = (vert_step + deg1) - j;
+            if j > deg2 {
+                // out of bounds
+                break;
+            }
+            sum ^= table_multiply(poly1[i], poly2[j]);
+        }
+        output[vert_step + deg1] = sum;
+    }
+
     output
 }
 
@@ -102,7 +155,7 @@ pub fn make_rdsm_generator_polynomial(ec_symbols: u32, tables: &ExpLogLUTs) -> P
         // this value is the polynomial x + a^i ... does this actually line up
         // with the qr code standard? is a == 0000_0010 ?
         let multiplier: Polynomial = vec![1, table_pow(2, i)];
-        output = polynomial_multiply(&output, &multiplier, tables);
+        output = polynomial_multiply(&output, &multiplier);
     }
     output
 }

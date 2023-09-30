@@ -1,16 +1,15 @@
 use crate::*;
 // functions from the wikiversity "reed-solomon codes for coders" article
 
-// qr format generator/divisor polynomial, 0b10100110111
-pub const QR_FORMAT_GEN: Element = 0x537;
 // qr data generator/divisor polynomial, 0b100011101
 pub const QR_CODEWORD_GEN: Element = 0x11D;
+// qr format generator/divisor polynomial, 0b10100110111
+pub const QR_FORMAT_GEN: Element = 0x537;
 
-// an element in a galois field
+// an element in the finite field GF(2^8)
 pub type Element = u32;
 
 // exp/log tables for the "table_*" functions
-// exp is unique for 255 values, log is defined for 255 but there's an extra 0 element
 pub(super) const EXPVALUES: usize = 255;
 pub(super) const LOGVALUES: usize = 255;
 pub type ExpLogLUTs = ([Element; EXPVALUES], [usize; LOGVALUES]);
@@ -121,10 +120,6 @@ pub fn galois_multiply(x: Element, y: Element, primitive: Element) -> Element {
     }
 }
 
-pub fn qr_multiply(x: Element, y: Element) -> Element {
-    galois_multiply(x, y, QR_CODEWORD_GEN)
-}
-
 pub fn bit_length(n: Element) -> u32 {
     match n {
         0 => 0,
@@ -151,47 +146,6 @@ pub fn carryless_divide(dividend: Element, divisor: Element) -> Element {
     }
     dnd
 }
-
-// uses russian peasant multiplication
-// default values prim = 0 field_charac_full = 256, carryless = true
-/*
-    Galois Field integer multiplication using Russian Peasant Multiplication algorithm
-    (faster than the standard multiplication + modular reduction).
-    If prim is 0 and carryless=False, then the function produces the result for
-    a standard integer multiplication (no carry-less arithmetics nor modular reduction).
-*/
-// i see literally no reason to use this
-/* pub fn galois_multiply_peasant_full(
-    x: Element,
-    y: Element,
-    primitive: Element,
-    field_charac_full: u32,
-    carryless: bool,
-) -> Element {
-    let mut x = x;
-    let mut y = y;
-    let mut output = 0;
-
-    while y > 0 {
-        if (y & 1) != 0 {
-            output = if carryless { output ^ x } else { output + x };
-        }
-        y >>= 1;
-        x <<= 1;
-        if primitive > 0 && x & (field_charac_full as Element) != 0 {
-            x = x ^ primitive;
-        }
-    }
-    output
-} */
-
-// attempting to make a nicer peasant multiply...
-// not sure what the field character is supposed to be, but i'm guessing 256
-// not using this
-/* pub fn galois_multiply_peasant_qr(x: Element, y: Element) -> Element {
-    galois_multiply_peasant_full(x, y, QR_CODEWORD_GEN, 256, true)
-}
- */
 
 // NEW ADDITIONS BELOW: section "multiplication with logarithms" starts here
 
@@ -227,8 +181,10 @@ pub fn exp(n: usize) -> Element {
 }
 
 // ditto
+// i keep debating whether to make this function ->  Option<usize> instead
+// it would make the other functions a lot uglier though!
 pub fn log(e: Element) -> usize {
-    if e % 255 == 0 {
+    if e == 0 {
         panic!()
     } else {
         QR_EXP_LOG_TABLE.1[((e - 1) % 255) as usize]
@@ -260,6 +216,7 @@ pub fn table_pow(x: Element, power: u32) -> Element {
 }
 
 // old versions of the table operations
+// not fully tested or confirmed to work flawlessly
 mod _old {
     use super::*;
 
@@ -301,4 +258,45 @@ mod _old {
         let (exp, log) = tables;
         exp[((log[element_to_usize(x)]) * power as usize) % 255]
     }
+
+    // uses russian peasant multiplication
+    // default values prim = 0 field_charac_full = 256, carryless = true
+    /*
+        Galois Field integer multiplication using Russian Peasant Multiplication algorithm
+        (faster than the standard multiplication + modular reduction).
+        If prim is 0 and carryless=False, then the function produces the result for
+        a standard integer multiplication (no carry-less arithmetics nor modular reduction).
+    */
+    // i see literally no reason to use this
+    /* pub fn galois_multiply_peasant_full(
+        x: Element,
+        y: Element,
+        primitive: Element,
+        field_charac_full: u32,
+        carryless: bool,
+    ) -> Element {
+        let mut x = x;
+        let mut y = y;
+        let mut output = 0;
+
+        while y > 0 {
+            if (y & 1) != 0 {
+                output = if carryless { output ^ x } else { output + x };
+            }
+            y >>= 1;
+            x <<= 1;
+            if primitive > 0 && x & (field_charac_full as Element) != 0 {
+                x = x ^ primitive;
+            }
+        }
+        output
+    } */
+
+    // attempting to make a nicer peasant multiply...
+    // not sure what the field character is supposed to be, but i'm guessing 256
+    // not using this
+    /* pub fn galois_multiply_peasant_qr(x: Element, y: Element) -> Element {
+        galois_multiply_peasant_full(x, y, QR_CODEWORD_GEN, 256, true)
+    }
+     */
 }
