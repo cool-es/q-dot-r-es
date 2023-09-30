@@ -11,10 +11,12 @@ pub type Element = u32;
 
 // exp/log tables for the "table_*" functions
 // exp is unique for 255 values, log is defined for 255 but there's an extra 0 element
-pub type ExpLogLUTs = ([Element; 255], [usize; 256]);
+pub(super) const EXPVALUES: usize = 255;
+pub(super) const LOGVALUES: usize = 255;
+pub type ExpLogLUTs = ([Element; EXPVALUES], [usize; LOGVALUES]);
 
 // blank tables to make initialization easier
-pub const BLANK_EXP_LOG_LUTS: ExpLogLUTs = ([0; 255], [0; 256]);
+pub const BLANK_EXP_LOG_LUTS: ExpLogLUTs = ([0; EXPVALUES], [0; LOGVALUES]);
 
 // returns the remainder of fmt divided by g in GF(2^8), assuming fmt < 2^15
 // named "check format" because it returns qr format data:
@@ -203,7 +205,7 @@ pub fn carryless_divide(dividend: Element, divisor: Element) -> Element {
 // possible remainder this way, and they will replace the full-size polynomials just fine
 pub fn generate_exp_log_tables(tables: &mut ExpLogLUTs) {
     let (exp, log) = tables;
-    let mut x: usize = 1;
+    let mut x: Element = 1;
 
     // the intention here is that exp[i] == a^i mod p, so this should not
     // assign a value to log[0]... if it does, something is wrong
@@ -211,9 +213,11 @@ pub fn generate_exp_log_tables(tables: &mut ExpLogLUTs) {
     // so therefore, the log table has 255 usize values.
     // log table is mod 255 because x^(q-1) = 1 for all elements in GF(q) except 0
     for i in 0..255 {
-        exp[i] = x as Element;
-        log[x % 256] = i as usize;
-        x = (galois_multiply(x as Element, 2, QR_CODEWORD_GEN)) as usize;
+        exp[i] = x;
+        // log(x) == log[x - 1]
+        log[(x as usize - 1) % 255] = i as usize;
+        // note that the logarithm operation is base 0b10
+        x = galois_multiply(x, 0b10, QR_CODEWORD_GEN);
     }
 }
 
@@ -223,25 +227,25 @@ pub fn generate_exp_log_tables(tables: &mut ExpLogLUTs) {
 // update: it's because the multiplicative group lacks the zero element -> one less.
 // update 2: i think this is wrong. it should be 256, albeit with the criterion that
 // log[0] is never accessed
-fn i(x: Element) -> usize {
-    (x % 256) as usize
-}
+// fn i(x: Element) -> usize {
+//     (x % 256) as usize
+// }
 
 // helper functions, uses precomputed tables
-fn exp(n: usize) -> Element {
-    PC_EXP_LOG_TABLE.0[n % 255]
+pub fn exp(n: usize) -> Element {
+    QR_EXP_LOG_TABLE.0[n % 255]
 }
 
-fn log(e: Element) -> usize {
+pub fn log(e: Element) -> usize {
     if e == 0 {
         panic!();
     } else {
-        PC_EXP_LOG_TABLE.1[((e - 1) % 255) as usize]
+        QR_EXP_LOG_TABLE.1[((e - 1) % 255) as usize]
     }
 }
 
 // "gf_mul"
-pub fn table_multiply(x: Element, y: Element, tables: Option<&ExpLogLUTs>) -> Element {
+pub fn table_multiply(x: Element, y: Element) -> Element {
     if x == 0 || y == 0 {
         return 0;
     }
@@ -249,14 +253,13 @@ pub fn table_multiply(x: Element, y: Element, tables: Option<&ExpLogLUTs>) -> El
         // exp(log(x) + log(y))
         exp[i((log[i(x)] + log[i(y)]) as Element)]
     } else */
-    {
-        // use precomputed table
-        exp(log(x) + log(y))
-    }
+
+    // use precomputed table
+    exp(log(x) + log(y))
 }
 
 // "gf_div"
-pub fn table_divide(x: Element, y: Element, tables: Option<&ExpLogLUTs>) -> Element {
+pub fn table_divide(x: Element, y: Element) -> Element {
     if x == 0 {
         return 0;
     }
@@ -268,17 +271,22 @@ pub fn table_divide(x: Element, y: Element, tables: Option<&ExpLogLUTs>) -> Elem
         // exp(log(x) - log(y))
         exp[i((log[i(x)] + (255 - log[i(y)])) as Element)]
     } else  */
-    {
-        // use precomputed table
-        exp(log(x) + (255 - log(y)))
-    }
+
+    // use precomputed table
+    exp(log(x) + (255 - log(y)))
 }
 
-pub fn table_pow(x: Element, power: u32, tables: Option<&ExpLogLUTs>) -> Element {
+pub fn table_pow(x: Element, power: u32) -> Element {
     /* if let Some((exp, log)) = tables {
         exp[i((log[i(x)] as Element) * (power as Element))]
-    } else  */{
-        // use precomputed table
-        exp(log(x) * power as usize)
-    }
+    } else  */
+
+    // use precomputed table
+    exp(log(x) * power as usize)
+}
+
+// old versions of the table operations
+mod old {
+    use super::*;
+
 }

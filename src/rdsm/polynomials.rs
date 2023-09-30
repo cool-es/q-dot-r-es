@@ -24,10 +24,14 @@ pub const FULL_TEST_RESULT: &[Element] = &[
 // [a, b, c, d] = ax^3 + bx^2 + cx + d
 // (i personally don't think that's a good decision, but)
 
-pub fn polynomial_scalar_multiply(poly: &Polynomial, scalar: Element, tables: &ExpLogLUTs) -> Polynomial {
+pub fn polynomial_scalar_multiply(
+    poly: &Polynomial,
+    scalar: Element,
+    tables: &ExpLogLUTs,
+) -> Polynomial {
     let mut output: Polynomial = Vec::new();
     for &i in poly {
-        output.push(table_multiply(i, scalar, Some(tables)));
+        output.push(table_multiply(i, scalar));
     }
     output
 }
@@ -64,7 +68,7 @@ pub fn polynomial_multiply(
         for j in 0..poly1.len() {
             // the tutorial claims that this line is:
             // "equivalent to r[i + j] = gf_add(r[i+j], gf_mul(p[i], q[j]))"
-            output[i + j] ^= table_multiply(poly1[j], poly2[i], Some(tables));
+            output[i + j] ^= table_multiply(poly1[j], poly2[i]);
         }
     }
     output
@@ -75,7 +79,7 @@ pub fn polynomial_multiply(
 pub fn polynomial_evaluate(poly: &Polynomial, x: Element, tables: &ExpLogLUTs) -> Element {
     let mut output = poly[0];
     for i in 1..poly.len() {
-        output = table_multiply(output, x, Some(tables)) ^ poly[i];
+        output = table_multiply(output, x) ^ poly[i];
     }
     output
 }
@@ -97,7 +101,7 @@ pub fn make_rdsm_generator_polynomial(ec_symbols: u32, tables: &ExpLogLUTs) -> P
     for i in 0..ec_symbols {
         // this value is the polynomial x + a^i ... does this actually line up
         // with the qr code standard? is a == 0000_0010 ?
-        let multiplier: Polynomial = vec![1, table_pow(2, i, Some(tables))];
+        let multiplier: Polynomial = vec![1, table_pow(2, i)];
         output = polynomial_multiply(&output, &multiplier, tables);
     }
     output
@@ -150,7 +154,7 @@ pub fn polynomial_divide(
         if coef != 0 {
             for j in 1..divisor.len() {
                 if divisor[j] != 0 {
-                    output[i + j] ^= table_multiply(divisor[j], coef, Some(tables));
+                    output[i + j] ^= table_multiply(divisor[j], coef);
                 }
             }
         }

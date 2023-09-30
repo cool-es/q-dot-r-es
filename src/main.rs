@@ -5,7 +5,8 @@ use image::*;
 use rdsm::*;
 
 fn main() {
-_print_exp_log_tables();
+    // _print_exp_log_tables();
+    // test_gf();
     // test_reed_solomon(0);
     // remasking_test();
 }
@@ -77,7 +78,7 @@ fn test_format_parsing(path: &str) {
     let xbm_bitmap = ImgRowAligned::from_xbm(&xbm_string).unwrap();
     let fcode = get_fcode(&xbm_bitmap, 1, (0, 0)).unwrap();
     println!("{:#b}", fcode);
-    println!("remainder {:#b}", qr_fcode_remainder(fcode as u32),);
+    println!("remainder {:#b}", qr_fcode_remainder(fcode as u32));
 
     {
         let (correction, mask) = interpret_format(fcode).unwrap();
@@ -222,8 +223,58 @@ pub fn test_gf() {
     */
     let a = 0b10001001;
     let b = 0b00101010;
-    println!("{:016b}", galois_multiply(a, b, 0));
-    println!("{:016b}", galois_multiply(a, b, 0x11d));
+    // println!("{:016b}", galois_multiply(a, b, 0));
+    // println!("{:016b}", galois_multiply(a, b, QR_CODEWORD_GEN));
+
+    // works!
+    assert!(galois_multiply(a, b, 0) == 0b0001010001111010);
+    assert!(galois_multiply(a, b, QR_CODEWORD_GEN) == 0b0000000011000011);
+    assert!(table_multiply(a, b) == 0b0000000011000011);
+
+    println!("basic tests passed! now here's the real trial:");
+
+    let mut hits = [false; 255];
+
+    for i in 0..255 {
+        let k = table_pow(0b10, i);
+        assert!(log(k) == i as usize);
+        hits[(k - 1) as usize] = true;
+    }
+    assert!(!hits.contains(&false));
+
+    println!("you are a master multiplication table !!");
+
+    for x in 0..255 {
+        for y in 0..x {
+            let a =
+                galois_multiply(x, y, QR_CODEWORD_GEN) == galois_multiply(y, x, QR_CODEWORD_GEN);
+            let b = galois_multiply(x, y, QR_CODEWORD_GEN) == table_multiply(x, y);
+            let c = {
+                if x * y != 0 {
+                    (log(x) + log(y)) % 255 == log(galois_multiply(x, y, QR_CODEWORD_GEN))
+                } else {
+                    true
+                }
+            };
+            if !(a && b && c) {
+                println!("({:03},{:03}) failed {}", x, y, {
+                    let mut text = String::new();
+                    if !a {
+                        text.push('a')
+                    }
+                    if !b {
+                        text.push('b')
+                    }
+                    if !c {
+                        text.push('c')
+                    }
+                    text
+                });
+            }
+        }
+    }
+
+    println!("wowza!!");
 
     // println!("{:016b}", galois_multiply_peasant_full(a, b, 0, 256, true));
     // println!(
@@ -269,7 +320,7 @@ fn test_reed_solomon(test: u8) {
             print!("{:3}:", i);
             for j in 1..255 {
                 let mul1 = galois_multiply(i as Element, j as Element, QR_CODEWORD_GEN);
-                let mul2 = table_multiply(i as Element, j as Element, Some(&lookup_tables));
+                let mul2 = table_multiply(i as Element, j as Element);
 
                 // let div2 = table_divide(i as Element, j as Element, &lookup_tables);
 
@@ -277,7 +328,7 @@ fn test_reed_solomon(test: u8) {
 
                 if i as Element
                     != galois_multiply(
-                        table_divide(i as Element, j as Element, Some(&lookup_tables)),
+                        table_divide(i as Element, j as Element),
                         j as Element,
                         QR_CODEWORD_GEN,
                     )

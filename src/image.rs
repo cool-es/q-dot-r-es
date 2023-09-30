@@ -1,6 +1,6 @@
- mod continuous;
- mod qr_standard;
- mod rowaligned;
+mod continuous;
+mod qr_standard;
+mod rowaligned;
 
 pub use continuous::*;
 pub use qr_standard::*;
