@@ -195,7 +195,7 @@ def gf_poly_div(dividend, divisor):
     separator = -(len(divisor)-1)
     return msg_out[:separator], msg_out[separator:] # return quotient, remainder.
 */
-pub fn polynomial_divide(
+pub fn _polynomial_divide(
     dividend: &Polynomial,
     divisor: &Polynomial,
     // tables: &ExpLogLUTs,
@@ -203,6 +203,12 @@ pub fn polynomial_divide(
     // man, idk
 
     let mut output = dividend.clone();
+    // output.reverse();
+    // let mut dnd = dividend.clone();
+    // dnd.reverse();
+    // let mut dsr = divisor.clone();
+    // dsr.reverse();
+
     for i in 0..(dividend.len() - (divisor.len() - 1)) {
         let coef = output[i];
         if coef != 0 {
@@ -214,20 +220,49 @@ pub fn polynomial_divide(
         }
     }
 
+    // output.reverse();
     let (quotient, remainder) = output.split_at(divisor.len() - 1);
+    // let (quotient, remainder) = output.split_at(divisor.len() - 1);
     (quotient.to_vec(), remainder.to_vec())
 }
 
-pub fn polynomial_remainder(
-    dividend: &Polynomial,
-    divisor: &Polynomial,
-) -> (Polynomial, Polynomial) {
-    if dividend.len() < divisor.len() {
-        return (dividend.clone(), dividend.clone());
+// helper function for polynomial_remainder
+fn first_nonzero_index(poly: &Polynomial) -> Option<usize> {
+    for (i, &coefficient) in poly.iter().enumerate() {
+        if coefficient != 0 {
+            return Some(i);
+        }
     }
-    let mut output = divisor.clone();
+    None
+}
 
-    todo!()
+pub fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) -> Polynomial {
+    if divisor[0] == 0 {
+        todo!()
+    }
+    if dividend.len() < divisor.len() {
+        return dividend.clone();
+    }
+    let diff = dividend.len() - divisor.len();
+    let mut output = dividend.clone();
+    // rightwards index shift in output (equivalent to multiplying divisor by x^(diff-shift))
+    // if you wanted the quotient too, it would be {q[shift] = multiplier}, then reverse q
+    for shift in 0..=diff {
+        if output[shift] == 0 {
+            continue;
+        }
+        let multiplier = table_divide(output[shift], divisor[0]);
+
+        for index in 0..divisor.len() {
+            output[index + shift] ^= table_multiply(divisor[index], multiplier);
+        }
+    }
+
+    // bugtesting
+    output
+
+    // output starts with a bunch of 0s
+    // output[diff..].to_vec()
 }
 
 /*
@@ -250,7 +285,7 @@ pub fn encode_message(message: &Polynomial, ec_symbols: u32, tables: &ExpLogLUTs
     message_padded.extend(std::iter::repeat(0).take(generator_polynomial.len() - 1));
 
     // i do not know what i am doing.
-    let remainder = polynomial_divide(&message_padded, &generator_polynomial).1;
+    let remainder = _polynomial_divide(&message_padded, &generator_polynomial).1;
     let mut output = message.clone();
     output.extend(remainder.iter());
     output
@@ -266,20 +301,49 @@ pub fn degree(poly: &Polynomial) -> usize {
     poly.len() - 1
 }
 
-pub fn prettyprint(poly: &Polynomial, data: bool) -> Option<String> {
+pub fn prettyprint(poly: &Polynomial) {
     let mut output = String::new();
     for i in 0..poly.len() {
         if poly[i] != 0 {
-            output.push_str(format!("a^{} x^{}", log(poly[i]), poly.len() - (i + 1)).as_str());
-            if i != poly.len() - 1 {
-                output.push_str(" + ");
+            let mut str = String::new();
+            if poly[i] == 1 {
+                str = format!("x{}", superscript(poly.len() - (i + 1)));
+            } else if i == poly.len() - 1 {
+                str = format!("a{}", superscript(log(poly[i])),);
+            } else {
+                str = format!(
+                    "a{}x{}",
+                    superscript(log(poly[i])),
+                    superscript(poly.len() - (i + 1))
+                );
             }
+            if i < poly.len() - 1 {
+                str.push_str(" + ");
+            }
+
+            output.push_str(str.as_str());
         }
     }
-    if data {
-        Some(output)
-    } else {
-        println!("{}", output);
-        None
+    println!("{}", output);
+}
+
+fn superscript(input: usize) -> String {
+    // ¹²³⁴⁵⁶⁷⁸⁹⁰
+    let mut output = String::new();
+    if input == 0 {
+        output.push_str("ˣ");
+        return output;
+    } else if input == 1 {
+        return output;
     }
+    for i in (0..=input.ilog10()).rev() {
+        let digit = (input as u32 / 10u32.pow(i as u32)) % 10;
+        output.push(match digit {
+            1 => '¹',
+            2 => '²',
+            3 => '³',
+            _ => char::from_u32('⁰' as u32 + digit).unwrap(),
+        })
+    }
+    output
 }

@@ -11,14 +11,15 @@ fn main() {
     // test_gf();
     // test_reed_solomon(0b10);
     // remasking_test();
+    // test_rdsm_generator();
 }
 
 fn test_polynomial_mult() {
     // it works!!
     let cafebabe: Polynomial = Vec::from([0xca, 0xfe, 0xba, 0xbe]);
     let deadbeef: Polynomial = Vec::from([0xde, 0xad, 0xbe, 0xef]);
-    prettyprint(&cafebabe, false);
-    prettyprint(&deadbeef, false);
+    prettyprint(&cafebabe);
+    prettyprint(&deadbeef);
     println!("{:?}", polynomial_multiply(&cafebabe, &deadbeef));
     println!("{:?}", polynomial_multiply(&deadbeef, &cafebabe));
     println!("{:?}", es_polynomial_multiply(&cafebabe, &deadbeef));
@@ -27,21 +28,42 @@ fn test_polynomial_mult() {
 
 fn test_polynomial_div() {
     let cafebabe: Polynomial = Vec::from([0xca, 0xfe, 0xba, 0xbe]);
-    let deadbeef: Polynomial = Vec::from([0xde, 0xad, 0xbe, 0xef]);
-    let a = polynomial_multiply(&cafebabe, &deadbeef);
-    prettyprint(&cafebabe, false);
-    prettyprint(&deadbeef, false);
-    let cfb = polynomial_divide(&a, &deadbeef).0;
-    let dbf = polynomial_divide(&a, &cafebabe).0;
-    prettyprint(&cfb, false);
-    prettyprint(&dbf, false);
+    // let deadbeef: Polynomial = Vec::from([0xde, 0xad, 0xbe, 0xef]);
+    let big_1: Polynomial = (1..10).map(|x| (x * 541) % 256).collect();
+    let big_2: Polynomial = (1..15).map(|x| (x * 311) % 256).collect();
+    let sum = polynomial_add(&big_1, &big_2);
+    let rem_1 = polynomial_remainder(&big_1, &cafebabe);
+    let rem_2 = polynomial_remainder(&big_2, &cafebabe);
+    let rem_sum = polynomial_add(&rem_1, &rem_2);
+    let sum_rem = polynomial_remainder(&sum, &cafebabe);
+
+    println!("divisor:");
+    prettyprint(&cafebabe);
+    // prettyprint(&deadbeef);
+
+    println!("\nbig polynomial 1:");
+    prettyprint(&big_1);
+    println!("big polynomial 2:");
+    prettyprint(&big_2);
+    println!("sum of bigs:");
+    prettyprint(&sum);
+
+    println!("\nremainder of big 1:");
+    prettyprint(&rem_1);
+    println!("remainder of big 2:");
+    prettyprint(&rem_2);
+
+    println!("\nremainder of sums:");
+    prettyprint(&sum_rem);
+    println!("sum of remainders:");
+    prettyprint(&rem_sum);
 }
 
 fn test_rdsm_generator() {
-    for i in [7, 10, 13, 15] {
+    for i in [7, 10, 13, 15, 20, 22, 24, 68] {
         let a = make_rdsm_generator_polynomial(i);
-        println!("{}:", i);
-        prettyprint(&a, false);
+        print!("{} -- ", i);
+        prettyprint(&a);
         println!();
     }
 }
