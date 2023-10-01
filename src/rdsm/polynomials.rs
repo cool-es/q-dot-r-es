@@ -226,14 +226,24 @@ pub fn _polynomial_divide(
     (quotient.to_vec(), remainder.to_vec())
 }
 
-// helper function for polynomial_remainder
-fn first_nonzero_index(poly: &Polynomial) -> Option<usize> {
+// helper function
+pub fn degree(poly: &Polynomial) -> usize {
     for (i, &coefficient) in poly.iter().enumerate() {
         if coefficient != 0 {
-            return Some(i);
+            return (poly.len() - i) - 1;
         }
     }
-    None
+    0
+}
+
+// helper function for polynomial_remainder
+fn leading_zeroes(poly: &Polynomial) -> usize {
+    for (i, &coefficient) in poly.iter().enumerate() {
+        if coefficient != 0 {
+            return i;
+        }
+    }
+    poly.len()
 }
 
 pub fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) -> Polynomial {
@@ -258,13 +268,14 @@ pub fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) -> Poly
         }
     }
 
-    // bugtesting
-    output
-
+    if leading_zeroes(&output) < diff {
+        panic!()
+    }
     // output starts with a bunch of 0s
-    // output[diff..].to_vec()
+    output[diff..].to_vec()
 }
 
+// it works!!! i'm doing encodation!!!!!
 /*
 def rs_encode_msg(msg_in, nsym):
     '''Reed-Solomon main encoding function'''
@@ -277,28 +288,16 @@ def rs_encode_msg(msg_in, nsym):
     # Return the codeword
     return msg_out
 */
-pub fn encode_message(message: &Polynomial, ec_symbols: u32, tables: &ExpLogLUTs) -> Polynomial {
+pub fn encode_message(message: &Polynomial, ec_symbols: u32, _tables: &ExpLogLUTs) -> Polynomial {
     let generator_polynomial = make_rdsm_generator_polynomial(ec_symbols);
 
-    // i don't know what i'm doing
     let mut message_padded = message.clone();
-    message_padded.extend(std::iter::repeat(0).take(generator_polynomial.len() - 1));
+    message_padded.extend(std::iter::repeat(0).take(ec_symbols as usize));
 
-    // i do not know what i am doing.
-    let remainder = _polynomial_divide(&message_padded, &generator_polynomial).1;
-    let mut output = message.clone();
-    output.extend(remainder.iter());
+    let remainder = polynomial_remainder(&message_padded, &generator_polynomial);
+    let mut output = polynomial_add(&message_padded, &remainder);
+
     output
-}
-
-// "Simple, isn't it?" get bent
-
-// in theory i should have the full capability to create a qr code now
-// nope it don't work
-
-// helper function
-pub fn degree(poly: &Polynomial) -> usize {
-    poly.len() - 1
 }
 
 pub fn prettyprint(poly: &Polynomial) {

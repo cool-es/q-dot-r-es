@@ -6,10 +6,10 @@ use rdsm::*;
 
 fn main() {
     // test_polynomial_mult();
-    test_polynomial_div();
+    // test_polynomial_div();
     // _print_exp_log_tables();
     // test_gf();
-    // test_reed_solomon(0b10);
+    test_reed_solomon(0b10);
     // remasking_test();
     // test_rdsm_generator();
 }
@@ -57,6 +57,8 @@ fn test_polynomial_div() {
     prettyprint(&sum_rem);
     println!("sum of remainders:");
     prettyprint(&rem_sum);
+
+    assert_eq!(sum_rem, rem_sum);
 }
 
 fn test_rdsm_generator() {
