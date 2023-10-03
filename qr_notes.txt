@@ -1,0 +1,47 @@
+~~~ notes on qr encoding/decoding ~~~
+
+qr symbols contain a bitstream which is not aligned to its constituent 8-bit codewords (pg. 20)
+
+assuming byte / alphanumeric / numeric mode, version 1 (pg. 24),
+the bitstream consists of:
+• mode indicator, 4 bits (0100 / 0010 / 0001)
+• character count indicator (8 / 9 / 10)
+• data bit stream
+• terminator: 0000
+i believe the format allows for consecutive streams of different data spliced together
+
+byte mode is shift-jis (pg. 29), which i believe is ascii-adjacent
+
+codewords are aligned in columns of width 2,
+are always read right-to-left in rows either up or down,
+and all data has its MSB first (pg. 53)
+
+symbol structure refs: pg. 13 (layout), pg. 21 (version size / codeword capacity table),
+pg. 34 (error correction / data capacity table),
+
+error correction refs: pg. 41
+
+generator polynomials: pg. 73
+
+symbol encoding example: pg. 90
+
+
+symbol size is 21 + 4 * (version -1) for version between 1 and 40
+
+position detection patterns are 7*7 modules, but are also framed by a line of white modules, so in effect they're 8*8
+
+alignment patterns (small squares in versions > 1) are 5*5 modules, are offset 4 modules in on every side (4 modules fit between the size and the alignment pattern), three are missing, in each of the position detection patterns' corners. coordinates are in a table on pg. 88
+
+version : n where n^2-3 is no. of alignment patterns:
+1    : (no pattern)
+2..  : 2
+7..  : 3
+14.. : 4 
+21.. : 5
+28.. : 6
+35.. : 7
+
+timing patterns (dotted lines) are at x = 6, y = 6
+
+
+version info data blocks: TBD!!
