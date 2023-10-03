@@ -1,12 +1,33 @@
 mod tables;
+pub use tables::*;
+
+fn bad_version(version: u32) -> bool {
+    !(1..=40).contains(&version)
+}
 
 // returns the standard sizes for qr code symbols, indexed by version number
 // 21*21, 25*25, ..., 177*177
 pub fn version_to_size(version: u32) -> Option<u32> {
-    if !(1..=40).contains(&version) {
+    if bad_version(version) {
         None
     } else {
         Some(21 + 4 * (version - 1))
+    }
+}
+
+fn version_to_max_index(version: u32) -> usize {
+    if bad_version(version) {
+        panic!()
+    }
+    20 + 4 * (version as usize - 1)
+}
+
+fn out_of_bounds(x: usize, y: usize, version: u32) -> bool {
+    if bad_version(version) {
+        true
+    } else {
+        // x.max(y) + 1 > 21 + 4 * (version as usize - 1)
+        x.max(y) > 16 + 4 * version as usize
     }
 }
 
@@ -121,7 +142,7 @@ fn penalty<T: super::Bitmap>(input: &T) -> u32 {
 // relative to top left module of the finder pattern
 // from LSB (0) to MSB (14) (see pg. 60)
 fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize, usize))> {
-    if !(1..=40).contains(&version) || bit > 14 {
+    if bad_version(version) || bit > 14 {
         // undefined
         return None;
     }
@@ -226,10 +247,92 @@ fn qr_data_coords(codeword: u32, bit: u8, version: u32) -> Option<(usize, usize)
         return None;
     }
 
-    None
+    todo!()
 }
 
-//
-fn coord_is_alignment_pattern(x: usize, y: usize, version: u32) -> bool {
+// returns the next bit of data after this one
+fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)> {
+    // larger versions contain version information blocks which i haven't implemented yet
+    if version > 6 {
+        return None;
+    }
+
+    if !coord_is_data(x, y, version) {
+        return None;
+    }
+
+    let is_ap = |xi, yi| coord_is_alignment_pattern(xi, yi, version);
+    // let is_ap2 = |xi: i16, yi: i16| {
+    //     coord_is_alignment_pattern((x as i16 + xi) as usize, (y as i16 + yi) as usize, version)
+    // };
+    let is_data = |xi, yi| coord_is_data(xi, yi, version);
+
+    let max = version_to_max_index(version);
+    // x coord is on the right-hand side of a codeword
+    let x_right = (x % 2 == 0) ^ (x < 6);
+    // codeword is read from bottom to top (negative y direction)
+    let up_codeword = (((max - x) / 2) % 2 == 0) ^ (x < 6);
+
+    if x_right {
+        // ←
+        return Some((x - 1, y));
+    }
+
+    if up_codeword {
+        // about to hit position markers
+        if y == 9 && (x < 9 || (max - x) < 8) {
+            if x == 0 {
+                return None;
+            }
+
+            return Some((x - 1, y));
+        }
+
+        // about to hit timing pattern
+        if y == 7 {
+            return Some((x + 1, y - 2));
+        }
+
+        // about to hit an alignment pattern
+        if is_ap(x, y - 1) {
+            return Some((x + 1, y - 6));
+        } else if is_ap(x + 1, y - 1) {
+            // ↑
+            return Some((x, y - 1));
+        } else {
+            // ↗
+            return Some((x + 1, y - 1));
+        }
+
+    } else {
+    }
+
     todo!()
+}
+
+fn coord_is_alignment_pattern(x: usize, y: usize, version: u32) -> bool {
+    if out_of_bounds(x, y, version) {
+        panic!();
+    }
+
+    let indices = AP_COORD_INDICES[version as usize - 1];
+    for &i in indices {
+        if x.abs_diff(i) < 3 {
+            for &j in indices {
+                if y.abs_diff(j) < 3 {
+                    return true;
+                }
+            }
+            break;
+        }
+    }
+    false
+}
+
+pub fn coord_is_data(x: usize, y: usize, version: u32) -> bool {
+    if out_of_bounds(x, y, version) || coord_is_alignment_pattern(x, y, version) {
+        false
+    } else {
+        todo!()
+    }
 }

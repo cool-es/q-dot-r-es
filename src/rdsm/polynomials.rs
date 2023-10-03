@@ -37,7 +37,7 @@ pub fn polynomial_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
     let mut output: Polynomial = Vec::new();
     // resize the vector to fit the higher-degree (longer) polynomial
     let (p1_len, p2_len) = (poly1.len(), poly2.len());
-    let out_len = std::cmp::max(p1_len, p2_len);
+    let out_len = p1_len.max(p2_len);
     output.resize(out_len, 0);
 
     for i in 0..p1_len {
@@ -311,6 +311,27 @@ pub fn charprint(poly: &Polynomial) {
 }
 
 pub fn prettyprint(poly: &Polynomial) {
+    fn superscript(input: usize) -> String {
+        // ¹²³⁴⁵⁶⁷⁸⁹⁰
+        let mut output = String::new();
+        if input == 0 {
+            output.push_str("ˣ");
+            return output;
+        } else if input == 1 {
+            return output;
+        }
+        for i in (0..=input.ilog10()).rev() {
+            let digit = (input as u32 / 10u32.pow(i as u32)) % 10;
+            output.push(match digit {
+                1 => '¹',
+                2 => '²',
+                3 => '³',
+                _ => char::from_u32('⁰' as u32 + digit).unwrap(),
+            })
+        }
+        output
+    }
+
     let mut output = String::new();
     let last_byte_not_zero = *poly.last().unwrap() != 0;
     if poly[0] == 0 {
@@ -338,27 +359,6 @@ pub fn prettyprint(poly: &Polynomial) {
         }
     }
     println!("{}", output);
-}
-
-fn superscript(input: usize) -> String {
-    // ¹²³⁴⁵⁶⁷⁸⁹⁰
-    let mut output = String::new();
-    if input == 0 {
-        output.push_str("ˣ");
-        return output;
-    } else if input == 1 {
-        return output;
-    }
-    for i in (0..=input.ilog10()).rev() {
-        let digit = (input as u32 / 10u32.pow(i as u32)) % 10;
-        output.push(match digit {
-            1 => '¹',
-            2 => '²',
-            3 => '³',
-            _ => char::from_u32('⁰' as u32 + digit).unwrap(),
-        })
-    }
-    output
 }
 
 pub fn string_to_polynomial(text: &str) -> Polynomial {

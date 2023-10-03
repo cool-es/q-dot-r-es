@@ -1,2 +1,3 @@
+finish "next data bit" function 😫
 implement "data coordinate" function (qr_standard.rs > qr_data_coords)
 finish penalty routine (qr_standard.rs > penalty)

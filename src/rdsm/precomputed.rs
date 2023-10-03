@@ -40,10 +40,7 @@ pub fn _print_exp_log_tables_inline() {
         print!("{:#04x},", exp[x]);
     }
 
-    print!(
-        "],[\n// {} values of element -> usize\n",
-        log.len()
-    );
+    print!("],[\n// {} values of element -> usize\n", log.len());
     for x in 0..log.len() {
         print!("{:#04x},", log[x]);
     }

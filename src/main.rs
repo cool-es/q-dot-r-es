@@ -4,32 +4,7 @@ mod rdsm;
 use image::*;
 use rdsm::*;
 
-fn main() {
-    {
-        let a = string_to_polynomial("Ough,, Houhgh");
-        // let b = string_to_polynomial("foghorn leghorn");
-        doubleprint(&a);
-        // doubleprint(&b);
-
-        let b = encode_message(&a, 20);
-        doubleprint(&b);
-
-        let c = polynomial_remainder(&b, &make_rdsm_generator_polynomial(20));
-        doubleprint(&c);
-        // let ab = polynomial_multiply(&a, &b);
-        // doubleprint(&ab);
-
-        // let div = polynomial_remainder(&a, &b);
-        // doubleprint(&div);
-    }
-    // test_polynomial_mult();
-    // test_polynomial_div();
-    // _print_exp_log_tables();
-    // test_gf();
-    // test_reed_solomon(0b10);
-    // remasking_test();
-    // test_rdsm_generator();
-}
+fn main() {}
 
 fn test_polynomial_mult() {
     // it works!!
@@ -389,22 +364,6 @@ fn test_reed_solomon(test: u8) {
         println!("control:");
         charprint(&control);
         prettyprint(&control);
-        // println!("output:\n{:?}\ncontrol:\n{:?}", &output, &control);
-
-        // let len = std::cmp::max(output.len(), control.len());
-        // control.resize(len, 0);
-        // output.resize(len, 0);
-        // println!("difference:");
-        // for i in 0..len {
-        //     if i == 16 {
-        //         println!();
-        //     }
-        //     print!("{}", output[i] as i32 - control[i] as i32);
-        //     if i != len - 1 {
-        //         print!(", ");
-        //     }
-        // }
-        // println!();
     }
 
     if test & 0b100 != 0 {
