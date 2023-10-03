@@ -130,14 +130,14 @@ pub fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynom
 
 // evaluates a polynomial for a specific value of x
 // "based on horner's scheme for maximum efficiency"
-pub fn polynomial_evaluate(poly: &Polynomial, x: Element, tables: &ExpLogLUTs) -> Element {
+/* pub fn polynomial_evaluate(poly: &Polynomial, x: Element, tables: &ExpLogLUTs) -> Element {
     let mut output = poly[0];
     for i in 1..poly.len() {
         output = table_multiply(output, x) ^ poly[i];
     }
     output
 }
-
+ */
 // wow! this sucks!
 /*
     def rs_generator_poly(nsym):
@@ -227,13 +227,8 @@ pub fn _polynomial_divide(
 }
 
 // helper function
-pub fn degree(poly: &Polynomial) -> usize {
-    for (i, &coefficient) in poly.iter().enumerate() {
-        if coefficient != 0 {
-            return (poly.len() - i) - 1;
-        }
-    }
-    0
+pub fn length(poly: &Polynomial) -> usize {
+    poly.len() - leading_zeroes(poly)
 }
 
 // helper function for polynomial_remainder
@@ -243,7 +238,7 @@ fn leading_zeroes(poly: &Polynomial) -> usize {
             return i;
         }
     }
-    poly.len()
+    poly.len() - 1
 }
 
 pub fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) -> Polynomial {
@@ -272,7 +267,7 @@ pub fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) -> Poly
         panic!()
     }
     // output starts with a bunch of 0s
-    output[diff..].to_vec()
+    output[leading_zeroes(&output)..].to_vec()
 }
 
 // it works!!! i'm doing encodation!!!!!
@@ -288,7 +283,7 @@ def rs_encode_msg(msg_in, nsym):
     # Return the codeword
     return msg_out
 */
-pub fn encode_message(message: &Polynomial, ec_symbols: u32, _tables: &ExpLogLUTs) -> Polynomial {
+pub fn encode_message(message: &Polynomial, ec_symbols: u32) -> Polynomial {
     let generator_polynomial = make_rdsm_generator_polynomial(ec_symbols);
 
     let mut message_padded = message.clone();
@@ -300,27 +295,46 @@ pub fn encode_message(message: &Polynomial, ec_symbols: u32, _tables: &ExpLogLUT
     output
 }
 
+pub fn charprint(poly: &Polynomial) {
+    let mut output = String::new();
+    for &i in poly {
+        let o = i as u8;
+        output.push({
+            if o.is_ascii_control() {
+                '😨'
+            } else {
+                o as char
+            }
+        });
+    }
+    println!("{:?}", output);
+}
+
 pub fn prettyprint(poly: &Polynomial) {
     let mut output = String::new();
+    let last_byte_not_zero = *poly.last().unwrap() != 0;
+    if poly[0] == 0 {
+        // polynomial has leading zeroes - it shouldn't
+        output.push('🤔');
+    }
     for i in 0..poly.len() {
         if poly[i] != 0 {
-            let mut str = String::new();
+            let mut part: String;
             if poly[i] == 1 {
-                str = format!("x{}", superscript(poly.len() - (i + 1)));
+                part = format!("x{}", superscript(poly.len() - (i + 1)));
             } else if i == poly.len() - 1 {
-                str = format!("a{}", superscript(log(poly[i])),);
+                part = format!("a{}", superscript(log(poly[i])),);
             } else {
-                str = format!(
+                part = format!(
                     "a{}x{}",
                     superscript(log(poly[i])),
                     superscript(poly.len() - (i + 1))
                 );
             }
-            if i < poly.len() - 1 {
-                str.push_str(" + ");
+            if i < poly.len() - 1 && last_byte_not_zero {
+                part.push_str(" + ");
             }
-
-            output.push_str(str.as_str());
+            output.push_str(part.as_str());
         }
     }
     println!("{}", output);
@@ -345,4 +359,16 @@ fn superscript(input: usize) -> String {
         })
     }
     output
+}
+
+pub fn string_to_polynomial(text: &str) -> Polynomial {
+    text.chars()
+        .map(|c| {
+            if (c as u32) < 256 {
+                c as Element
+            } else {
+                ' ' as Element
+            }
+        })
+        .collect()
 }

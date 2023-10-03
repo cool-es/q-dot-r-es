@@ -5,11 +5,28 @@ use image::*;
 use rdsm::*;
 
 fn main() {
+    {
+        let a = string_to_polynomial("Ough,, Houhgh");
+        // let b = string_to_polynomial("foghorn leghorn");
+        doubleprint(&a);
+        // doubleprint(&b);
+
+        let b = encode_message(&a, 20);
+        doubleprint(&b);
+
+        let c = polynomial_remainder(&b, &make_rdsm_generator_polynomial(20));
+        doubleprint(&c);
+        // let ab = polynomial_multiply(&a, &b);
+        // doubleprint(&ab);
+
+        // let div = polynomial_remainder(&a, &b);
+        // doubleprint(&div);
+    }
     // test_polynomial_mult();
     // test_polynomial_div();
     // _print_exp_log_tables();
     // test_gf();
-    test_reed_solomon(0b10);
+    // test_reed_solomon(0b10);
     // remasking_test();
     // test_rdsm_generator();
 }
@@ -26,6 +43,12 @@ fn test_polynomial_mult() {
     println!("{:?}", es_polynomial_multiply(&deadbeef, &cafebabe));
 }
 
+fn doubleprint(input: &Polynomial) {
+    charprint(input);
+    prettyprint(input);
+    println!();
+}
+
 fn test_polynomial_div() {
     let cafebabe: Polynomial = Vec::from([0xca, 0xfe, 0xba, 0xbe]);
     // let deadbeef: Polynomial = Vec::from([0xde, 0xad, 0xbe, 0xef]);
@@ -38,25 +61,25 @@ fn test_polynomial_div() {
     let sum_rem = polynomial_remainder(&sum, &cafebabe);
 
     println!("divisor:");
-    prettyprint(&cafebabe);
+    doubleprint(&cafebabe);
     // prettyprint(&deadbeef);
 
     println!("\nbig polynomial 1:");
-    prettyprint(&big_1);
+    doubleprint(&big_1);
     println!("big polynomial 2:");
-    prettyprint(&big_2);
+    doubleprint(&big_2);
     println!("sum of bigs:");
-    prettyprint(&sum);
+    doubleprint(&sum);
 
     println!("\nremainder of big 1:");
-    prettyprint(&rem_1);
+    doubleprint(&rem_1);
     println!("remainder of big 2:");
-    prettyprint(&rem_2);
+    doubleprint(&rem_2);
 
     println!("\nremainder of sums:");
-    prettyprint(&sum_rem);
+    doubleprint(&sum_rem);
     println!("sum of remainders:");
-    prettyprint(&rem_sum);
+    doubleprint(&rem_sum);
 
     assert_eq!(sum_rem, rem_sum);
 }
@@ -353,25 +376,35 @@ fn test_reed_solomon(test: u8) {
 
     if test & 0b10 != 0 {
         let input: Polynomial = Vec::from(TEST_MSG);
-        let mut control: Polynomial = Vec::from(FULL_TEST_RESULT);
-        let mut output = encode_message(&input, 10, &lookup_tables);
-        //assert!(output == control);
-        println!("output:\n{:?}\ncontrol:\n{:?}", &output, &control);
+        let control: Polynomial = Vec::from(FULL_TEST_RESULT);
+        let output = encode_message(&input, 10);
+        assert_eq!(output, control);
 
-        let len = std::cmp::max(output.len(), control.len());
-        control.resize(len, 0);
-        output.resize(len, 0);
-        println!("difference:");
-        for i in 0..len {
-            if i == 16 {
-                println!();
-            }
-            print!("{}", output[i] as i32 - control[i] as i32);
-            if i != len - 1 {
-                print!(", ");
-            }
-        }
-        println!();
+        println!("input:");
+        charprint(&input);
+        prettyprint(&input);
+        println!("output:");
+        charprint(&output);
+        prettyprint(&output);
+        println!("control:");
+        charprint(&control);
+        prettyprint(&control);
+        // println!("output:\n{:?}\ncontrol:\n{:?}", &output, &control);
+
+        // let len = std::cmp::max(output.len(), control.len());
+        // control.resize(len, 0);
+        // output.resize(len, 0);
+        // println!("difference:");
+        // for i in 0..len {
+        //     if i == 16 {
+        //         println!();
+        //     }
+        //     print!("{}", output[i] as i32 - control[i] as i32);
+        //     if i != len - 1 {
+        //         print!(", ");
+        //     }
+        // }
+        // println!();
     }
 
     if test & 0b100 != 0 {

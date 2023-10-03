@@ -1,4 +1,2 @@
-deal with polynomial division (rdsm.rs > encode_message)...
-figure out if the "evaluate polynomial" function serves any purpose?? (rdsm.rs > polynomial_evaluate)
 implement "data coordinate" function (qr_standard.rs > qr_data_coords)
 finish penalty routine (qr_standard.rs > penalty)
