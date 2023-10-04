@@ -15,6 +15,14 @@ pub fn version_to_size(version: u32) -> Option<u32> {
     }
 }
 
+fn size_to_version(size: usize) -> Option<u32> {
+    if size % 4 == 1 && (21..=177).contains(&size) {
+        Some((size as u32 - 17) / 4)
+    } else {
+        None
+    }
+}
+
 fn version_to_max_index(version: u32) -> usize {
     if bad_version(version) {
         panic!()
@@ -37,8 +45,18 @@ impl super::continuous::Img {
     pub fn qr_mask_xor(&mut self, pattern: u8) {
         qr_mask_xor(self, pattern)
     }
-    pub fn penalty(&self) -> u32 {
+    pub fn qr_penalty(&self) -> u32 {
         penalty(self)
+    }
+    pub fn qr_version(&self) -> Option<u32> {
+        use super::*;
+
+        let (x, y) = self.dims();
+        if x != y {
+            None
+        } else {
+            size_to_version(x)
+        }
     }
 }
 
@@ -47,8 +65,18 @@ impl super::rowaligned::ImgRowAligned {
     pub fn qr_mask_xor(&mut self, pattern: u8) {
         qr_mask_xor(self, pattern)
     }
-    pub fn penalty(&self) -> u32 {
+    pub fn qr_penalty(&self) -> u32 {
         penalty(self)
+    }
+    pub fn qr_version(&self) -> Option<u32> {
+        use super::*;
+
+        let (x, y) = self.dims();
+        if x != y {
+            None
+        } else {
+            size_to_version(x)
+        }
     }
 }
 
@@ -56,23 +84,35 @@ impl super::rowaligned::ImgRowAligned {
 // efficient, should replace _new_qr_mask():
 // _new_qr_mask(a, b, x) == new(a, b).qr_mask_xor(x)
 // i wrote this on the first try just before bedtime. go me
+// modified to leave gaps in the pattern for valid qr version sizes
 fn qr_mask_xor<T: super::Bitmap>(input: &mut T, pattern: u8) {
+    let maybe_version = {
+        if input.dims().0 != input.dims().1 {
+            None
+        } else {
+            size_to_version(input.dims().0)
+        }
+    };
+
     for vec_index in 0..input.debug_bits().len() {
         let mut mask_byte = 0u8;
         for bit_index in (0..8).rev() {
             mask_byte <<= 1;
             if let Some((x, y)) = input.debug_index_to_xy(vec_index, bit_index) {
-                mask_byte |= (match pattern {
-                    0 => (x + y) % 2,
-                    1 => y % 2,
-                    2 => x % 3,
-                    3 => (x + y) % 3,
-                    4 => (x / 3 + y / 2) % 2,
-                    5 => (x * y) % 2 + (x * y) % 3,
-                    6 => ((x * y) % 3 + x * y) % 2,
-                    7 => ((x * y) % 3 + x + y) % 2,
-                    _ => panic!(),
-                } == 0) as u8;
+                if maybe_version.is_none() || coord_is_data(x, y, maybe_version.unwrap_or_default())
+                {
+                    mask_byte |= (match pattern {
+                        0 => (x + y) % 2,
+                        1 => y % 2,
+                        2 => x % 3,
+                        3 => (x + y) % 3,
+                        4 => (x / 3 + y / 2) % 2,
+                        5 => (x * y) % 2 + (x * y) % 3,
+                        6 => ((x * y) % 3 + x * y) % 2,
+                        7 => ((x * y) % 3 + x + y) % 2,
+                        _ => panic!(),
+                    } == 0) as u8;
+                }
             }
         }
         input.debug_bits_mut()[vec_index] ^= mask_byte;

@@ -6,27 +6,37 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    {
-        let mut code = testutil::hello1();
-        code.qr_mask_xor(
-            interpret_format(get_fcode(&code, 1, (0, 0)).unwrap())
-                .unwrap()
-                .1,
-        );
+    // read_bitstream();
+    let code = testutil::hello1();
+    debug_print(&code);
+    println!();
+    for i in 0..8 {
+        let mut c = code.clone();
+        c.qr_mask_xor(i);
+        debug_print(&c);
+        println!();
+    }
+}
 
-        let (mut x, mut y) = (20, 20);
-        for i in 0..280 {
-            print!("{}", u8::from(code.get_bit(x, y).unwrap()));
-            if let Some(coords) = next_data_bit(x, y, 1) {
-                (x, y) = coords;
-            } else {
-                break;
-            }
+fn read_bitstream() {
+    let mut code = testutil::hello1();
+    code.qr_mask_xor(
+        interpret_format(get_fcode(&code, 1, (0, 0)).unwrap())
+            .unwrap()
+            .1,
+    );
+    let (mut x, mut y) = (20, 20);
+    for i in 0..280 {
+        print!("{}", u8::from(code.get_bit(x, y).unwrap()));
+        if let Some(coords) = next_data_bit(x, y, 1) {
+            (x, y) = coords;
+        } else {
+            break;
         }
     }
 }
 
-fn _compare_mask_to_is_data() {
+fn _compare_mask_to_isdata() {
     let mask = testutil::mask();
     let mut blank = testutil::blank();
     let size = version_to_size(1).unwrap() as usize;

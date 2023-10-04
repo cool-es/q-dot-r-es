@@ -25,13 +25,13 @@ pub const FULL_TEST_RESULT: &[Element] = &[
 // [a, b, c, d] = ax^3 + bx^2 + cx + d
 // (i personally don't think that's a good decision, but)
 
-pub fn polynomial_scalar_multiply(poly: &Polynomial, scalar: Element) -> Polynomial {
-    let mut output: Polynomial = Vec::new();
-    for &i in poly {
-        output.push(table_multiply(i, scalar));
-    }
-    output
-}
+// pub fn polynomial_scalar_multiply(poly: &Polynomial, scalar: Element) -> Polynomial {
+//     let mut output: Polynomial = Vec::new();
+//     for &i in poly {
+//         output.push(table_multiply(i, scalar));
+//     }
+//     output
+// }
 
 pub fn polynomial_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
     let mut output: Polynomial = Vec::new();
@@ -195,36 +195,36 @@ def gf_poly_div(dividend, divisor):
     separator = -(len(divisor)-1)
     return msg_out[:separator], msg_out[separator:] # return quotient, remainder.
 */
-pub fn _polynomial_divide(
-    dividend: &Polynomial,
-    divisor: &Polynomial,
-    // tables: &ExpLogLUTs,
-) -> (Polynomial, Polynomial) {
-    // man, idk
+// pub fn _polynomial_divide(
+//     dividend: &Polynomial,
+//     divisor: &Polynomial,
+//     // tables: &ExpLogLUTs,
+// ) -> (Polynomial, Polynomial) {
+//     // man, idk
 
-    let mut output = dividend.clone();
-    // output.reverse();
-    // let mut dnd = dividend.clone();
-    // dnd.reverse();
-    // let mut dsr = divisor.clone();
-    // dsr.reverse();
+//     let mut output = dividend.clone();
+//     // output.reverse();
+//     // let mut dnd = dividend.clone();
+//     // dnd.reverse();
+//     // let mut dsr = divisor.clone();
+//     // dsr.reverse();
 
-    for i in 0..(dividend.len() - (divisor.len() - 1)) {
-        let coef = output[i];
-        if coef != 0 {
-            for j in 1..divisor.len() {
-                if divisor[j] != 0 {
-                    output[i + j] ^= table_multiply(divisor[j], coef);
-                }
-            }
-        }
-    }
+//     for i in 0..(dividend.len() - (divisor.len() - 1)) {
+//         let coef = output[i];
+//         if coef != 0 {
+//             for j in 1..divisor.len() {
+//                 if divisor[j] != 0 {
+//                     output[i + j] ^= table_multiply(divisor[j], coef);
+//                 }
+//             }
+//         }
+//     }
 
-    // output.reverse();
-    let (quotient, remainder) = output.split_at(divisor.len() - 1);
-    // let (quotient, remainder) = output.split_at(divisor.len() - 1);
-    (quotient.to_vec(), remainder.to_vec())
-}
+//     // output.reverse();
+//     let (quotient, remainder) = output.split_at(divisor.len() - 1);
+//     // let (quotient, remainder) = output.split_at(divisor.len() - 1);
+//     (quotient.to_vec(), remainder.to_vec())
+// }
 
 // helper function
 pub fn length(poly: &Polynomial) -> usize {
