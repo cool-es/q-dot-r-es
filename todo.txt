@@ -1,4 +1,4 @@
-finish "next data bit" function 😫
 implement "data coordinate" function (qr_standard.rs > qr_data_coords)
 finish penalty routine (qr_standard.rs > penalty)
 add a mask-writing function that respects alignment patterns
+bugtest "next data bit" function for symbols of version >1

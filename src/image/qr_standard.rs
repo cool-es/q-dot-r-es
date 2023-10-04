@@ -257,9 +257,9 @@ pub fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)>
         return None;
     }
 
-    if !coord_is_data(x, y, version) {
-        return None;
-    }
+    // if !coord_is_data(x, y, version) {
+    //     return None;
+    // }
 
     // x coord is on the right-hand side of a codeword
     // if x < 6, x needs to be odd; otherwise even
@@ -271,7 +271,7 @@ pub fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)>
     let max = version_to_max_index(version);
 
     // the last bit in the pattern (assuming no version data!!)
-    if x == 0 && (max - y) == 9 {
+    if x == 0 && (max - y) == 8 {
         return None;
     }
 
@@ -280,20 +280,28 @@ pub fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)>
         return Some((8, max - 8));
     }
 
+    // the one skip over the vertical timing pattern
+    if (x, y) == (7, 9) {
+        return Some((5, 9));
+    }
+
     // abbreviations
     let is_ap = |xi, yi| coord_is_alignment_pattern(xi, yi, version);
-    let is_data = |xi, yi| coord_is_data(xi, yi, version);
 
     // is the codeword being read from bottom to top (negative y direction)?
     let up_codeword = (((max - x) / 2) % 2 == 0) ^ (x < 6);
 
     if up_codeword {
+        // about to hit top, go left
+        if y == 0 {
+            return Some((x - 1, y));
+        }
+
         // about to hit top left / top right position markers
         if y == 9 && (x < 9 || (max - x) < 8) {
-            if x == 0 {
-                return None;
-            }
-
+            // if x == 0 {
+            //     return None;
+            // }
             return Some((x - 1, y));
         }
 
@@ -306,20 +314,25 @@ pub fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)>
         if is_ap(x, y - 1) {
             // we need to jump over it
             return Some((x + 1, y - 6));
-        } else if is_ap(x + 1, y - 1) {
+        }
+        if is_ap(x + 1, y - 1) {
             // we can sidle past it
             return Some((x, y - 1));
-        } else {
-            // there was no alignment pattern. all is well
-            return Some((x + 1, y - 1));
         }
+
+        // nothing in the way. all is well
+        return Some((x + 1, y - 1));
     } else {
+        // about to hit bottom, go left
+        if y == max {
+            return Some((x - 1, y));
+        }
+
         // about to hit lower left position marker
         if y == max - 8 && (x < 9) {
-            if x == 0 {
-                return None;
-            }
-
+            // if x == 0 {
+            //     return None;
+            // }
             return Some((x - 1, y));
         }
 
@@ -328,22 +341,20 @@ pub fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)>
             return Some((x + 1, y + 2));
         }
 
-        // about to hit an alignment pattern
+        // about to hit alignment pattern
         if is_ap(x, y + 1) {
             // we need to jump over it
             return Some((x + 1, y + 6));
-        } else {
-            // no alignment pattern
-            return Some((x + 1, y - 1));
         }
-    }
 
-    todo!()
+        // nothing in the way
+        return Some((x + 1, y + 1));
+    }
 }
 
 fn coord_is_alignment_pattern(x: usize, y: usize, version: u32) -> bool {
     if out_of_bounds(x, y, version) {
-        panic!();
+        panic!("x = {}, y = {}", x, y);
     }
 
     let indices = AP_COORD_INDICES[version as usize - 1];

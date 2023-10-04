@@ -3,8 +3,95 @@ mod rdsm;
 
 use image::*;
 use rdsm::*;
+// use testutil::*;
 
-fn main() {}
+fn main() {
+    bugtest_squiggle();
+    full_squiggle_test();
+}
+
+fn full_squiggle_test() {
+    let mut coordpairs = [[0; 256]; 256];
+    let mut a = Img::new(21, 21);
+    let (mut cx, mut cy) = (20, 20);
+    a.invert();
+    for _i in 0..(8 * 28) {
+        a.set_bit(cx, cy, false);
+        if let Some(new_coords) = next_data_bit(cx, cy, 1) {
+            print!("{:?} -> {:?}", (cx, cy), new_coords);
+            (cx, cy) = new_coords;
+
+            let a = &mut coordpairs[cx][cy];
+            if *a != 0 {
+                println!(" {}!!", a);
+            } else {
+                println!();
+            }
+            *a += 1;
+        } else {
+            break;
+        }
+    }
+    debug_print(&a);
+}
+
+fn bugtest_squiggle() {
+    let mut coordpairs = [["⬜️"; 21]; 21];
+    let mask = testutil::mask();
+    debug_print(&mask);
+    for x1 in 0..21 {
+        for y1 in 0..21 {
+            if let Some(bit) = mask.get_bit(x1, y1) {
+                if bit {
+                    coordpairs[x1][y1] = {
+                        if let Some((x2, y2)) = next_data_bit(x1, y1, 1) {
+                            let xdiff = x2 as i32 - x1 as i32;
+                            let ydiff = y2 as i32 - y1 as i32;
+
+                            if xdiff.abs() > 1 || ydiff.abs() > 1 {
+                                "🦅"
+                            } else if xdiff.abs() == ydiff.abs() {
+                                // diagonal, or none
+                                match (xdiff.signum(), ydiff.signum()) {
+                                    (1, 1) => "↘️ ",
+                                    (1, -1) => "↗️ ",
+                                    (-1, 1) => "↙️ ",
+                                    (-1, -1) => "↖️ ",
+                                    _ => "💥",
+                                }
+                            } else if xdiff.abs() > ydiff.abs() {
+                                // horizontal-ish
+                                if xdiff.signum() == 1 {
+                                    "➡️ "
+                                } else {
+                                    "⬅️ "
+                                }
+                            } else {
+                                // vertical-ish
+                                if ydiff.signum() == -1 {
+                                    "⬆️ "
+                                } else {
+                                    "⬇️ "
+                                }
+                            }
+                        } else {
+                            "💥"
+                        }
+                    };
+                }
+            } else {
+                println!("note... {x1} and {y1} are no good");
+            }
+        }
+    }
+    for y in 0..21 {
+        let mut a = "".to_string();
+        for x in 0..21 {
+            a.push_str(coordpairs[x][y]);
+        }
+        println!("{}", a);
+    }
+}
 
 fn test_polynomial_mult() {
     // it works!!
@@ -438,4 +525,18 @@ fn test_reed_solomon(test: u8) {
     }
 
     if test & 0b100000 != 0 {}
+}
+
+mod testutil {
+    use super::*;
+
+    pub fn mask() -> ImgRowAligned {
+        xbm_filepath_into_bitmap("hellomask_smol.xbm")
+    }
+    pub fn hello1() -> ImgRowAligned {
+        xbm_filepath_into_bitmap("hellocode_smol.xbm")
+    }
+    pub fn hello2() -> ImgRowAligned {
+        xbm_filepath_into_bitmap("hellocode2_smol.xbm")
+    }
 }
