@@ -27,6 +27,7 @@ fn out_of_bounds(x: usize, y: usize, version: u32) -> bool {
         true
     } else {
         // x.max(y) + 1 > 21 + 4 * (version as usize - 1)
+        // note that this is a comparison that returns bool
         x.max(y) > 16 + 4 * version as usize
     }
 }
@@ -371,10 +372,72 @@ fn coord_is_alignment_pattern(x: usize, y: usize, version: u32) -> bool {
     false
 }
 
+// fn coord_is_pa_timing_format_pattern(x: usize, y: usize, version: u32) -> bool {
+//     if x == 6 || y == 6 {
+//         // timing pattern
+//         true
+//     } else if x < 8 && y < 8 {
+//         // top left position alignment square
+//         true
+//     } else {
+//         let max = version_to_max_index(version);
+//         if (x <= 7 && max - y <= 7) || (y <= 7 && max - x <= 7) {
+//             // other two alignment squares
+//             true
+//         } else if (x == 8 && (y <= 8 || max - y <= 6)) || (y == 8 && (x <= 8 || max - x <= 7)) {
+//             // format pattern
+//             true
+//         } else if (x, y) == (8, max - 7) {
+//             // singular constant bit that's always 1
+//             true
+//         } else {
+//             false
+//         }
+//     }
+// }
+
 pub fn coord_is_data(x: usize, y: usize, version: u32) -> bool {
-    if out_of_bounds(x, y, version) || coord_is_alignment_pattern(x, y, version) {
-        false
+    // if out_of_bounds(x, y, version)
+    //     || coord_is_alignment_pattern(x, y, version)
+    //     || coord_is_pa_timing_format_pattern(x, y, version)
+    // {
+    //     false
+    // } else {
+    //     true
+    // }
+    coord_status(x, y, version) == 0
+}
+
+// from 0 to 5:
+// data, position, timing, format, alignment, that one bit
+pub fn coord_status(x: usize, y: usize, version: u32) -> u8 {
+    if out_of_bounds(x, y, version) {
+        return u8::MAX;
+    }
+
+    if coord_is_alignment_pattern(x, y, version) {
+        // alignment pattern
+        4
+    } else if x == 6 || y == 6 {
+        // timing pattern
+        2
+    } else if x < 8 && y < 8 {
+        // top left position square
+        1
     } else {
-        todo!()
+        let max = version_to_max_index(version);
+        if (x <= 7 && max - y <= 7) || (y <= 7 && max - x <= 7) {
+            // other two position squares
+            1
+        } else if (x == 8 && (y <= 8 || max - y <= 6)) || (y == 8 && (x <= 8 || max - x <= 7)) {
+            // format pattern
+            3
+        } else if (x, y) == (8, max - 7) {
+            // singular constant bit that's always 1
+            5
+        } else {
+            // data
+            0
+        }
     }
 }

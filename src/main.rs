@@ -6,8 +6,24 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    bugtest_squiggle();
-    full_squiggle_test();
+    // bugtest_squiggle();
+    // full_squiggle_test();
+    {
+        let mask = testutil::mask();
+        let mut blank = testutil::blank();
+        let size = version_to_size(1).unwrap() as usize;
+        for x in 0..size {
+            for y in 0..size {
+                if (mask.get_bit(x, y).unwrap() != coord_is_data(x, y, 1)) {
+                    // println!("error: x {}, y {}", x, y);
+                    blank.set_bit(x, y, true);
+                }
+            }
+        }
+        debug_print(&mask);
+        println!();
+        debug_print(&blank);
+    }
 }
 
 fn full_squiggle_test() {
@@ -538,5 +554,8 @@ mod testutil {
     }
     pub fn hello2() -> ImgRowAligned {
         xbm_filepath_into_bitmap("hellocode2_smol.xbm")
+    }
+    pub fn blank() -> ImgRowAligned {
+        ImgRowAligned::new(21, 21)
     }
 }
