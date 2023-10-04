@@ -1,3 +1,4 @@
+write function that stitches bitstream into codewords
 finish penalty routine (qr_standard.rs > penalty)
 add a mask-writing function that respects alignment patterns
-bugtest "next data bit" function for symbols of version >1
+add alignment/position/timing pattern drawing routine

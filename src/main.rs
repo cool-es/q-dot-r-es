@@ -6,9 +6,23 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    for i in 1..=5 {
-        _coord_status_test(i);
-        println!();
+    {
+        let mut code = testutil::hello1();
+        code.qr_mask_xor(
+            interpret_format(get_fcode(&code, 1, (0, 0)).unwrap())
+                .unwrap()
+                .1,
+        );
+
+        let (mut x, mut y) = (20, 20);
+        for i in 0..280 {
+            print!("{}", u8::from(code.get_bit(x, y).unwrap()));
+            if let Some(coords) = next_data_bit(x, y, 1) {
+                (x, y) = coords;
+            } else {
+                break;
+            }
+        }
     }
 }
 
@@ -114,7 +128,46 @@ fn _bugtest_squiggle(version: u32) {
     }
 }
 
-fn _coord_status_test(version: u32) {
+fn _highlight_codewords(version: u32) {
+    let size = version_to_size(version).unwrap() as usize;
+    let mut coordpairs: Vec<Vec<&str>> = Vec::new();
+    coordpairs.resize(size, {
+        let mut gunk = Vec::new();
+        gunk.resize(size, "⬜️");
+        gunk
+    });
+    // let mask = testutil::mask();
+    // debug_print(&mask);
+    let (mut x, mut y) = (size - 1, size - 1);
+    let mut colors = (["🟥", "🟧", "🟨", "🟩", "🟦", "🟪"]
+        .iter()
+        .cycle()
+        .peekable());
+
+    for (count, _i) in (0..size.pow(2)).enumerate() {
+        if count % 8 == 0 {
+            colors.next();
+        }
+
+        coordpairs[x][y] = colors.peek().unwrap();
+
+        if let Some((x2, y2)) = next_data_bit(x, y, version) {
+            (x, y) = (x2, y2);
+        } else {
+            break;
+        }
+    }
+
+    for y in 0..size {
+        let mut a = "".to_string();
+        for x in 0..size {
+            a.push_str(coordpairs[x][y]);
+        }
+        println!("{}", a);
+    }
+}
+
+fn _print_symbol_diagram(version: u32) {
     let size = version_to_size(version).unwrap() as usize;
     let mut coordpairs: Vec<Vec<&str>> = Vec::new();
     coordpairs.resize(size, {
