@@ -5,28 +5,26 @@ use image::*;
 use rdsm::*;
 // use testutil::*;
 
-fn main() {
-    // bugtest_squiggle();
-    // full_squiggle_test();
-    {
-        let mask = testutil::mask();
-        let mut blank = testutil::blank();
-        let size = version_to_size(1).unwrap() as usize;
-        for x in 0..size {
-            for y in 0..size {
-                if (mask.get_bit(x, y).unwrap() != coord_is_data(x, y, 1)) {
-                    // println!("error: x {}, y {}", x, y);
-                    blank.set_bit(x, y, true);
-                }
+fn main() {}
+
+fn _compare_mask_to_is_data() {
+    let mask = testutil::mask();
+    let mut blank = testutil::blank();
+    let size = version_to_size(1).unwrap() as usize;
+    for x in 0..size {
+        for y in 0..size {
+            if mask.get_bit(x, y).unwrap() != coord_is_data(x, y, 1) {
+                // println!("error: x {}, y {}", x, y);
+                blank.set_bit(x, y, true);
             }
         }
-        debug_print(&mask);
-        println!();
-        debug_print(&blank);
     }
+    debug_print(&mask);
+    println!();
+    debug_print(&blank);
 }
 
-fn full_squiggle_test() {
+fn _full_squiggle_test() {
     let mut coordpairs = [[0; 256]; 256];
     let mut a = Img::new(21, 21);
     let (mut cx, mut cy) = (20, 20);
@@ -51,7 +49,7 @@ fn full_squiggle_test() {
     debug_print(&a);
 }
 
-fn bugtest_squiggle() {
+fn _bugtest_squiggle() {
     let mut coordpairs = [["⬜️"; 21]; 21];
     let mask = testutil::mask();
     debug_print(&mask);
@@ -109,7 +107,7 @@ fn bugtest_squiggle() {
     }
 }
 
-fn test_polynomial_mult() {
+fn _test_polynomial_mult() {
     // it works!!
     let cafebabe: Polynomial = Vec::from([0xca, 0xfe, 0xba, 0xbe]);
     let deadbeef: Polynomial = Vec::from([0xde, 0xad, 0xbe, 0xef]);
@@ -121,13 +119,13 @@ fn test_polynomial_mult() {
     println!("{:?}", es_polynomial_multiply(&deadbeef, &cafebabe));
 }
 
-fn doubleprint(input: &Polynomial) {
+fn _doubleprint(input: &Polynomial) {
     charprint(input);
     prettyprint(input);
     println!();
 }
 
-fn test_polynomial_div() {
+fn _test_polynomial_div() {
     let cafebabe: Polynomial = Vec::from([0xca, 0xfe, 0xba, 0xbe]);
     // let deadbeef: Polynomial = Vec::from([0xde, 0xad, 0xbe, 0xef]);
     let big_1: Polynomial = (1..10).map(|x| (x * 541) % 256).collect();
@@ -139,30 +137,30 @@ fn test_polynomial_div() {
     let sum_rem = polynomial_remainder(&sum, &cafebabe);
 
     println!("divisor:");
-    doubleprint(&cafebabe);
+    _doubleprint(&cafebabe);
     // prettyprint(&deadbeef);
 
     println!("\nbig polynomial 1:");
-    doubleprint(&big_1);
+    _doubleprint(&big_1);
     println!("big polynomial 2:");
-    doubleprint(&big_2);
+    _doubleprint(&big_2);
     println!("sum of bigs:");
-    doubleprint(&sum);
+    _doubleprint(&sum);
 
     println!("\nremainder of big 1:");
-    doubleprint(&rem_1);
+    _doubleprint(&rem_1);
     println!("remainder of big 2:");
-    doubleprint(&rem_2);
+    _doubleprint(&rem_2);
 
     println!("\nremainder of sums:");
-    doubleprint(&sum_rem);
+    _doubleprint(&sum_rem);
     println!("sum of remainders:");
-    doubleprint(&rem_sum);
+    _doubleprint(&rem_sum);
 
     assert_eq!(sum_rem, rem_sum);
 }
 
-fn test_rdsm_generator() {
+fn _test_rdsm_generator() {
     for i in [7, 10, 13, 15, 20, 22, 24, 68] {
         let a = make_rdsm_generator_polynomial(i);
         print!("{} -- ", i);
@@ -171,23 +169,23 @@ fn test_rdsm_generator() {
     }
 }
 
-fn remasking_test() {
+fn _remasking_test() {
     let code = xbm_filepath_into_bitmap("hellocode_smol.xbm");
 
-    debug_print_qr(&code);
+    _debug_print_qr(&code);
     println!();
-    let i = 0;
+    // let i = 0;
     for i in 0..=7 {
-        if let Some(code2) = qr_remask_v1_symbol(&code, i) {
+        if let Some(code2) = _qr_remask_v1_symbol(&code, i) {
             println!("mask {}", i);
-            debug_print_qr(&code2);
+            _debug_print_qr(&code2);
         }
         println!("\n");
     }
 }
 
 // this function works perfectly!! it's great
-fn qr_remask_v1_symbol(input: &ImgRowAligned, mask_pattern: u8) -> Option<ImgRowAligned> {
+fn _qr_remask_v1_symbol(input: &ImgRowAligned, mask_pattern: u8) -> Option<ImgRowAligned> {
     let old_fcode = get_fcode(input, 1, (0, 0))?;
     let (correction_level, old_mask_pattern) = interpret_format(old_fcode)?;
     if mask_pattern == old_mask_pattern {
@@ -207,7 +205,7 @@ fn qr_remask_v1_symbol(input: &ImgRowAligned, mask_pattern: u8) -> Option<ImgRow
     Some(image)
 }
 
-fn print_qr_mask_patterns() {
+fn _print_qr_mask_patterns() {
     let x = ImgRowAligned::new(25, 25);
     // let x = image_type::continuous::Img::new(25,25);
     for i in 0..8 {
@@ -233,7 +231,7 @@ fn print_qr_mask_patterns() {
 //     debug_print(&qr);
 // }
 
-fn test_format_parsing(path: &str) {
+fn _test_format_parsing(path: &str) {
     let xbm_string = std::fs::read_to_string(path).unwrap();
     let xbm_bitmap = ImgRowAligned::from_xbm(&xbm_string).unwrap();
     let fcode = get_fcode(&xbm_bitmap, 1, (0, 0)).unwrap();
@@ -290,7 +288,7 @@ fn debug_print<T: Bitmap>(input: &T) {
     }
 }
 
-fn debug_print_qr<T: Bitmap>(input: &T) {
+fn _debug_print_qr<T: Bitmap>(input: &T) {
     let throwaway_hack = || {
         for _i in 0..2 {
             for _y in 0..input.dims().1 + 4 {
@@ -324,7 +322,7 @@ fn debug_print_row<T: Bitmap>(input: &T, y: usize, emoji: bool) -> Option<String
     Some(output)
 }
 
-fn test_xbm_output() {
+fn _test_xbm_output() {
     println!(
         "{}",
         ImgRowAligned::as_xbm(
@@ -340,7 +338,7 @@ fn test_xbm_output() {
     );
 }
 
-fn test_xbm(path: &str) {
+fn _test_xbm(path: &str) {
     let input = std::fs::read_to_string(path).unwrap();
     let x = ImgRowAligned::from_xbm(&input).unwrap();
     let mut vector: Vec<ImgRowAligned> = Vec::new();
@@ -363,7 +361,7 @@ fn xbm_filepath_into_bitmap(path: &str) -> ImgRowAligned {
     ImgRowAligned::from_xbm(&input).unwrap()
 }
 // tests qr format check, assuming debug printing is enabled
-fn test_checkfmt() {
+fn _test_checkfmt() {
     for i in 10..20 {
         qr_fcode_remainder((2u32.pow(15) - 20) + i);
         println!();
@@ -372,7 +370,7 @@ fn test_checkfmt() {
 
 // just the example taken from the tutorial
 // returns 0001010001111010 and 0000000011000011 (correct)
-pub fn test_gf() {
+pub fn _test_gf() {
     /*
         >>> a = 0b10001001
         >>> b = 0b00101010
@@ -443,7 +441,7 @@ pub fn test_gf() {
     // );
 }
 
-fn test_reed_solomon(test: u8) {
+fn _test_reed_solomon(test: u8) {
     // time to generate a qr code (clueless)
     let mut lookup_tables = BLANK_EXP_LOG_LUTS;
     generate_exp_log_tables(&mut lookup_tables);
@@ -473,8 +471,8 @@ fn test_reed_solomon(test: u8) {
         for i in 1..255 {
             print!("{:3}:", i);
             for j in 1..255 {
-                let mul1 = galois_multiply(i as Element, j as Element, QR_CODEWORD_GEN);
-                let mul2 = table_multiply(i as Element, j as Element);
+                // let mul1 = galois_multiply(i as Element, j as Element, QR_CODEWORD_GEN);
+                // let mul2 = table_multiply(i as Element, j as Element);
 
                 // let div2 = table_divide(i as Element, j as Element, &lookup_tables);
 

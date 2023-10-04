@@ -258,9 +258,9 @@ pub fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)>
         return None;
     }
 
-    // if !coord_is_data(x, y, version) {
-    //     return None;
-    // }
+    if !coord_is_data(x, y, version) {
+        return None;
+    }
 
     // x coord is on the right-hand side of a codeword
     // if x < 6, x needs to be odd; otherwise even
@@ -372,39 +372,7 @@ fn coord_is_alignment_pattern(x: usize, y: usize, version: u32) -> bool {
     false
 }
 
-// fn coord_is_pa_timing_format_pattern(x: usize, y: usize, version: u32) -> bool {
-//     if x == 6 || y == 6 {
-//         // timing pattern
-//         true
-//     } else if x < 8 && y < 8 {
-//         // top left position alignment square
-//         true
-//     } else {
-//         let max = version_to_max_index(version);
-//         if (x <= 7 && max - y <= 7) || (y <= 7 && max - x <= 7) {
-//             // other two alignment squares
-//             true
-//         } else if (x == 8 && (y <= 8 || max - y <= 6)) || (y == 8 && (x <= 8 || max - x <= 7)) {
-//             // format pattern
-//             true
-//         } else if (x, y) == (8, max - 7) {
-//             // singular constant bit that's always 1
-//             true
-//         } else {
-//             false
-//         }
-//     }
-// }
-
 pub fn coord_is_data(x: usize, y: usize, version: u32) -> bool {
-    // if out_of_bounds(x, y, version)
-    //     || coord_is_alignment_pattern(x, y, version)
-    //     || coord_is_pa_timing_format_pattern(x, y, version)
-    // {
-    //     false
-    // } else {
-    //     true
-    // }
     coord_status(x, y, version) == 0
 }
 
