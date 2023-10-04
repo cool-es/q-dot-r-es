@@ -238,20 +238,20 @@ pub fn set_fcode<T: super::Bitmap>(
 }
 
 // return the coordinates of a given byte/codeword in a qr symbol (quite inefficiently)
-fn qr_data_coords(codeword: u32, bit: u8, version: u32) -> Option<(usize, usize)> {
-    let size = version_to_size(version)?;
-    let bitstream_index = codeword * 8 + bit as u32;
+// fn qr_data_coords(codeword: u32, bit: u8, version: u32) -> Option<(usize, usize)> {
+//     let size = version_to_size(version)?;
+//     let bitstream_index = codeword * 8 + bit as u32;
 
-    // only v1 for now
-    if version != 1 {
-        return None;
-    }
+//     // only v1 for now
+//     if version != 1 {
+//         return None;
+//     }
 
-    todo!()
-}
+//     todo!()
+// }
 
 // returns the next bit of data after this one
-fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)> {
+pub fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)> {
     // larger versions contain version information blocks which i haven't implemented yet
     if version > 6 {
         return None;
@@ -261,25 +261,34 @@ fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)> {
         return None;
     }
 
-    let is_ap = |xi, yi| coord_is_alignment_pattern(xi, yi, version);
-    // let is_ap2 = |xi: i16, yi: i16| {
-    //     coord_is_alignment_pattern((x as i16 + xi) as usize, (y as i16 + yi) as usize, version)
-    // };
-    let is_data = |xi, yi| coord_is_data(xi, yi, version);
-
-    let max = version_to_max_index(version);
     // x coord is on the right-hand side of a codeword
-    let x_right = (x % 2 == 0) ^ (x < 6);
-    // codeword is read from bottom to top (negative y direction)
-    let up_codeword = (((max - x) / 2) % 2 == 0) ^ (x < 6);
-
-    if x_right {
+    // if x < 6, x needs to be odd; otherwise even
+    if (x % 2 == 0) ^ (x < 6) {
         // ←
         return Some((x - 1, y));
     }
 
+    let max = version_to_max_index(version);
+
+    // the last bit in the pattern (assuming no version data!!)
+    if x == 0 && (max - y) == 9 {
+        return None;
+    }
+
+    // the only discontinuous part of the pattern - lower left corner
+    if (x, y) == (9, max) {
+        return Some((8, max - 8));
+    }
+
+    // abbreviations
+    let is_ap = |xi, yi| coord_is_alignment_pattern(xi, yi, version);
+    let is_data = |xi, yi| coord_is_data(xi, yi, version);
+
+    // is the codeword being read from bottom to top (negative y direction)?
+    let up_codeword = (((max - x) / 2) % 2 == 0) ^ (x < 6);
+
     if up_codeword {
-        // about to hit position markers
+        // about to hit top left / top right position markers
         if y == 9 && (x < 9 || (max - x) < 8) {
             if x == 0 {
                 return None;
@@ -295,16 +304,38 @@ fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)> {
 
         // about to hit an alignment pattern
         if is_ap(x, y - 1) {
+            // we need to jump over it
             return Some((x + 1, y - 6));
         } else if is_ap(x + 1, y - 1) {
-            // ↑
+            // we can sidle past it
             return Some((x, y - 1));
         } else {
-            // ↗
+            // there was no alignment pattern. all is well
             return Some((x + 1, y - 1));
         }
-
     } else {
+        // about to hit lower left position marker
+        if y == max - 8 && (x < 9) {
+            if x == 0 {
+                return None;
+            }
+
+            return Some((x - 1, y));
+        }
+
+        // about to hit timing pattern
+        if y == 5 {
+            return Some((x + 1, y + 2));
+        }
+
+        // about to hit an alignment pattern
+        if is_ap(x, y + 1) {
+            // we need to jump over it
+            return Some((x + 1, y + 6));
+        } else {
+            // no alignment pattern
+            return Some((x + 1, y - 1));
+        }
     }
 
     todo!()
