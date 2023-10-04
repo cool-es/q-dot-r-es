@@ -5,7 +5,12 @@ use image::*;
 use rdsm::*;
 // use testutil::*;
 
-fn main() {}
+fn main() {
+    for i in 1..=5 {
+        _coord_status_test(i);
+        println!();
+    }
+}
 
 fn _compare_mask_to_is_data() {
     let mask = testutil::mask();
@@ -49,58 +54,89 @@ fn _full_squiggle_test() {
     debug_print(&a);
 }
 
-fn _bugtest_squiggle() {
-    let mut coordpairs = [["⬜️"; 21]; 21];
-    let mask = testutil::mask();
-    debug_print(&mask);
-    for x1 in 0..21 {
-        for y1 in 0..21 {
-            if let Some(bit) = mask.get_bit(x1, y1) {
-                if bit {
-                    coordpairs[x1][y1] = {
-                        if let Some((x2, y2)) = next_data_bit(x1, y1, 1) {
-                            let xdiff = x2 as i32 - x1 as i32;
-                            let ydiff = y2 as i32 - y1 as i32;
+fn _bugtest_squiggle(version: u32) {
+    let size = version_to_size(version).unwrap() as usize;
+    let mut coordpairs: Vec<Vec<&str>> = Vec::new();
+    coordpairs.resize(size, {
+        let mut gunk = Vec::new();
+        gunk.resize(size, "⬜️");
+        gunk
+    });
+    // let mask = testutil::mask();
+    // debug_print(&mask);
+    for x1 in 0..size {
+        for y1 in 0..size {
+            if coord_is_data(x1, y1, version) {
+                coordpairs[x1][y1] = {
+                    if let Some((x2, y2)) = next_data_bit(x1, y1, version) {
+                        let xdiff = x2 as i32 - x1 as i32;
+                        let ydiff = y2 as i32 - y1 as i32;
 
-                            if xdiff.abs() > 1 || ydiff.abs() > 1 {
-                                "🦅"
-                            } else if xdiff.abs() == ydiff.abs() {
-                                // diagonal, or none
-                                match (xdiff.signum(), ydiff.signum()) {
-                                    (1, 1) => "↘️ ",
-                                    (1, -1) => "↗️ ",
-                                    (-1, 1) => "↙️ ",
-                                    (-1, -1) => "↖️ ",
-                                    _ => "💥",
-                                }
-                            } else if xdiff.abs() > ydiff.abs() {
-                                // horizontal-ish
-                                if xdiff.signum() == 1 {
-                                    "➡️ "
-                                } else {
-                                    "⬅️ "
-                                }
+                        if xdiff.abs() > 1 || ydiff.abs() > 1 {
+                            "🦅"
+                        } else if xdiff.abs() == ydiff.abs() {
+                            // diagonal, or none
+                            match (xdiff.signum(), ydiff.signum()) {
+                                (1, 1) => "↘️ ",
+                                (1, -1) => "↗️ ",
+                                (-1, 1) => "↙️ ",
+                                (-1, -1) => "↖️ ",
+                                _ => "💥",
+                            }
+                        } else if xdiff.abs() > ydiff.abs() {
+                            // horizontal-ish
+                            if xdiff.signum() == 1 {
+                                "➡️ "
                             } else {
-                                // vertical-ish
-                                if ydiff.signum() == -1 {
-                                    "⬆️ "
-                                } else {
-                                    "⬇️ "
-                                }
+                                "⬅️ "
                             }
                         } else {
-                            "💥"
+                            // vertical-ish
+                            if ydiff.signum() == -1 {
+                                "⬆️ "
+                            } else {
+                                "⬇️ "
+                            }
                         }
-                    };
-                }
-            } else {
-                println!("note... {x1} and {y1} are no good");
+                    } else {
+                        "💥"
+                    }
+                };
             }
         }
     }
-    for y in 0..21 {
+    for y in 0..size {
         let mut a = "".to_string();
-        for x in 0..21 {
+        for x in 0..size {
+            a.push_str(coordpairs[x][y]);
+        }
+        println!("{}", a);
+    }
+}
+
+fn _coord_status_test(version: u32) {
+    let size = version_to_size(version).unwrap() as usize;
+    let mut coordpairs: Vec<Vec<&str>> = Vec::new();
+    coordpairs.resize(size, {
+        let mut gunk = Vec::new();
+        gunk.resize(size, "");
+        gunk
+    });
+    for x in 0..size {
+        for y in 0..size {
+            coordpairs[x][y] = match coord_status(x, y, version) {
+                0 => "🟩",
+                1 => "🟨",
+                2 => "🟥",
+                3 => "🟦",
+                4 => "⬜️",
+                _ => "⬛️",
+            };
+        }
+    }
+    for y in 0..size {
+        let mut a = "".to_string();
+        for x in 0..size {
             a.push_str(coordpairs[x][y]);
         }
         println!("{}", a);

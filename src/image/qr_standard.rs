@@ -359,10 +359,14 @@ fn coord_is_alignment_pattern(x: usize, y: usize, version: u32) -> bool {
     }
 
     let indices = AP_COORD_INDICES[version as usize - 1];
-    for &i in indices {
+    for (k, &i) in indices.iter().enumerate() {
         if x.abs_diff(i) < 3 {
-            for &j in indices {
+            for (l, &j) in indices.iter().enumerate() {
                 if y.abs_diff(j) < 3 {
+                    // making sure not to include the non-existent alignment patterns
+                    if k.max(l) == 0 || (k.min(l) == 0 && k.max(l) == indices.len() - 1) {
+                        break;
+                    }
                     return true;
                 }
             }
@@ -386,9 +390,6 @@ pub fn coord_status(x: usize, y: usize, version: u32) -> u8 {
     if coord_is_alignment_pattern(x, y, version) {
         // alignment pattern
         4
-    } else if x == 6 || y == 6 {
-        // timing pattern
-        2
     } else if x < 8 && y < 8 {
         // top left position square
         1
@@ -397,6 +398,9 @@ pub fn coord_status(x: usize, y: usize, version: u32) -> u8 {
         if (x <= 7 && max - y <= 7) || (y <= 7 && max - x <= 7) {
             // other two position squares
             1
+        } else if x == 6 || y == 6 {
+            // timing pattern
+            2
         } else if (x == 8 && (y <= 8 || max - y <= 6)) || (y == 8 && (x <= 8 || max - x <= 7)) {
             // format pattern
             3
