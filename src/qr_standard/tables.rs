@@ -98,7 +98,7 @@ mod _old {
     // alignment pattern coord 6, for symbols of version ≥35
     pub const AP_COORDS_6: &[usize] = &[150, 154, 158, 162, 166, 170];
 
-    pub fn _version_coordinates(version: u32) -> Vec<usize> {
+    pub fn version_coordinates(version: u32) -> Vec<usize> {
         if !((1..=40).contains(&version)) {
             panic!()
         }
@@ -126,10 +126,10 @@ mod _old {
         output
     }
 
-    pub fn _print_table() {
+    pub fn print_table() {
         print!("const DATA: [&[usize];40] = [");
         for i in 1..=40 {
-            let a = _version_coordinates(i);
+            let a = version_coordinates(i);
             print!("&{:?},", a);
         }
         println!("];");

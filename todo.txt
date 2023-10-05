@@ -1,4 +1,4 @@
 write function that stitches bitstream into codewords
 finish penalty routine (qr_standard.rs > penalty)
-implement support for format blocks in "next data bit" function
+implement support for version format blocks in "next data bit" function
 replace the "polynomial" type with the "codewords" type (convert functions, etc)

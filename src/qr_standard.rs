@@ -432,7 +432,7 @@ pub fn coord_is_data(x: usize, y: usize, version: u32) -> bool {
 }
 
 // from 0 to 5:
-// data, position, timing, format, alignment, that one bit
+// data, position, timing, format, alignment, version, that one bit
 pub fn coord_status(x: usize, y: usize, version: u32) -> u8 {
     if out_of_bounds(x, y, version) {
         return u8::MAX;
@@ -457,6 +457,9 @@ pub fn coord_status(x: usize, y: usize, version: u32) -> u8 {
             3
         } else if (x, y) == (8, max - 7) {
             // singular constant bit that's always 1
+            6
+        } else if version >= 7 && x.min(y) <= 5 && x.max(y) >= max - 10 {
+            // version pattern
             5
         } else {
             // data

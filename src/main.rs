@@ -2,20 +2,21 @@
 #![allow(dead_code)]
 
 mod image;
-mod rdsm;
 mod qr_standard;
+mod rdsm;
 
 use image::*;
-use rdsm::*;
 use qr_standard::*;
+use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    for i in 1..=10 {
-        println!("\nversion {i}");
-        let a = ImgRowAligned::new_blank_qr(i);
-        _debug_print(&a);
-    }
+    _print_symbol_diagram(9);
+    // for i in 1..=10 {
+    //     println!("\nversion {i}");
+    //     let a = ImgRowAligned::new_blank_qr(i);
+    //     _debug_print(&a);
+    // }
 }
 
 fn read_bitstream() {
@@ -469,6 +470,7 @@ fn _test_checkfmt() {
 
 // just the example taken from the tutorial
 // returns 0001010001111010 and 0000000011000011 (correct)
+#[test]
 pub fn _test_gf() {
     /*
         >>> a = 0b10001001

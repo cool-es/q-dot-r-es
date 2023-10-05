@@ -39,9 +39,9 @@ enum BitSequence {
 #[derive(Clone)]
 pub struct DataStream {
     data: Vec<BitSequence>,
-    qr_version: u8,
-    error_correction: u8,
-    valid: Option<bool>,
+    // qr_version: u8,
+    // error_correction: u8,
+    // valid: Option<bool>,
 }
 
 #[derive(Clone)]
@@ -52,6 +52,9 @@ pub struct BitData {
 }
 
 impl DataStream {
+    pub fn new() -> Self {
+        DataStream { data: Vec::new() }
+    }
     pub fn is_valid(&self) -> bool {
         stream_is_valid(self)
     }
@@ -75,5 +78,13 @@ fn stream_is_valid(input: &DataStream) -> bool {
 }
 
 fn string_to_stream(input: &String) -> DataStream {
+    todo!()
+}
+
+fn stream_to_bits(input: &DataStream, version: u32, error_words: u32) -> BitData {
+    todo!()
+}
+
+fn bits_to_stream(input: &BitData) -> DataStream {
     todo!()
 }

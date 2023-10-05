@@ -53,4 +53,4 @@ version : n where n^2-3 is no. of alignment patterns:
 
 timing patterns (dotted lines) are at x = 6, y = 6
 
-version info data blocks: TBD!!
+version info data blocks: pgs. 60 (graphical layout of bits), 84 (example of encryption)
