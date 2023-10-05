@@ -2,8 +2,8 @@ use super::*;
 
 mod tables;
 pub use tables::*;
-
-use crate::image::Bitmap;
+mod bitstream;
+pub use bitstream::*;
 
 fn bad_version(version: u32) -> bool {
     !(1..=40).contains(&version)
@@ -129,6 +129,7 @@ fn qr_mask_xor<T: image::Bitmap>(input: &mut T, pattern: u8) {
     }
 }
 
+#[allow(unused_variables, unreachable_code)]
 fn penalty<T: image::Bitmap>(input: &T) -> u32 {
     // returns the qr code penalty for a bitmap, to choose xor patterns
     // 4 tests, weighted 3, 3, 40, 10

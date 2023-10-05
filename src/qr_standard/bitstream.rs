@@ -1,6 +1,8 @@
-use super::*;
+// work in progress, suppressing warnings
+#![allow(unused_variables)]
 
-enum DataChunk {
+#[derive(Clone)]
+enum BitSequence {
     // not implementing ECI at this time
 
     // mode indicator
@@ -27,20 +29,16 @@ enum DataChunk {
     // 1 character / 13 bits
     Kanji(u16),
 
+    // the bit sequence 0000
     Terminator,
-}
 
-// this is also a possible solution but it's doing too much at once
-/* enum DataChunk2 {
-    Byte { count: u32, data: Vec<u8> },
-    Numeric { count: u32, data: Vec<u8> },
-    AlphaNum { count: u32, data: Vec<u8> },
-    Terminator,
-} */
+    // pattern of bits that does not adhere to the standard
+    Undefined,
+}
 
 #[derive(Clone)]
 pub struct DataStream {
-    data: Vec<DataChunk>,
+    data: Vec<BitSequence>,
     qr_version: u8,
     error_correction: u8,
     valid: Option<bool>,
@@ -55,10 +53,27 @@ pub struct BitData {
 
 impl DataStream {
     pub fn is_valid(&self) -> bool {
-        self.valid == Some(true)
+        stream_is_valid(self)
     }
-    pub fn validate(&mut self) {
-        // set a value for self.valid
-        todo!();
+    pub fn as_codewords(&self) -> BitData {
+        todo!()
     }
+}
+
+impl BitData {
+    pub fn codewords(&self) -> &Vec<u8> {
+        &self.codewords
+    }
+
+    pub fn as_datastream(&self) -> DataStream {
+        todo!()
+    }
+}
+
+fn stream_is_valid(input: &DataStream) -> bool {
+    todo!()
+}
+
+fn string_to_stream(input: &String) -> DataStream {
+    todo!()
 }

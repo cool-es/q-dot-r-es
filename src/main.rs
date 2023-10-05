@@ -1,3 +1,6 @@
+// work in progress, suppressing warnings
+#![allow(dead_code)]
+
 mod image;
 mod rdsm;
 mod qr_standard;
@@ -23,7 +26,7 @@ fn read_bitstream() {
             .1,
     );
     let (mut x, mut y) = (20, 20);
-    for i in 0..280 {
+    for _i in 0..280 {
         print!("{}", u8::from(code.get_bit(x, y).unwrap()));
         if let Some(coords) = next_data_bit(x, y, 1) {
             (x, y) = coords;
@@ -146,10 +149,10 @@ fn _highlight_codewords(version: u32) {
     // let mask = testutil::mask();
     // debug_print(&mask);
     let (mut x, mut y) = (size - 1, size - 1);
-    let mut colors = (["🟥", "🟧", "🟨", "🟩", "🟦", "🟪"]
+    let mut colors = ["🟥", "🟧", "🟨", "🟩", "🟦", "🟪"]
         .iter()
         .cycle()
-        .peekable());
+        .peekable();
 
     for (count, _i) in (0..size.pow(2)).enumerate() {
         if count % 8 == 0 {

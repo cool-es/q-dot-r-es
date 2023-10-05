@@ -290,7 +290,7 @@ pub fn encode_message(message: &Polynomial, ec_symbols: u32) -> Polynomial {
     message_padded.extend(std::iter::repeat(0).take(ec_symbols as usize));
 
     let remainder = polynomial_remainder(&message_padded, &generator_polynomial);
-    let mut output = polynomial_add(&message_padded, &remainder);
+    let output = polynomial_add(&message_padded, &remainder);
 
     output
 }
