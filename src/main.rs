@@ -1,8 +1,10 @@
 mod image;
 mod rdsm;
+mod qr_standard;
 
 use image::*;
 use rdsm::*;
+use qr_standard::*;
 // use testutil::*;
 
 fn main() {

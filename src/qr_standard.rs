@@ -1,3 +1,5 @@
+use super::*;
+
 mod tables;
 pub use tables::*;
 
@@ -43,7 +45,7 @@ fn out_of_bounds(x: usize, y: usize, version: u32) -> bool {
 }
 
 // Img methods pertaining to the qr standard specifically
-impl super::continuous::Img {
+impl image::Img {
     pub fn qr_mask_xor(&mut self, pattern: u8) {
         qr_mask_xor(self, pattern)
     }
@@ -51,7 +53,7 @@ impl super::continuous::Img {
         penalty(self)
     }
     pub fn qr_version(&self) -> Option<u32> {
-        use super::*;
+        use image::*;
 
         let (x, y) = self.dims();
         if x != y {
@@ -66,7 +68,7 @@ impl super::continuous::Img {
 }
 
 // ImgRowAligned methods, ditto
-impl super::rowaligned::ImgRowAligned {
+impl image::ImgRowAligned {
     pub fn qr_mask_xor(&mut self, pattern: u8) {
         qr_mask_xor(self, pattern)
     }
@@ -74,7 +76,7 @@ impl super::rowaligned::ImgRowAligned {
         penalty(self)
     }
     pub fn qr_version(&self) -> Option<u32> {
-        use super::*;
+        use image::*;
 
         let (x, y) = self.dims();
         if x != y {
@@ -93,7 +95,7 @@ impl super::rowaligned::ImgRowAligned {
 // _new_qr_mask(a, b, x) == new(a, b).qr_mask_xor(x)
 // i wrote this on the first try just before bedtime. go me
 // modified to leave gaps in the pattern for valid qr version sizes
-fn qr_mask_xor<T: super::Bitmap>(input: &mut T, pattern: u8) {
+fn qr_mask_xor<T: image::Bitmap>(input: &mut T, pattern: u8) {
     let maybe_version = {
         if input.dims().0 != input.dims().1 {
             None
@@ -127,7 +129,7 @@ fn qr_mask_xor<T: super::Bitmap>(input: &mut T, pattern: u8) {
     }
 }
 
-fn penalty<T: super::Bitmap>(input: &T) -> u32 {
+fn penalty<T: image::Bitmap>(input: &T) -> u32 {
     // returns the qr code penalty for a bitmap, to choose xor patterns
     // 4 tests, weighted 3, 3, 40, 10
     /*
@@ -215,7 +217,7 @@ fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize,
 }
 
 // ref. pg. 60
-pub fn get_fcode<T: super::Bitmap>(input: &T, version: u32, offset: (usize, usize)) -> Option<u16> {
+pub fn get_fcode<T: image::Bitmap>(input: &T, version: u32, offset: (usize, usize)) -> Option<u16> {
     // the coordinates of the top left module; in hellocode, it's (2,2)
     let (ox, oy) = offset;
     let mut output1 = 0;
@@ -269,7 +271,7 @@ pub fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u16> {
     crate::rdsm::qr_generate_fcode((correction_level << 3) | mask_pattern)
 }
 
-pub fn set_fcode<T: super::Bitmap>(
+pub fn set_fcode<T: image::Bitmap>(
     input: &mut T,
     version: u32,
     offset: (usize, usize),
@@ -462,7 +464,7 @@ pub fn coord_status(x: usize, y: usize, version: u32) -> u8 {
     }
 }
 
-fn new_blank_qr_code<T: super::Bitmap>(version: u32) -> T {
+fn new_blank_qr_code<T: image::Bitmap>(version: u32) -> T {
     let max = version_to_max_index(version);
     let mut output = T::new(max + 1, max + 1);
     let mut set = |x, y| output.set_bit(x as usize, y as usize, true);
