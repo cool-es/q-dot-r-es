@@ -12,6 +12,15 @@ i believe the format allows for consecutive streams of different data spliced to
 
 byte mode is shift-jis (pg. 29), which i believe is ascii-adjacent
 
+alphanumeric mode supports 45 different characters:
+numbers (hex 30 - 39)
+alphabet (41 - 5A)
+[ space, $, %, *, +, -, ., /, : ] (20, 24, 25, 2B, 2D - 2F, 3A)
+
+reference on data modes: pg. 22, mixing data modes: pg. 92
+
+
+
 codewords are aligned in columns of width 2,
 are always read right-to-left in rows either up or down,
 and all data has its MSB first (pg. 53)
@@ -24,6 +33,7 @@ error correction refs: pg. 41
 generator polynomials: pg. 73
 
 symbol encoding example: pg. 90
+
 
 
 symbol size is 21 + 4 * (version -1) for version between 1 and 40
@@ -42,6 +52,5 @@ version : n where n^2-3 is no. of alignment patterns:
 35.. : 7
 
 timing patterns (dotted lines) are at x = 6, y = 6
-
 
 version info data blocks: TBD!!
