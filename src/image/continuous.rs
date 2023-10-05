@@ -61,13 +61,6 @@ impl Img {
         }
     }
 
-    // "stamp" function, to copy a smaller bitmap onto a bigger one
-    // (e.g. a qr alignment square onto a qr code). the x/y coords
-    // are aligned to the stamp's top left corner
-    pub fn rubberstamp(&mut self, stamp: &Self, x: usize, y: usize) {
-        todo!()
-    }
-
     // ... very tricky to optimize
     // lazy solution for now: use set_bit
     pub fn set_row(&mut self, y: usize, row: u128) {
@@ -227,7 +220,7 @@ impl BitmapDebug for Img {
 impl BitXorAssign for Img {
     fn bitxor_assign(&mut self, rhs: Self) {
         if (self.width, self.height) != (rhs.width, rhs.height) {
-            panic!();
+            panic!()
         } else {
             for i in 0..self.bits.len() {
                 self.bits[i] ^= rhs.bits[i];

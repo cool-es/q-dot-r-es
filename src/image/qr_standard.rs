@@ -1,6 +1,8 @@
 mod tables;
 pub use tables::*;
 
+use crate::image::Bitmap;
+
 fn bad_version(version: u32) -> bool {
     !(1..=40).contains(&version)
 }
@@ -58,6 +60,9 @@ impl super::continuous::Img {
             size_to_version(x)
         }
     }
+    pub fn new_blank_qr(version: u32) -> Self {
+        new_blank_qr_code(version)
+    }
 }
 
 // ImgRowAligned methods, ditto
@@ -77,6 +82,9 @@ impl super::rowaligned::ImgRowAligned {
         } else {
             size_to_version(x)
         }
+    }
+    pub fn new_blank_qr(version: u32) -> Self {
+        new_blank_qr_code(version)
     }
 }
 
@@ -395,16 +403,16 @@ pub fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)>
 
 fn coord_is_alignment_pattern(x: usize, y: usize, version: u32) -> bool {
     if out_of_bounds(x, y, version) {
-        panic!("x = {}, y = {}", x, y);
+        panic!("x = {}, y = {}", x, y)
     }
 
     let indices = AP_COORD_INDICES[version as usize - 1];
-    for (k, &i) in indices.iter().enumerate() {
-        if x.abs_diff(i) < 3 {
-            for (l, &j) in indices.iter().enumerate() {
-                if y.abs_diff(j) < 3 {
+    for (h, &hc) in indices.iter().enumerate() {
+        if x.abs_diff(hc) < 3 {
+            for (v, &vc) in indices.iter().enumerate() {
+                if y.abs_diff(vc) < 3 {
                     // making sure not to include the non-existent alignment patterns
-                    if k.max(l) == 0 || (k.min(l) == 0 && k.max(l) == indices.len() - 1) {
+                    if h.max(v) == 0 || (h.min(v) == 0 && h.max(v) == indices.len() - 1) {
                         break;
                     }
                     return true;
@@ -452,4 +460,54 @@ pub fn coord_status(x: usize, y: usize, version: u32) -> u8 {
             0
         }
     }
+}
+
+fn new_blank_qr_code<T: super::Bitmap>(version: u32) -> T {
+    let max = version_to_max_index(version);
+    let mut output = T::new(max + 1, max + 1);
+    let mut set = |x, y| output.set_bit(x as usize, y as usize, true);
+
+    {
+        //  draw alignment patters
+        let alignment_coords = alignment_pattern_coords(version);
+        for (x, y) in alignment_coords {
+            set(x, y);
+            for i in 0..=3 {
+                // draw it in a rotationally symmetric way, clockwise
+                set((x - 1) + i, y - 2); // top
+                set(x + 2, (y - 1) + i); // right
+                set((x + 1) - i, y + 2); // bottom
+                set(x - 2, (y + 1) - i); // left
+            }
+        }
+    }
+
+    {
+        // draw timing patterns
+        for i in 8..=(max - 8) {
+            if i % 2 == 0 {
+                set(i, 6);
+                set(6, i);
+            }
+        }
+    }
+
+    // draw position patterns
+    {
+        for x in 0..=6usize {
+            for y in 0..=6usize {
+                if (x.abs_diff(3) == 2 && y.abs_diff(3) != 3)
+                    || (y.abs_diff(3) == 2 && x.abs_diff(3) != 3)
+                {
+                    // the white ring around the center of the position pattern
+                    continue;
+                }
+                set(x, y);
+                set(y, max - x);
+                set(max - y, x);
+            }
+        }
+    }
+
+    output
 }

@@ -243,7 +243,7 @@ fn leading_zeroes(poly: &Polynomial) -> usize {
 
 pub fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) -> Polynomial {
     if divisor[0] == 0 {
-        todo!()
+        panic!()
     }
     if dividend.len() < divisor.len() {
         return dividend.clone();

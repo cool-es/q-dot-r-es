@@ -6,15 +6,10 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    // read_bitstream();
-    let code = testutil::hello1();
-    debug_print(&code);
-    println!();
-    for i in 0..8 {
-        let mut c = code.clone();
-        c.qr_mask_xor(i);
-        debug_print(&c);
-        println!();
+    for i in 1..=10 {
+        println!("\nversion {i}");
+        let a = ImgRowAligned::new_blank_qr(i);
+        _debug_print(&a);
     }
 }
 
@@ -48,9 +43,9 @@ fn _compare_mask_to_isdata() {
             }
         }
     }
-    debug_print(&mask);
+    _debug_print(&mask);
     println!();
-    debug_print(&blank);
+    _debug_print(&blank);
 }
 
 fn _full_squiggle_test() {
@@ -75,7 +70,7 @@ fn _full_squiggle_test() {
             break;
         }
     }
-    debug_print(&a);
+    _debug_print(&a);
 }
 
 fn _bugtest_squiggle(version: u32) {
@@ -311,7 +306,7 @@ fn _print_qr_mask_patterns() {
         let mut masky = x.clone();
         masky.qr_mask_xor(i);
         println!();
-        debug_print(&masky);
+        _debug_print(&masky);
     }
 }
 
@@ -349,7 +344,7 @@ fn _test_format_parsing(path: &str) {
             }
         });
         println!("masking pattern {:#05b}", mask);
-        debug_print(&xbm_bitmap);
+        _debug_print(&xbm_bitmap);
         /* for mask in  0..=7 */
         {
             let mut code_for_masking = xbm_bitmap.clone();
@@ -374,14 +369,14 @@ fn _test_format_parsing(path: &str) {
             // println!();
             code_for_masking.mask_set(&xbm_bitmap, &pixelmask);
             println!("mask {}:", mask);
-            debug_print(&xor_mask_pattern);
+            _debug_print(&xor_mask_pattern);
             println!();
-            debug_print(&code_for_masking);
+            _debug_print(&code_for_masking);
         }
     }
 }
 
-fn debug_print<T: Bitmap>(input: &T) {
+fn _debug_print<T: Bitmap>(input: &T) {
     for y in 0..input.dims().1 {
         println!("{}", debug_print_row(input, y, true).unwrap())
     }

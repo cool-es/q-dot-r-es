@@ -203,7 +203,7 @@ pub fn table_multiply(x: Element, y: Element) -> Element {
 // "gf_div"
 pub fn table_divide(x: Element, y: Element) -> Element {
     if y == 0 {
-        panic!();
+        panic!()
     } else if x == 0 {
         return 0;
     }
@@ -223,7 +223,7 @@ mod _old {
     // table index helper function
     fn element_to_usize(e: Element) -> usize {
         if e == 0 {
-            panic!();
+            panic!()
         } else {
             ((e - 1) % 255) as usize
         }
@@ -243,7 +243,7 @@ mod _old {
     // "gf_div"
     pub fn table_divide(x: Element, y: Element, tables: &ExpLogLUTs) -> Element {
         if y == 0 {
-            panic!();
+            panic!()
         }
         if x == 0 {
             return 0;

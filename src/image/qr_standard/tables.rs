@@ -1,6 +1,6 @@
 pub fn alignment_pattern_coords(version: u32) -> Vec<(usize, usize)> {
     if !(1..=40).contains(&version) {
-        panic!();
+        panic!()
     }
     let indices = AP_COORD_INDICES[version as usize - 1];
     let mut output = Vec::new();

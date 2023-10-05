@@ -1,4 +1,3 @@
-add a mask-writing function that respects alignment patterns
-add alignment/position/timing pattern drawing routine
 write function that stitches bitstream into codewords
 finish penalty routine (qr_standard.rs > penalty)
+implement support for format blocks in "next data bit" function
