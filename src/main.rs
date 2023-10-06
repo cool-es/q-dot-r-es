@@ -11,12 +11,28 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    _print_symbol_diagram(9);
+    _bugtest_squiggle(9);
+    // _print_symbol_diagram(9);
     // for i in 1..=10 {
     //     println!("\nversion {i}");
     //     let a = ImgRowAligned::new_blank_qr(i);
     //     _debug_print(&a);
     // }
+}
+
+#[test]
+fn _lockstep_squiggle_test() {
+    for version in 1..=6 {
+        let size = version_to_size(version).unwrap() as usize;
+        for x in 0..size {
+            for y in 0..size {
+                assert_eq!(
+                    _obsolete_next_data_bit(x, y, version),
+                    next_data_bit(x, y, version)
+                );
+            }
+        }
+    }
 }
 
 fn read_bitstream() {

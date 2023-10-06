@@ -303,7 +303,7 @@ pub fn set_fcode<T: image::Bitmap>(
 // }
 
 // returns the next bit of data after this one
-pub fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)> {
+pub fn _obsolete_next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)> {
     // larger versions contain version information blocks which i haven't implemented yet
     if version > 6 {
         return None;
@@ -402,6 +402,53 @@ pub fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)>
         // nothing in the way
         return Some((x + 1, y + 1));
     }
+}
+
+pub fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)> {
+    // naive, slow, and robust implementation of "next data bit"
+    // simply zigzag as if the pattern was blank,
+    // returning the next valid coord
+
+    if !coord_is_data(x, y, version) {
+        return None;
+    }
+
+    let max = version_to_max_index(version);
+    let (mut x, mut y) = (x, y);
+
+    // upper bound to avoid infinite loops
+    for _i in 0..(max + 1).pow(2) {
+        // x coord is on the right-hand side of a codeword
+        // if x < 6, x needs to be odd; otherwise even
+        if (x % 2 == 0) ^ (x < 6) {
+            // ←
+            (x, y) = (x - 1, y);
+        } else {
+            // is the codeword being read from bottom to top (negative y direction)?
+            let up_codeword = (((max - x) / 2) % 2 == 0) ^ (x < 6);
+
+            if (y == 0 && up_codeword) || (y == max && !up_codeword) {
+                (x, y) = (x - 1, y);
+            } else if up_codeword {
+                (x, y) = (x + 1, y - 1);
+            } else {
+                (x, y) = (x + 1, y + 1);
+            }
+        }
+
+        if x == 6 {
+            x -= 1;
+        }
+
+        if coord_is_data(x, y, version) {
+            break;
+        }
+        if (x, y) == (0, max) {
+            return None;
+        }
+    }
+
+    Some((x, y))
 }
 
 fn coord_is_alignment_pattern(x: usize, y: usize, version: u32) -> bool {
