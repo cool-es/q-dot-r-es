@@ -5,6 +5,16 @@ pub use tables::*;
 mod bitstream;
 pub use bitstream::*;
 
+pub trait QR: Bitmap {
+    fn qr_mask_xor(&mut self, pattern: u8);
+    fn qr_penalty(&self) -> u32;
+    fn qr_version(&self) -> Option<u32>;
+    fn new_blank_qr(version: u32) -> Self;
+    fn is_valid_size(&self) -> bool {
+        self.qr_version().is_some()
+    }
+}
+
 fn bad_version(version: u32) -> bool {
     !(1..=40).contains(&version)
 }
@@ -45,14 +55,14 @@ fn out_of_bounds(x: usize, y: usize, version: u32) -> bool {
 }
 
 // Img methods pertaining to the qr standard specifically
-impl image::Img {
-    pub fn qr_mask_xor(&mut self, pattern: u8) {
+impl QR for image::Img {
+    fn qr_mask_xor(&mut self, pattern: u8) {
         qr_mask_xor(self, pattern)
     }
-    pub fn qr_penalty(&self) -> u32 {
+    fn qr_penalty(&self) -> u32 {
         penalty(self)
     }
-    pub fn qr_version(&self) -> Option<u32> {
+    fn qr_version(&self) -> Option<u32> {
         use image::*;
 
         let (x, y) = self.dims();
@@ -62,20 +72,20 @@ impl image::Img {
             size_to_version(x)
         }
     }
-    pub fn new_blank_qr(version: u32) -> Self {
+    fn new_blank_qr(version: u32) -> Self {
         new_blank_qr_code(version)
     }
 }
 
 // ImgRowAligned methods, ditto
-impl image::ImgRowAligned {
-    pub fn qr_mask_xor(&mut self, pattern: u8) {
+impl QR for image::ImgRowAligned {
+    fn qr_mask_xor(&mut self, pattern: u8) {
         qr_mask_xor(self, pattern)
     }
-    pub fn qr_penalty(&self) -> u32 {
+    fn qr_penalty(&self) -> u32 {
         penalty(self)
     }
-    pub fn qr_version(&self) -> Option<u32> {
+    fn qr_version(&self) -> Option<u32> {
         use image::*;
 
         let (x, y) = self.dims();
@@ -85,7 +95,7 @@ impl image::ImgRowAligned {
             size_to_version(x)
         }
     }
-    pub fn new_blank_qr(version: u32) -> Self {
+    fn new_blank_qr(version: u32) -> Self {
         new_blank_qr_code(version)
     }
 }
@@ -129,8 +139,11 @@ fn qr_mask_xor<T: image::Bitmap>(input: &mut T, pattern: u8) {
     }
 }
 
-#[allow(unused_variables, unreachable_code)]
-fn penalty<T: image::Bitmap>(input: &T) -> u32 {
+fn penalty<T: QR>(input: &T) -> u32 {
+    if !input.is_valid_size() {
+        panic!()
+    }
+
     // returns the qr code penalty for a bitmap, to choose xor patterns
     // 4 tests, weighted 3, 3, 40, 10
     /*
@@ -144,48 +157,235 @@ fn penalty<T: image::Bitmap>(input: &T) -> u32 {
     // • ... and every 1:1:3:1:1 pattern is, as well
     // • ... and the pattern weight is penalized once
 
-    // Adjacent modules in row/column in same color
-    let test1: u32 = {
-        // penalty: 3 + i
-        //  i is the amount by which the number of adjacent modules of the same color exceeds 5
+    let width = input.dims().0;
+    let max = width - 1;
 
-        let (dimension, _height) = input.dims();
-        for n in 0..dimension {
-            // get row n
-            // use get_row here
-            todo!()
-
-            // get column n
+    let bits = {
+        let mut rows = Vec::new();
+        for y in 0..=max {
+            rows.push(input.get_row(y).unwrap());
         }
-        todo!()
+        rows
     };
 
-    // Block of modules in same color
-    let test2: (u32, u32) = {
+    // it's get_bit but fast (and instead of bounds checks you get panics)
+    let get = |x: usize, y: usize| bits[y] & (1 << (max - x)) != 0;
+
+    // Adjacent modules in row/column in same color
+    let adjacent: u32 = {
+        // penalty: 3 + i
+        // i is the amount by which the number of adjacent modules of the same color exceeds 5
+        let mut penalty = 0;
+        for n in 0..=max {
+            let (mut value, mut run) = (false, 0);
+            // get row n
+            for x in 0..=max {
+                let bit = get(x, n);
+
+                // if we're not at the start of the loop,
+                if x != 0 {
+                    if value == bit {
+                        run += 1;
+                    } else if run > 5 {
+                        // 3 + run - 5
+                        penalty += run - 2;
+                    }
+                }
+                value = bit;
+            }
+
+            // get column n (same thing again)
+            run = 0;
+            for y in 0..=max {
+                let bit = get(n, y);
+                if y != 0 {
+                    if value == bit {
+                        run += 1;
+                    } else if run > 5 {
+                        penalty += run - 2;
+                    }
+                }
+                value = bit;
+            }
+        }
+        penalty
+    };
+
+    // bypassing this code for now
+    let block: u32 = 0;
+    {
         // penalty: 3 * (m - 1) * (n - 1)
         // where the block size = m * n
-        todo!()
+
+        // look for rectangles width (width of symbol), ... , 2
+        // by using a sliding frame, and mark already-scored pixels.
+        // this is no panacea, but it's an okay solution
+        let mut penalty = 0;
+        let mut scored = vec![false; width.pow(2)];
+
+        for rect_width in (0..=max).rev() {
+            // "leeway" is the range of acceptable starting values for x
+            let leeway = max - rect_width;
+            /*
+            start traversing the bitmap row by row. skip forward to the end of a "failed rectangle", and skip to the next row if x then is > leeway
+
+            if a series of similar pixels is found, check next line. if there is no match, continue checking at end of the series on the previous line. if there is a match, see how long it goes for, add the score and then mark all of the rectangle's pixels as scored
+            */
+
+            for y in 0..=(max - 1) {
+                'row: for starting_x in 0..=leeway {
+                    if scored[starting_x + width * y]
+                        || get(starting_x, y) != get(starting_x, y + 1)
+                    {
+                        // already scored, or can't be a valid rectangle
+                        continue;
+                    }
+                    /*
+                    since we're looking for the widest rectangles first, there's no chance of the "discovery loop" breaking by hitting an already-scored pixel going sideways - that can only happen while going downwards. going sideways, the "discovery loop" will only ever be broken by hitting either a pixel of the other color or the side of the pattern
+                    */
+                    let color = get(starting_x, y);
+                    for x_offset in 0..=rect_width {
+                        let x = starting_x + x_offset;
+
+                        // failure conditions, all of which
+                        // make it a non-scoring pattern
+                        if (get(x, y) != color)
+                            || (get(x, y + 1) != color)
+                            || scored[x + width * (y + 1)]
+                        {
+                            if x > leeway {
+                                break 'row;
+                            } else {
+                                continue;
+                            }
+                        }
+                    }
+                    // we are in a valid 2-row rectangle (at least)
+                    // now to keep checking!
+                    let mut rect_height = 1;
+
+                    // extend rectangle downwards as far as possible
+                    'extend: for y2 in (y + 2)..max {
+                        for x2 in starting_x..=(starting_x + rect_width) {
+                            if (get(x2, y2) != color) || scored[x2 + width * y2] {
+                                break 'extend;
+                            }
+                        }
+                        rect_height += 1;
+                    }
+
+                    // mark rectangle's pixels as scored
+                    for i in y..=(y + rect_height) {
+                        for j in starting_x..(starting_x + rect_width) {
+                            scored[j + width * i] = true;
+                        }
+                    }
+
+                    penalty += 3 * rect_width * rect_height;
+                }
+            }
+        }
+        penalty
     };
+    /*
+    {
+        // Block of modules in same color
+        // oh boy
+        // how am i supposed to score this scenario?
+        //  0111
+        //  1111
+        //  1111
+        let mut penalty = 0;
+
+        // vector to store score and rectangle id... i'm in too deep now!!
+        // let row = max + 1;
+        let mut scores = vec![None::<(u32, u32)>; width.pow(2)];
+        // let mut rectangle_table = Vec::new();
+        // rectangle_table.push(todo!());
+
+        // iterating over the whole bitmap in one go
+        // replaces nested for loops for x1 and x2
+        for k in 0..width.pow(2) {
+            let (x1, y1) = (k % width, k / width);
+            let color = get(x1, y1);
+
+            // these are split up because it got too complex otherwise
+            for x2 in (x1 + 1)..=max {
+                for y2 in (y1 + 1)..=max {
+                    'rectangle_check: {
+                        // if both coords belong to an already-scored rectangle,
+                        // it must be a sub-rectangle with lower score
+                        if scores[x1 + width * y1].is_some()
+                            && scores[x1 + width * y1] == scores[x2 + width * y2]
+                        {
+                            break 'rectangle_check;
+                        } else if color == get(x2, y2) {
+                            // we may be in a block of the same color
+                            for k in 0..((x2 - x1) * (y2 - y1)) {
+                                if get(k % (x2 - x1), k / (x2 - x1)) != color {
+                                    break 'rectangle_check;
+                                }
+                            }
+                            // we are in a solid rectangle
+                        }
+                        todo!()
+                    }
+                }
+            }
+        }
+        // penalty: 3 * (m - 1) * (n - 1)
+        // where the block size = m * n
+        penalty
+    };
+    */
 
     // 1:1:3:1:1 ratio (dark:light:dark:light:dark) pattern in row/column
-    let test3: u32 = {
+    // named "fake marker" because it can be confused with the position markers
+    let fake_marker: u32 = {
         // penalty: 40
+        let mut penalty = 0;
+        let pattern = 0b1011101;
 
-        // i'm very unsure if this is cumulative or just a binary...
-        // this is meant to stop patterns that look like the qr alignment marks,
-        // so i assume this must be cumulative - otherwise every qr code would be tied
-        todo!()
+        for i in 0..=max {
+            for x in 0..=(max - 6) {
+                'horizontal_test: {
+                    for bit in 0..=6 {
+                        if get(x + bit, i) != (pattern & (1 << bit) != 0) {
+                            break 'horizontal_test;
+                        }
+                    }
+                    // matching pattern
+                    penalty += 40;
+                }
+            }
+
+            // reusing code
+            for y in 0..=(max - 6) {
+                'vertical_test: {
+                    for bit in 0..=6 {
+                        if get(i, y + bit) != (pattern & (1 << bit) != 0) {
+                            break 'vertical_test;
+                        }
+                    }
+                    penalty += 40;
+                }
+            }
+        }
+
+        penalty
     };
 
     // Proportion of dark modules in entire symbol
-    let test4: u32 = {
+    let proportion: u32 = {
         // penalty: 10 * k
         // k is the rating of the deviation of the proportion of dark modules in the symbol from 50% in steps of 5%
-        todo!()
+
+        let black: u32 = bits.iter().map(|z| z.count_ones()).sum();
+        let proportion: f32 = (black as f32) / (width as f32).powi(2);
+        (10.0 - 20.0 * proportion).abs().round() as u32
     };
 
-    todo!()
-    // (3 + test1) + (3 * (test2.0 - 1) * (test2.1 - 1)) + (40 * test3) + (10 * test4)
+    adjacent + block + fake_marker + proportion
 }
 
 // raw data for format writing/reading operations

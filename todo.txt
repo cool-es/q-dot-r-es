@@ -1,3 +1,6 @@
+bugtest penalty routine (qr_standard.rs row 270)
 write function that stitches bitstream into codewords
-finish penalty routine (qr_standard.rs > penalty)
-replace the "polynomial" type with the "codewords" type (convert functions, etc)
+
+PITEOG stuff:
+replace the "polynomial" type with the "codewords" type (convert functions, etc)?
+deprecate the continuous-data "Img" type?
