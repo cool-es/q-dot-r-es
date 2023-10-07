@@ -211,9 +211,7 @@ fn penalty<T: QR>(input: &T) -> u32 {
         penalty
     };
 
-    // bypassing this code for now
-    let block: u32 = 0;
-    {
+    let block: u32 = {
         // penalty: 3 * (m - 1) * (n - 1)
         // where the block size = m * n
 
@@ -285,7 +283,7 @@ fn penalty<T: QR>(input: &T) -> u32 {
                 }
             }
         }
-        penalty
+        penalty as u32
     };
     /*
     {
@@ -382,9 +380,23 @@ fn penalty<T: QR>(input: &T) -> u32 {
 
         let black: u32 = bits.iter().map(|z| z.count_ones()).sum();
         let proportion: f32 = (black as f32) / (width as f32).powi(2);
+        println!(
+            "* black: {}\n* proportion: {}\n* result: {}\n* -> {}",
+            black,
+            proportion,
+            (10.0 - 20.0 * proportion).abs(),
+            (10.0 - 20.0 * proportion).abs().round()
+        );
         (10.0 - 20.0 * proportion).abs().round() as u32
     };
-
+    println!(
+        "adjacent: {}\nblock: {}\nfake marker: {}\nproportion: {}\nsum: {}",
+        adjacent,
+        block,
+        fake_marker,
+        proportion,
+        adjacent + block + fake_marker + proportion
+    );
     adjacent + block + fake_marker + proportion
 }
 

@@ -11,7 +11,10 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    _bugtest_squiggle(9);
+    let hello = testutil::mask();
+    hello.qr_penalty();
+    // println!("{}",hello.qr_penalty());
+    // _bugtest_squiggle(9);
     // _print_symbol_diagram(9);
     // for i in 1..=10 {
     //     println!("\nversion {i}");
