@@ -139,7 +139,7 @@ fn qr_mask_xor<T: image::Bitmap>(input: &mut T, pattern: u8) {
     }
 }
 
-fn penalty<T: QR>(input: &T) -> u32 {
+pub fn penalty<T: QR>(input: &T) -> u32 {
     if !input.is_valid_size() {
         panic!()
     }
@@ -453,6 +453,225 @@ fn penalty<T: QR>(input: &T) -> u32 {
     }
 
     adjacent + block + fake_marker + proportion
+}
+
+pub fn penalty2<T: QR>(input: &T) -> u32 {
+    penalty_adjacent(input)
+        + penalty_block(input)
+        + penalty_fake_marker(input)
+        + penalty_proportion(input)
+}
+
+// Adjacent modules in row/column in same color
+fn penalty_adjacent<T: QR>(input: &T) -> u32 {
+    let width = input.dims().0;
+    let max = width - 1;
+
+    let bits = {
+        let mut rows = Vec::new();
+        for y in 0..=max {
+            rows.push(input.get_row(y).unwrap());
+        }
+        rows
+    };
+
+    // it's get_bit but fast (and instead of bounds checks you get panics)
+    let get = |x: usize, y: usize| bits[y] & (1 << (max - x)) != 0;
+
+    // penalty: 3 + i
+    // i is the amount by which the number of adjacent modules of the same color exceeds 5
+    let mut penalty = 0;
+    for n in 0..=max {
+        // get row n
+        let (mut xrun, mut yrun) = (1, 1);
+        for index in 0..=max {
+            // checking x
+            if index < max && get(index, n) == get(index + 1, n) {
+                xrun += 1;
+            } else {
+                if xrun > 5 {
+                    // 3 + run - 5
+                    penalty += xrun - 2;
+                }
+                xrun = 1;
+            }
+
+            // checking y
+            if index < max && get(n, index) == get(n, index + 1) {
+                yrun += 1;
+            } else {
+                if yrun > 5 {
+                    // 3 + run - 5
+                    penalty += yrun - 2;
+                }
+                yrun = 1;
+            }
+        }
+    }
+    penalty
+}
+
+fn penalty_block<T: QR>(input: &T) -> u32 {
+    let width = input.dims().0;
+    let max = width - 1;
+
+    let bits = {
+        let mut rows = Vec::new();
+        for y in 0..=max {
+            rows.push(input.get_row(y).unwrap());
+        }
+        rows
+    };
+
+    // it's get_bit but fast (and instead of bounds checks you get panics)
+    let get = |x: usize, y: usize| bits[y] & (1 << (max - x)) != 0;
+
+    // penalty: 3 * (m - 1) * (n - 1)
+    // where the block size = m * n
+
+    // look for rectangles width (width of symbol), ... , 2
+    // by using a sliding frame, and mark already-scored pixels.
+    // this is no panacea, but it's an okay solution
+    let mut penalty = 0;
+    let mut scored = vec![false; width.pow(2)];
+
+    for rect_width in (1..=max).rev() {
+        // "leeway" is the range of acceptable starting values for x
+        let leeway = max - rect_width;
+        /*
+        start traversing the bitmap row by row. skip forward to the end of a "failed rectangle", and skip to the next row if x then is > leeway
+
+        if a series of similar pixels is found, check next line. if there is no match, continue checking at end of the series on the previous line. if there is a match, see how long it goes for, add the score and then mark all of the rectangle's pixels as scored
+        */
+
+        for y in 0..=(max - 1) {
+            'row: for starting_x in 0..=leeway {
+                if scored[starting_x + width * y] || get(starting_x, y) != get(starting_x, y + 1) {
+                    // already scored, or can't be a valid rectangle
+                    continue;
+                }
+                /*
+                since we're looking for the widest rectangles first, there's no chance of the "discovery loop" breaking by hitting an already-scored pixel going sideways - that can only happen while going downwards. going sideways, the "discovery loop" will only ever be broken by hitting either a pixel of the other color or the side of the pattern
+                */
+                let color = get(starting_x, y);
+                for x_offset in 0..=rect_width {
+                    let x = starting_x + x_offset;
+
+                    // failure conditions, all of which
+                    // make it a non-scoring pattern
+                    if (get(x, y) != color)
+                        || (get(x, y + 1) != color)
+                        || scored[x + width * (y + 1)]
+                    {
+                        if x > leeway {
+                            break 'row;
+                        } else {
+                            continue 'row;
+                        }
+                    }
+                }
+                // we are in a valid 2-row rectangle (at least)
+                // now to keep checking!
+                let mut rect_height = 1;
+
+                // extend rectangle downwards as far as possible
+                'extend: for y2 in (y + 2)..=max {
+                    for x2 in starting_x..=(starting_x + rect_width) {
+                        if (get(x2, y2) != color) || scored[x2 + width * y2] {
+                            break 'extend;
+                        }
+                    }
+                    rect_height += 1;
+                }
+
+                // mark rectangle's pixels as scored
+                for i in y..=(y + rect_height) {
+                    for j in starting_x..=(starting_x + rect_width) {
+                        scored[j + width * i] = true;
+                    }
+                }
+
+                penalty += 3 * rect_width * rect_height;
+            }
+        }
+    }
+    penalty as u32
+}
+
+// 1:1:3:1:1 ratio (dark:light:dark:light:dark) pattern in row/column
+// named "fake marker" because it can be confused with the position markers
+fn penalty_fake_marker<T: QR>(input: &T) -> u32 {
+    let width = input.dims().0;
+    let max = width - 1;
+
+    let bits = {
+        let mut rows = Vec::new();
+        for y in 0..=max {
+            rows.push(input.get_row(y).unwrap());
+        }
+        rows
+    };
+
+    // it's get_bit but fast (and instead of bounds checks you get panics)
+    let get = |x: usize, y: usize| bits[y] & (1 << (max - x)) != 0;
+
+    // penalty: 40
+    let mut penalty = 0;
+    let pattern = 0b1011101;
+
+    for i in 0..=max {
+        for x in 0..=(max - 6) {
+            'horizontal_test: {
+                for bit in 0..=6 {
+                    if get(x + bit, i) != (pattern & (1 << bit) != 0) {
+                        break 'horizontal_test;
+                    }
+                }
+                // matching pattern
+                penalty += 40;
+            }
+        }
+
+        // reusing code
+        for y in 0..=(max - 6) {
+            'vertical_test: {
+                for bit in 0..=6 {
+                    if get(i, y + bit) != (pattern & (1 << bit) != 0) {
+                        break 'vertical_test;
+                    }
+                }
+                penalty += 40;
+            }
+        }
+    }
+
+    penalty
+}
+
+#[allow(unused_variables)]
+// Proportion of dark modules in entire symbol
+fn penalty_proportion<T: QR>(input: &T) -> u32 {
+    let width = input.dims().0;
+    let max = width - 1;
+
+    let bits = {
+        let mut rows = Vec::new();
+        for y in 0..=max {
+            rows.push(input.get_row(y).unwrap());
+        }
+        rows
+    };
+
+    // it's get_bit but fast (and instead of bounds checks you get panics)
+    let get = |x: usize, y: usize| bits[y] & (1 << (max - x)) != 0;
+
+    // penalty: 10 * k
+    // k is the rating of the deviation of the proportion of dark modules in the symbol from 50% in steps of 5%
+
+    let black: u32 = bits.iter().map(|z| z.count_ones()).sum();
+    let proportion: f32 = (black as f32) / (width as f32).powi(2);
+
+    (10.0 - 20.0 * proportion).abs().round() as u32
 }
 
 // raw data for format writing/reading operations
