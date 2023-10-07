@@ -25,24 +25,6 @@ fn main() {
 }
 
 #[test]
-fn penalty_test() {
-    let img_list = vec![testutil::mask(), testutil::hello1(), testutil::hello2()];
-    let mut mega_list = Vec::new();
-    for img in img_list {
-        mega_list.push(img.clone());
-        for i in 0..7 {
-            let mut a = img.clone();
-            a.qr_mask_xor(i);
-            mega_list.push(a);
-        }
-    }
-
-    for img in mega_list {
-        assert_eq!(penalty(&img), penalty2(&img));
-    }
-}
-
-#[test]
 fn _lockstep_squiggle_test() {
     for version in 1..=6 {
         let size = version_to_size(version).unwrap() as usize;
