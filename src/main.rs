@@ -11,8 +11,9 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    let hello = testutil::hello1();
-    hello.qr_penalty();
+    _remasking_test()
+    // let mut hello = testutil::mask();
+    // hello.qr_penalty();
     // println!("{}",hello.qr_penalty());
     // _bugtest_squiggle(9);
     // _print_symbol_diagram(9);
@@ -298,6 +299,7 @@ fn _remasking_test() {
         if let Some(code2) = _qr_remask_v1_symbol(&code, i) {
             println!("mask {}", i);
             _debug_print_qr(&code2);
+            println!("penalty: {}",code2.qr_penalty());
         }
         println!("\n");
     }
@@ -308,8 +310,8 @@ fn _qr_remask_v1_symbol(input: &ImgRowAligned, mask_pattern: u8) -> Option<ImgRo
     let old_fcode = get_fcode(input, 1, (0, 0))?;
     let (correction_level, old_mask_pattern) = interpret_format(old_fcode)?;
     if mask_pattern == old_mask_pattern {
-        return None;
-    };
+        // return None;
+    }
 
     let pixelmask = xbm_filepath_into_bitmap("hellomask_smol.xbm");
 

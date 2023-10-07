@@ -144,7 +144,7 @@ fn penalty<T: QR>(input: &T) -> u32 {
         panic!()
     }
 
-    let debug = (true, true, true, false, true);
+    let debug = (false, false, false, false, false);
     // returns the qr code penalty for a bitmap, to choose xor patterns
     // 4 tests, weighted 3, 3, 40, 10
     /*
@@ -235,7 +235,7 @@ fn penalty<T: QR>(input: &T) -> u32 {
         let mut penalty = 0;
         let mut scored = vec![false; width.pow(2)];
 
-        for rect_width in (0..=max).rev() {
+        for rect_width in (1..=max).rev() {
             // "leeway" is the range of acceptable starting values for x
             let leeway = max - rect_width;
             /*
@@ -268,7 +268,7 @@ fn penalty<T: QR>(input: &T) -> u32 {
                             if x > leeway {
                                 break 'row;
                             } else {
-                                continue;
+                                continue 'row;
                             }
                         }
                     }
@@ -277,7 +277,7 @@ fn penalty<T: QR>(input: &T) -> u32 {
                     let mut rect_height = 1;
 
                     // extend rectangle downwards as far as possible
-                    'extend: for y2 in (y + 2)..max {
+                    'extend: for y2 in (y + 2)..=max {
                         for x2 in starting_x..=(starting_x + rect_width) {
                             if (get(x2, y2) != color) || scored[x2 + width * y2] {
                                 break 'extend;
@@ -288,22 +288,44 @@ fn penalty<T: QR>(input: &T) -> u32 {
 
                     // mark rectangle's pixels as scored
                     for i in y..=(y + rect_height) {
-                        for j in starting_x..(starting_x + rect_width) {
+                        for j in starting_x..=(starting_x + rect_width) {
                             scored[j + width * i] = true;
                         }
                     }
 
                     if debug.3 {
                         println!(
-                            "BLOCK - rectangle found: {:?} to {:?}\n   (w. {}, h. {})\n   score {}",
+                            "BLOCK - rectangle found: {:?} to {:?}\n   (w. {}, h. {})\n   score 3 * {}",
                             (starting_x, y),
                             (starting_x + rect_width, y + rect_height),
+                            rect_width + 1,
+                            rect_height + 1,
+                            rect_width * rect_height
+                        );
+                        for (i, &value) in scored.iter().enumerate() {
+                            if i % width == 0 && i != 0 {
+                                println!()
+                            }
+                            print!("{}", {
+                                if value {
+                                    "x"
+                                } else {
+                                    "."
+                                }
+                            });
+                        }
+                        println!("");
+                    }
+                    if debug.3 {
+                        println!(
+                            " ~~~~ penalty added: {} ({} * {})\n ~~~~ penalty {} -> {}\n",
+                            (rect_width * rect_height),
                             rect_width,
                             rect_height,
-                            3 * rect_width * rect_height
+                            penalty,
+                            penalty + (3 * rect_width * rect_height)
                         );
                     }
-
                     penalty += 3 * rect_width * rect_height;
                 }
             }
@@ -408,9 +430,9 @@ fn penalty<T: QR>(input: &T) -> u32 {
 
         if debug.1 {
             println!(
-                "* PROPORTION - black: {}\n* proportion: {}\n* result: {}\n* -> {}",
+                "* PROPORTION - black: {}\n* proportion: {}%\n* result: {}\n* -> {}",
                 black,
-                proportion,
+                proportion * 100.0,
                 (10.0 - 20.0 * proportion).abs(),
                 (10.0 - 20.0 * proportion).abs().round()
             );
