@@ -144,6 +144,7 @@ fn penalty<T: QR>(input: &T) -> u32 {
         panic!()
     }
 
+    let debug = (true, true, true, false, true);
     // returns the qr code penalty for a bitmap, to choose xor patterns
     // 4 tests, weighted 3, 3, 40, 10
     /*
@@ -188,6 +189,13 @@ fn penalty<T: QR>(input: &T) -> u32 {
                         run += 1;
                     } else if run > 5 {
                         // 3 + run - 5
+                        if debug.4 {
+                            println!(
+                                "ADJACENT - run of length {} found\n  horizontally up to {:?}",
+                                run,
+                                (x, n)
+                            )
+                        }
                         penalty += run - 2;
                     }
                 }
@@ -202,6 +210,13 @@ fn penalty<T: QR>(input: &T) -> u32 {
                     if value == bit {
                         run += 1;
                     } else if run > 5 {
+                        if debug.4 {
+                            println!(
+                                "ADJACENT - run of length {} found\n  horizontally up to {:?}",
+                                run,
+                                (n, y)
+                            )
+                        }
                         penalty += run - 2;
                     }
                 }
@@ -277,6 +292,17 @@ fn penalty<T: QR>(input: &T) -> u32 {
                         for j in starting_x..(starting_x + rect_width) {
                             scored[j + width * i] = true;
                         }
+                    }
+
+                    if debug.3 {
+                        println!(
+                            "BLOCK - rectangle found: {:?} to {:?}\n   (w. {}, h. {})\n   score {}",
+                            (starting_x, y),
+                            (starting_x + rect_width, y + rect_height),
+                            rect_width,
+                            rect_height,
+                            3 * rect_width * rect_height
+                        );
                     }
 
                     penalty += 3 * rect_width * rect_height;
@@ -380,23 +406,31 @@ fn penalty<T: QR>(input: &T) -> u32 {
 
         let black: u32 = bits.iter().map(|z| z.count_ones()).sum();
         let proportion: f32 = (black as f32) / (width as f32).powi(2);
-        println!(
-            "* black: {}\n* proportion: {}\n* result: {}\n* -> {}",
-            black,
-            proportion,
-            (10.0 - 20.0 * proportion).abs(),
-            (10.0 - 20.0 * proportion).abs().round()
-        );
+
+        if debug.1 {
+            println!(
+                "* PROPORTION - black: {}\n* proportion: {}\n* result: {}\n* -> {}",
+                black,
+                proportion,
+                (10.0 - 20.0 * proportion).abs(),
+                (10.0 - 20.0 * proportion).abs().round()
+            );
+        }
+
         (10.0 - 20.0 * proportion).abs().round() as u32
     };
-    println!(
-        "adjacent: {}\nblock: {}\nfake marker: {}\nproportion: {}\nsum: {}",
-        adjacent,
-        block,
-        fake_marker,
-        proportion,
-        adjacent + block + fake_marker + proportion
-    );
+
+    if debug.0 {
+        println!(
+            "adjacent: {}\nblock: {}\nfake marker: {}\nproportion: {}\nsum: {}",
+            adjacent,
+            block,
+            fake_marker,
+            proportion,
+            adjacent + block + fake_marker + proportion
+        );
+    }
+
     adjacent + block + fake_marker + proportion
 }
 

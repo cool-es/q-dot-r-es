@@ -11,7 +11,7 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    let hello = testutil::mask();
+    let hello = testutil::hello1();
     hello.qr_penalty();
     // println!("{}",hello.qr_penalty());
     // _bugtest_squiggle(9);
