@@ -178,49 +178,48 @@ fn penalty<T: QR>(input: &T) -> u32 {
         // i is the amount by which the number of adjacent modules of the same color exceeds 5
         let mut penalty = 0;
         for n in 0..=max {
-            let (mut value, mut run) = (false, 0);
             // get row n
-            for x in 0..=max {
-                let bit = get(x, n);
-
-                // if we're not at the start of the loop,
-                if x != 0 {
-                    if value == bit {
-                        run += 1;
-                    } else if run > 5 {
+            let (mut xrun, mut yrun) = (1, 1);
+            for index in 0..=max {
+                // checking x
+                if index < max && get(index, n) == get(index + 1, n) {
+                    xrun += 1;
+                } else {
+                    if xrun > 5 {
                         // 3 + run - 5
                         if debug.4 {
                             println!(
-                                "ADJACENT - run of length {} found\n  horizontally up to {:?}",
-                                run,
-                                (x, n)
-                            )
+                                "ADJACENT: - run of length {:2} on row {:2}: {:2} -> {:2}",
+                                xrun,
+                                n,
+                                index + 1 - xrun as usize,
+                                index
+                            );
                         }
-                        penalty += run - 2;
+                        penalty += xrun - 2;
                     }
+                    xrun = 1;
                 }
-                value = bit;
-            }
 
-            // get column n (same thing again)
-            run = 0;
-            for y in 0..=max {
-                let bit = get(n, y);
-                if y != 0 {
-                    if value == bit {
-                        run += 1;
-                    } else if run > 5 {
+                // checking y
+                if index < max && get(n, index) == get(n, index + 1) {
+                    yrun += 1;
+                } else {
+                    if yrun > 5 {
+                        // 3 + run - 5
                         if debug.4 {
                             println!(
-                                "ADJACENT - run of length {} found\n  horizontally up to {:?}",
-                                run,
-                                (n, y)
-                            )
+                                "ADJACENT: | run of length {:2} on col {:2}: {:2} -> {:2}",
+                                yrun,
+                                n,
+                                index + 1 - yrun as usize,
+                                index
+                            );
                         }
-                        penalty += run - 2;
+                        penalty += yrun - 2;
                     }
+                    yrun = 1;
                 }
-                value = bit;
             }
         }
         penalty
