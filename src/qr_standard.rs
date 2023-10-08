@@ -197,7 +197,7 @@ mod penalties {
                     if xrun > 5 {
                         if DEBUG {
                             if [0, 6, 7, max - 7, max - 6, max].contains(&line)
-                                // && (index < 7 || index > 7)
+                            // && (index < 7 || index > 7)
                             {
                             } else {
                                 println!(
@@ -223,7 +223,7 @@ mod penalties {
                     if yrun > 5 {
                         if DEBUG {
                             if [0, 6, 7, max - 7, max - 6, max].contains(&line)
-                                // && (index == max || index >= 7)
+                            // && (index == max || index >= 7)
                             {
                             } else {
                                 println!(
@@ -269,8 +269,7 @@ mod penalties {
         // this is no panacea, but it's an okay solution
         let mut penalty = 0;
 
-        // this could have been a Bitmap :/
-        let mut scored = vec![false; width.pow(2)];
+        let mut scored = ImgRowAligned::new(width, width);
 
         for rect_width in (1..=max).rev() {
             // "leeway" is the range of acceptable starting values for x
@@ -283,7 +282,7 @@ mod penalties {
 
             for y in 0..=(max - 1) {
                 'row: for starting_x in 0..=leeway {
-                    if scored[starting_x + width * y]
+                    if scored.get_bit(starting_x, y).unwrap()
                         || get(starting_x, y) != get(starting_x, y + 1)
                     {
                         // already scored, or can't be a valid rectangle
@@ -300,7 +299,7 @@ mod penalties {
                         // make it a non-scoring pattern
                         if (get(x, y) != color)
                             || (get(x, y + 1) != color)
-                            || scored[x + width * (y + 1)]
+                            || scored.get_bit(x, y + 1).unwrap()
                         {
                             if x > leeway {
                                 break 'row;
@@ -316,7 +315,7 @@ mod penalties {
                     // extend rectangle downwards as far as possible
                     'extend: for y2 in (y + 2)..=max {
                         for x2 in starting_x..=(starting_x + rect_width) {
-                            if (get(x2, y2) != color) || scored[x2 + width * y2] {
+                            if (get(x2, y2) != color) || scored.get_bit(x2, y2).unwrap() {
                                 break 'extend;
                             }
                         }
@@ -326,7 +325,7 @@ mod penalties {
                     // mark rectangle's pixels as scored
                     for i in y..=(y + rect_height) {
                         for j in starting_x..=(starting_x + rect_width) {
-                            scored[j + width * i] = true;
+                            scored.set_bit(j, i, true);
                         }
                     }
 
