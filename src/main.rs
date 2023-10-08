@@ -293,16 +293,29 @@ fn _remasking_test() {
     let code = xbm_filepath_into_bitmap("hellocode_smol.xbm");
 
     _debug_print_qr(&code);
-    println!();
+    let penalties = code.qr_penalty_split();
+    println!("penalty: {}", &penalties.iter().sum::<u32>());
+    println!(
+        "    adjacent: {}\n    block: {}\n    fake marker: {}\n    proportion: {}",
+        penalties[0], penalties[1], penalties[2], penalties[3]
+    );
+    println!("\n");
     // let i = 0;
+    /*
     for i in 0..=7 {
-        if let Some(code2) = _qr_remask_v1_symbol(&code, i) {
-            println!("mask {}", i);
-            _debug_print_qr(&code2);
-            println!("penalty: {}", code2.qr_penalty());
+            if let Some(code2) = _qr_remask_v1_symbol(&code, i) {
+                println!("mask {}", i);
+                _debug_print_qr(&code2);
+                let penalties = code2.qr_penalty_split();
+                println!("penalty: {}", &penalties.iter().sum::<u32>());
+                println!(
+                    "    adjacent: {}\n    block: {}\n    fake marker: {}\n    proportion: {}",
+                    penalties[0], penalties[1], penalties[2], penalties[3]
+                );
+                println!("\n");
+            }
         }
-        println!("\n");
-    }
+     */
 }
 
 // this function works perfectly!! it's great
@@ -310,7 +323,7 @@ fn _qr_remask_v1_symbol(input: &ImgRowAligned, mask_pattern: u8) -> Option<ImgRo
     let old_fcode = get_fcode(input, 1, (0, 0))?;
     let (correction_level, old_mask_pattern) = interpret_format(old_fcode)?;
     if mask_pattern == old_mask_pattern {
-        // return None;
+        return Some(input.clone());
     }
 
     let pixelmask = xbm_filepath_into_bitmap("hellomask_smol.xbm");

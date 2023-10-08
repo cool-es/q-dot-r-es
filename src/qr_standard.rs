@@ -8,6 +8,7 @@ pub use bitstream::*;
 pub trait QR: Bitmap {
     fn qr_mask_xor(&mut self, pattern: u8);
     fn qr_penalty(&self) -> u32;
+    fn qr_penalty_split(&self) -> [u32; 4];
     fn qr_version(&self) -> Option<u32>;
     fn new_blank_qr(version: u32) -> Self;
     fn is_valid_size(&self) -> bool {
@@ -75,6 +76,9 @@ impl QR for image::Img {
     fn new_blank_qr(version: u32) -> Self {
         new_blank_qr_code(version)
     }
+    fn qr_penalty_split(&self) -> [u32; 4] {
+        penalty_split(self)
+    }
 }
 
 // ImgRowAligned methods, ditto
@@ -97,6 +101,9 @@ impl QR for image::ImgRowAligned {
     }
     fn new_blank_qr(version: u32) -> Self {
         new_blank_qr_code(version)
+    }
+    fn qr_penalty_split(&self) -> [u32; 4] {
+        penalty_split(self)
     }
 }
 
@@ -139,18 +146,27 @@ fn qr_mask_xor<T: image::Bitmap>(input: &mut T, pattern: u8) {
     }
 }
 
-pub fn penalty<T: QR>(input: &T) -> u32 {
-    use penalty_functions::*;
+fn penalty<T: QR>(input: &T) -> u32 {
+    use penalties::*;
 
-    penalty_adjacent(input)
-        + penalty_block(input)
-        + penalty_fake_marker(input)
-        + penalty_proportion(input)
+    adjacent(input) + block(input) + fake_marker(input) + proportion(input)
 }
-mod penalty_functions {
+
+fn penalty_split<T: QR>(input: &T) -> [u32; 4] {
+    use penalties::*;
+    [
+        adjacent(input),
+        block(input),
+        fake_marker(input),
+        proportion(input),
+    ]
+}
+
+mod penalties {
     use super::*;
+    const DEBUG: bool = true;
     // Adjacent modules in row/column in same color
-    pub(super) fn penalty_adjacent<T: QR>(input: &T) -> u32 {
+    pub(super) fn adjacent<T: QR>(input: &T) -> u32 {
         let width = input.dims().0;
         let max = width - 1;
 
@@ -168,15 +184,25 @@ mod penalty_functions {
         // penalty: 3 + i
         // i is the amount by which the number of adjacent modules of the same color exceeds 5
         let mut penalty = 0;
-        for n in 0..=max {
+        for line in 0..=max {
             // get row n
             let (mut xrun, mut yrun) = (1, 1);
             for index in 0..=max {
                 // checking x
-                if index < max && get(index, n) == get(index + 1, n) {
+                if index < max && (get(index, line) == get(index + 1, line)) {
                     xrun += 1;
                 } else {
                     if xrun > 5 {
+                        if DEBUG {
+                            println!(
+                                "ADJ: horizontal, length {}\n   row {}, {} --- {} (score {})",
+                                xrun,
+                                line,
+                                index,
+                                (index + 1) - xrun,
+                                xrun - 2
+                            );
+                        }
                         // 3 + run - 5
                         penalty += xrun - 2;
                     }
@@ -184,10 +210,20 @@ mod penalty_functions {
                 }
 
                 // checking y
-                if index < max && get(n, index) == get(n, index + 1) {
+                if index < max && get(line, index) == get(line, index + 1) {
                     yrun += 1;
                 } else {
                     if yrun > 5 {
+                        if DEBUG {
+                            println!(
+                                "ADJ: vertical, length {}\n   row {}, {} ||| {} (score {})",
+                                yrun,
+                                line,
+                                index,
+                                (index + 1) - yrun,
+                                yrun - 2
+                            );
+                        }
                         // 3 + run - 5
                         penalty += yrun - 2;
                     }
@@ -195,10 +231,11 @@ mod penalty_functions {
                 }
             }
         }
-        penalty
+        penalty as u32
+        // - (132 * u32::from(DEBUG))
     }
 
-    pub(super) fn penalty_block<T: QR>(input: &T) -> u32 {
+    pub(super) fn block<T: QR>(input: &T) -> u32 {
         let width = input.dims().0;
         let max = width - 1;
 
@@ -284,12 +321,12 @@ mod penalty_functions {
                 }
             }
         }
-        penalty as u32
+        penalty as u32 - (36 * u32::from(DEBUG))
     }
 
     // 1:1:3:1:1 ratio (dark:light:dark:light:dark) pattern in row/column
     // named "fake marker" because it can be confused with the position markers
-    pub(super) fn penalty_fake_marker<T: QR>(input: &T) -> u32 {
+    pub(super) fn fake_marker<T: QR>(input: &T) -> u32 {
         let width = input.dims().0;
         let max = width - 1;
 
@@ -308,38 +345,61 @@ mod penalty_functions {
         let mut penalty = 0;
         let pattern = 0b1011101;
 
-        for i in 0..=max {
-            for x in 0..=(max - 6) {
+        for line in 0..=max {
+            for index in 0..=(max - 6) {
                 'horizontal_test: {
                     for bit in 0..=6 {
-                        if get(x + bit, i) != (pattern & (1 << bit) != 0) {
+                        if get(index + bit, line) != (pattern & (1 << bit) != 0) {
                             break 'horizontal_test;
                         }
                     }
                     // matching pattern
+                    if DEBUG {
+                        if (index == 0 || index + 6 == max)
+                            && [2, 3, 4, max - 2, max - 3, max - 4].contains(&line)
+                        {
+                            // println!("FM: h.");
+                        } else {
+                            println!(
+                                "FM: horizontal\n   row {:3}, {:3} ||| {:3}",
+                                line,
+                                index,
+                                index + 6
+                            );
+                        }
+                    }
                     penalty += 40;
                 }
-            }
-
-            // reusing code
-            for y in 0..=(max - 6) {
                 'vertical_test: {
                     for bit in 0..=6 {
-                        if get(i, y + bit) != (pattern & (1 << bit) != 0) {
+                        if get(line, index + bit) != (pattern & (1 << bit) != 0) {
                             break 'vertical_test;
+                        }
+                    }
+                    if DEBUG {
+                        if (index == 0 || index + 6 == max)
+                            && [2, 3, 4, max - 2, max - 3, max - 4].contains(&line)
+                        {
+                            // println!("FM: v.");
+                        } else {
+                            println!(
+                                "FM: vertical\n   column {:3}, {:3} ||| {:3}",
+                                line,
+                                index,
+                                index + 6
+                            );
                         }
                     }
                     penalty += 40;
                 }
             }
         }
-
-        penalty
+        penalty - (720 * u32::from(DEBUG))
     }
 
-    #[allow(unused_variables)]
+    // #[allow(unused_variables)]
     // Proportion of dark modules in entire symbol
-    pub(super) fn penalty_proportion<T: QR>(input: &T) -> u32 {
+    pub(super) fn proportion<T: QR>(input: &T) -> u32 {
         let width = input.dims().0;
         let max = width - 1;
 
@@ -352,7 +412,7 @@ mod penalty_functions {
         };
 
         // it's get_bit but fast (and instead of bounds checks you get panics)
-        let get = |x: usize, y: usize| bits[y] & (1 << (max - x)) != 0;
+        // let get = |x: usize, y: usize| bits[y] & (1 << (max - x)) != 0;
 
         // penalty: 10 * k
         // k is the rating of the deviation of the proportion of dark modules in the symbol from 50% in steps of 5%
@@ -360,7 +420,7 @@ mod penalty_functions {
         let black: u32 = bits.iter().map(|z| z.count_ones()).sum();
         let proportion: f32 = (black as f32) / (width as f32).powi(2);
 
-        (10.0 - 20.0 * proportion).abs().round() as u32
+        10 * ((10.0 - 20.0 * proportion).abs().round() as u32)
     }
 }
 
