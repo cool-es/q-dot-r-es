@@ -1,5 +1,3 @@
-bugtest penalty routine (qr_standard.rs row 270)
-    adjacent and block routines seem to just output nonsense
 write function that stitches bitstream into codewords
 
 PITEOG stuff:

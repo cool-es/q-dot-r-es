@@ -2,7 +2,7 @@
 #![allow(unused_variables)]
 
 #[derive(Clone)]
-enum BitSequence {
+enum Token {
     // not implementing ECI at this time
 
     // mode indicator
@@ -31,14 +31,11 @@ enum BitSequence {
 
     // the bit sequence 0000
     Terminator,
-
-    // pattern of bits that does not adhere to the standard
-    Undefined,
 }
 
 #[derive(Clone)]
 pub struct DataStream {
-    data: Vec<BitSequence>,
+    data: Vec<Token>,
     // qr_version: u8,
     // error_correction: u8,
     // valid: Option<bool>,
@@ -55,36 +52,39 @@ impl DataStream {
     pub fn new() -> Self {
         DataStream { data: Vec::new() }
     }
-    pub fn is_valid(&self) -> bool {
-        stream_is_valid(self)
-    }
-    pub fn as_codewords(&self) -> BitData {
-        todo!()
-    }
 }
 
 impl BitData {
     pub fn codewords(&self) -> &Vec<u8> {
         &self.codewords
     }
+}
 
-    pub fn as_datastream(&self) -> DataStream {
-        todo!()
+impl Token {
+    // number of bits taken up by a token
+    fn size(&self) -> usize {
+        match self {
+            // not completely sure about this!
+            Self::Mode(_) => 4,
+            Self::Count(_) => 8,
+            Self::Byte(_) => 8,
+            Self::Numeric(_) => 10,
+            Self::AlphaNum(_) => 11,
+            Self::Kanji(_) => 13,
+            Self::Terminator => 4,
+            // _ => panic!(),
+        }
     }
 }
 
-fn stream_is_valid(input: &DataStream) -> bool {
-    todo!()
-}
-
-fn string_to_stream(input: &String) -> DataStream {
-    todo!()
-}
-
-fn stream_to_bits(input: &DataStream, version: u32, error_words: u32) -> BitData {
-    todo!()
-}
-
-fn bits_to_stream(input: &BitData) -> DataStream {
-    todo!()
+// untested
+fn set_bit(input: &mut BitData, index: usize, state: bool) {
+    let (n, i) = (index / 8, index % 8);
+    if state {
+        // set a 1 (bitwise 'or' w/ 1)
+        input.codewords[n] |= 1 << i;
+    } else {
+        //set a 0 (bitwise 'and' w/ 0)
+        input.codewords[n] &= !(1 << i);
+    }
 }
