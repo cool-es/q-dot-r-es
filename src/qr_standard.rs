@@ -4,6 +4,8 @@ mod tables;
 pub use tables::*;
 mod bitstream;
 pub use bitstream::*;
+mod badstream;
+pub use badstream::*;
 
 pub trait QR: Bitmap {
     fn qr_mask_xor(&mut self, pattern: u8);
