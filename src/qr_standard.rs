@@ -165,6 +165,8 @@ fn penalty_split<T: QR>(input: &T) -> [u32; 4] {
 mod penalties {
     use super::*;
     const DEBUG: bool = true;
+    const SUB_INEVITABLE_SCORE: bool = true;
+
     // Adjacent modules in row/column in same color
     pub(super) fn adjacent<T: QR>(input: &T) -> u32 {
         let width = input.dims().0;
@@ -194,14 +196,19 @@ mod penalties {
                 } else {
                     if xrun > 5 {
                         if DEBUG {
-                            println!(
-                                "ADJ: horizontal, length {}\n   row {}, {} --- {} (score {})",
-                                xrun,
-                                line,
-                                index,
-                                (index + 1) - xrun,
-                                xrun - 2
-                            );
+                            if [0, 6, 7, max - 7, max - 6, max].contains(&line)
+                                // && (index < 7 || index > 7)
+                            {
+                            } else {
+                                println!(
+                                    "ADJ: horizontal, length {}\n   row {}, {} --- {} (score {})",
+                                    xrun,
+                                    line,
+                                    (index + 1) - xrun,
+                                    index,
+                                    xrun - 2
+                                );
+                            }
                         }
                         // 3 + run - 5
                         penalty += xrun - 2;
@@ -215,14 +222,19 @@ mod penalties {
                 } else {
                     if yrun > 5 {
                         if DEBUG {
-                            println!(
-                                "ADJ: vertical, length {}\n   row {}, {} ||| {} (score {})",
-                                yrun,
-                                line,
-                                index,
-                                (index + 1) - yrun,
-                                yrun - 2
-                            );
+                            if [0, 6, 7, max - 7, max - 6, max].contains(&line)
+                                // && (index == max || index >= 7)
+                            {
+                            } else {
+                                println!(
+                                    "ADJ: vertical, length {}\n   col {}, {} ||| {} (score {})",
+                                    yrun,
+                                    line,
+                                    (index + 1) - yrun,
+                                    index,
+                                    yrun - 2
+                                );
+                            }
                         }
                         // 3 + run - 5
                         penalty += yrun - 2;
@@ -231,8 +243,7 @@ mod penalties {
                 }
             }
         }
-        penalty as u32
-        // - (132 * u32::from(DEBUG))
+        penalty as u32 - (96 * u32::from(SUB_INEVITABLE_SCORE))
     }
 
     pub(super) fn block<T: QR>(input: &T) -> u32 {
@@ -257,6 +268,8 @@ mod penalties {
         // by using a sliding frame, and mark already-scored pixels.
         // this is no panacea, but it's an okay solution
         let mut penalty = 0;
+
+        // this could have been a Bitmap :/
         let mut scored = vec![false; width.pow(2)];
 
         for rect_width in (1..=max).rev() {
@@ -321,7 +334,7 @@ mod penalties {
                 }
             }
         }
-        penalty as u32 - (36 * u32::from(DEBUG))
+        penalty as u32 - (36 * u32::from(SUB_INEVITABLE_SCORE))
     }
 
     // 1:1:3:1:1 ratio (dark:light:dark:light:dark) pattern in row/column
@@ -394,7 +407,7 @@ mod penalties {
                 }
             }
         }
-        penalty - (720 * u32::from(DEBUG))
+        penalty - (720 * u32::from(SUB_INEVITABLE_SCORE))
     }
 
     // #[allow(unused_variables)]
