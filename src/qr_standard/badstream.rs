@@ -25,7 +25,7 @@ pub fn badstream_to_poly(input: &Badstream) -> Polynomial {
     output
 }
 
-pub fn add_ascii_to_badstream(text: &str, stream: &mut Badstream) {
+pub fn push_ascii(text: &str, stream: &mut Badstream) {
     for i in text.chars() {
         if i.is_ascii() {
             let a = i as u8;
@@ -36,11 +36,13 @@ pub fn add_ascii_to_badstream(text: &str, stream: &mut Badstream) {
     }
 }
 
-pub fn pad_to(codewords: usize, stream: &mut Badstream) {
+// ref. pg. 34
+// 0xEC and 0x11 are the pad codewords, 11101100 and 00010001
+pub fn pad_to(codeword_length: usize, stream: &mut Badstream) {
     if stream.len() % 8 != 0 {
         stream.resize(stream.len() + (8 - stream.len() % 8), false);
     }
-    for i in 0..(codewords - (stream.len() / 8)) {
+    for i in 0..(codeword_length - (stream.len() / 8)) {
         let a = [0xEC, 0x11][i % 2];
         for k in (0..=7).rev() {
             stream.push((a & (1 << k)) != 0);
@@ -48,11 +50,25 @@ pub fn pad_to(codewords: usize, stream: &mut Badstream) {
     }
 }
 
-pub fn push_bytes(bytes: &[u8], stream: &mut Badstream) {
-    for &a in bytes {
+pub fn push_codewords(codewords: &[u8], stream: &mut Badstream) {
+    // padding
+    if stream.len() % 8 != 0 {
+        stream.resize(stream.len() + (8 - stream.len() % 8), false);
+    }
+    for &a in codewords {
         for k in (0..=7).rev() {
             stream.push((a & (1 << k)) != 0);
         }
+    }
+}
+
+pub fn push_bits(bits: &str, stream: &mut Badstream) {
+    for number in bits.chars() {
+        stream.push(match number {
+            '0' => false,
+            '1' => true,
+            _ => panic!(),
+        });
     }
 }
 
@@ -78,3 +94,18 @@ pub fn push_bytes(bytes: &[u8], stream: &mut Badstream) {
 //         }
 //     }
 // }
+
+pub fn write_badstream_to_bitmap<T: QR>(stream: &Badstream, bitmap: &mut T) {
+    let version = bitmap.qr_version().unwrap();
+    let max = version_to_max_index(version);
+    let (mut x, mut y) = (max, max);
+    for (a, &i) in stream.iter().enumerate() {
+        bitmap.set_bit(x, y, i);
+        if let Some((x2, y2)) = next_data_bit(x, y, version) {
+            (x, y) = (x2, y2);
+        } else {
+            assert_eq!(a + 1, stream.len());
+            break;
+        }
+    }
+}

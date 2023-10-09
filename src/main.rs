@@ -11,8 +11,28 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    qr_correctness_check();
-    // _remasking_test();
+    let message: &mut Badstream = &mut Vec::new();
+    let text = "i made a qr code";
+    let bitmap = &mut ImgRowAligned::new_blank_qr(1);
+
+    push_bits("0100", message);
+    push_bits(format!("{:08b}", text.len()).as_str(), message);
+    push_ascii(text, message);
+    push_bits("0000", message);
+    pad_to(26 - 7, message);
+    let code = encode_message(&badstream_to_poly(message), 7);
+    let encoded_message: &mut Badstream = &mut Vec::new();
+    push_codewords(
+        code.iter()
+            .map(|&x| x as u8)
+            .collect::<Vec<u8>>()
+            .as_slice(),
+        encoded_message,
+    );
+    set_fcode(bitmap, 1, (0, 0), data_to_fcode(0b01, 1).unwrap());
+    write_badstream_to_bitmap(encoded_message, bitmap);
+    bitmap.qr_mask_xor(1);
+    _debug_print_qr(bitmap);
 }
 
 fn qr_correctness_check() {
@@ -37,7 +57,7 @@ fn qr_correctness_check() {
     println!();
     let p = badstream_to_poly(&bits);
     for &i in &p {
-        print!("{i:#04X}, ");
+        print!("{i:02X} ");
     }
     println!();
     for &i in &p {
@@ -52,7 +72,7 @@ fn qr_correctness_check() {
     let result = polynomial_remainder(&p, &divisor);
     println!("result:");
     _doubleprint(&result);
-    println!("{:?}",&result);
+    println!("{:?}", &result);
 }
 
 #[test]

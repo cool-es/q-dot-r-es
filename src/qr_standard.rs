@@ -508,11 +508,11 @@ pub fn interpret_format(fcode: u16) -> Option<(u8, u8)> {
     }
 
     // L, M, Q, H
-    // let mut correction = match 0b11 & (fcode >> 13) {
-    //     0b01 => 1,
-    //     0b00 => 2,
-    //     0b11 => 3,
-    //     0b10 | _ => 4,
+    // let correction = match 0b11 & (fcode >> 13) {
+    //     0b01 => 0,
+    //     0b00 => 1,
+    //     0b11 => 2,
+    //     0b10 | _ => 3,
     // };
     let correction = (0b11 & (fcode >> 13)) as u8;
 
