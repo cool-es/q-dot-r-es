@@ -13,6 +13,7 @@ pub trait QR: Bitmap {
     fn qr_penalty_split(&self) -> [u32; 4];
     fn qr_version(&self) -> Option<u32>;
     fn new_blank_qr(version: u32) -> Self;
+    fn unmask(&mut self);
     fn is_valid_size(&self) -> bool {
         self.qr_version().is_some()
     }
@@ -81,6 +82,9 @@ impl QR for image::Img {
     fn qr_penalty_split(&self) -> [u32; 4] {
         penalty_split(self)
     }
+    fn unmask(&mut self) {
+        unmask(self);
+    }
 }
 
 // ImgRowAligned methods, ditto
@@ -106,6 +110,9 @@ impl QR for image::ImgRowAligned {
     }
     fn qr_penalty_split(&self) -> [u32; 4] {
         penalty_split(self)
+    }
+    fn unmask(&mut self) {
+        unmask(self);
     }
 }
 
@@ -813,4 +820,11 @@ fn new_blank_qr_code<T: image::Bitmap>(version: u32) -> T {
     }
 
     output
+}
+
+fn unmask<T: QR>(input: &mut T) {
+    let version = input.qr_version().unwrap();
+    let fcode = get_fcode(input, version, (0, 0)).unwrap();
+    let mask = interpret_format(fcode).unwrap().0;
+    input.qr_mask_xor(mask);
 }
