@@ -11,28 +11,44 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    let message: &mut Badstream = &mut Vec::new();
-    let text = "i made a qr code";
-    let bitmap = &mut ImgRowAligned::new_blank_qr(1);
+    first_qr_code();
+}
 
-    push_bits("0100", message);
-    push_bits(format!("{:08b}", text.len()).as_str(), message);
-    push_ascii(text, message);
-    push_bits("0000", message);
-    pad_to(26 - 7, message);
-    let code = encode_message(&badstream_to_poly(message), 7);
-    let encoded_message: &mut Badstream = &mut Vec::new();
-    push_codewords(
-        code.iter()
-            .map(|&x| x as u8)
-            .collect::<Vec<u8>>()
-            .as_slice(),
-        encoded_message,
-    );
-    set_fcode(bitmap, 1, (0, 0), data_to_fcode(0b01, 1).unwrap());
-    write_badstream_to_bitmap(encoded_message, bitmap);
-    bitmap.qr_mask_xor(1);
-    _debug_print_qr(bitmap);
+fn first_qr_code() {
+    for mask in 0..=7 {
+        let message: &mut Badstream = &mut Vec::new();
+        let text = "hi :)";
+        let bitmap = &mut ImgRowAligned::new_blank_qr(5);
+
+        push_bits("0100", message);
+        push_bits(format!("{:08b}", text.len()).as_str(), message);
+        push_ascii(text, message);
+        push_bits("0000", message);
+        pad_to(134 - 26, message);
+        let code = encode_message(&badstream_to_poly(message), 26);
+
+        for (a, &i) in (&code).iter().enumerate() {
+            print!("{:02X} ", i);
+            if a % 8 == 7 {
+                println!();
+            }
+        }
+        println!();
+
+        let encoded_message: &mut Badstream = &mut Vec::new();
+        push_codewords(
+            code.iter()
+                .map(|&x| x as u8)
+                .collect::<Vec<u8>>()
+                .as_slice(),
+            encoded_message,
+        );
+        set_fcode(bitmap, 5, (0, 0), data_to_fcode(0b01, mask).unwrap());
+        write_badstream_to_bitmap(encoded_message, bitmap);
+        bitmap.qr_mask_xor(mask);
+        _debug_print_qr(bitmap);
+        println!();
+    }
 }
 
 fn qr_correctness_check() {
