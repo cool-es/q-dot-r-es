@@ -825,7 +825,7 @@ fn new_blank_qr_code<T: image::Bitmap>(version: u32) -> T {
 fn unmask<T: QR>(input: &mut T) {
     let version = input.qr_version().unwrap();
     let fcode = get_fcode(input, version, (0, 0)).unwrap();
-    let mask = interpret_format(fcode).unwrap().0;
+    let mask = interpret_format(fcode).unwrap().1;
     input.qr_mask_xor(mask);
 }
 

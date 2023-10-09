@@ -11,30 +11,48 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    // check the correctness of a qr code
+    qr_correctness_check();
+    // _remasking_test();
+}
+
+fn qr_correctness_check() {
     let mut hello = testutil::hello1();
     hello.unmask();
+    _debug_print(&hello);
     let mut bits: Badstream = Vec::new();
     let (mut x, mut y) = (20, 20);
+    bits.push(hello.get_bit(x, y).unwrap());
     while let Some((x2, y2)) = next_data_bit(x, y, hello.qr_version().unwrap()) {
         (x, y) = (x2, y2);
         bits.push(hello.get_bit(x, y).unwrap());
     }
-    let p = badstream_to_poly(&bits);
-    for &i in &p {
-        print!("{i:#04x} ");
+    for (o, &i) in (&bits).iter().enumerate() {
+        print!("{}", u8::from(i));
+        if o % 8 == 7 {
+            println!();
+        } else if o % 2 == 1 {
+            print!("-");
+        }
     }
     println!();
-
-    // let err = errc(&hello);
-    let err = 13;
-    println!("error correcting codewords: {}", err);
+    let p = badstream_to_poly(&bits);
+    for &i in &p {
+        print!("{i:#04X}, ");
+    }
+    println!();
+    for &i in &p {
+        print!("{i:08b} ");
+    }
+    println!();
+    let err = 10;
+    println!("error-correcting codewords: {}", err);
     let divisor = make_rdsm_generator_polynomial(err as u32);
     println!("divisor:");
     prettyprint(&divisor);
     let result = polynomial_remainder(&p, &divisor);
     println!("result:");
     _doubleprint(&result);
+    println!("{:?}",&result);
 }
 
 #[test]
@@ -330,7 +348,11 @@ fn _remasking_test() {
         }
      */
 }
-
+fn unmask(input: &mut ImgRowAligned) {
+    let fcode = get_fcode(input, 1, (0, 0)).unwrap();
+    let mask = interpret_format(fcode).unwrap().1;
+    input.qr_mask_xor(mask);
+}
 // this function works perfectly!! it's great
 fn _qr_remask_v1_symbol(input: &ImgRowAligned, mask_pattern: u8) -> Option<ImgRowAligned> {
     let old_fcode = get_fcode(input, 1, (0, 0))?;
