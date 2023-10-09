@@ -828,3 +828,9 @@ fn unmask<T: QR>(input: &mut T) {
     let mask = interpret_format(fcode).unwrap().0;
     input.qr_mask_xor(mask);
 }
+
+pub fn errc<T:QR>(input: &T) ->u8 {
+    let version = input.qr_version().unwrap();
+    let fcode = get_fcode(input, version, (0, 0)).unwrap();
+    interpret_format(fcode).unwrap().1
+}

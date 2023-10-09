@@ -11,17 +11,30 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    _remasking_test()
-    // let mut hello = testutil::mask();
-    // hello.qr_penalty();
-    // println!("{}",hello.qr_penalty());
-    // _bugtest_squiggle(9);
-    // _print_symbol_diagram(9);
-    // for i in 1..=10 {
-    //     println!("\nversion {i}");
-    //     let a = ImgRowAligned::new_blank_qr(i);
-    //     _debug_print(&a);
-    // }
+    // check the correctness of a qr code
+    let mut hello = testutil::hello1();
+    hello.unmask();
+    let mut bits: Badstream = Vec::new();
+    let (mut x, mut y) = (20, 20);
+    while let Some((x2, y2)) = next_data_bit(x, y, hello.qr_version().unwrap()) {
+        (x, y) = (x2, y2);
+        bits.push(hello.get_bit(x, y).unwrap());
+    }
+    let p = badstream_to_poly(&bits);
+    for &i in &p {
+        print!("{i:#04x} ");
+    }
+    println!();
+
+    // let err = errc(&hello);
+    let err = 13;
+    println!("error correcting codewords: {}", err);
+    let divisor = make_rdsm_generator_polynomial(err as u32);
+    println!("divisor:");
+    prettyprint(&divisor);
+    let result = polynomial_remainder(&p, &divisor);
+    println!("result:");
+    _doubleprint(&result);
 }
 
 #[test]
