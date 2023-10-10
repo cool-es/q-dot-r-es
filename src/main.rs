@@ -11,7 +11,38 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    first_qr_code();
+    let mut a = Vec::new();
+    for i in ERROR_CORRECTION_CODEWORDS {
+        a.push(make_rdsm_generator_polynomial(i));
+    }
+    print!("&[");
+    for poly in &a {
+        print!("&[");
+        for &el in poly {
+            let k = log(el);
+            print!("{},",k);
+        }
+        print!("],");
+    }
+    println!("];");
+}
+
+fn gen_codeword_table() {
+    let mut cwords = Vec::new();
+    for version in 1..=40 {
+        let mut cwordcount: usize = 1;
+
+        // let bitmap = ImgRowAligned::new_blank_qr(version);
+        let mut x = (version_to_size(version).unwrap() - 1) as usize;
+        let mut y = x;
+
+        while let Some((x2, y2)) = next_data_bit(x, y, version) {
+            (x, y) = (x2, y2);
+            cwordcount += 1;
+        }
+        cwords.push(cwordcount / 8);
+    }
+    println!("{:?}", cwords);
 }
 
 fn first_qr_code() {

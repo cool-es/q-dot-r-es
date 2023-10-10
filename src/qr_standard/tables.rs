@@ -18,6 +18,7 @@ pub fn alignment_pattern_coords(version: u32) -> Vec<(usize, usize)> {
     output
 }
 
+// the centers of alignment patterns in both x and y dimensions
 pub(super) const AP_COORD_INDICES: [&[usize]; 40] = [
     &[],
     &[6, 18],
@@ -59,4 +60,17 @@ pub(super) const AP_COORD_INDICES: [&[usize]; 40] = [
     &[6, 32, 58, 84, 110, 136, 162],
     &[6, 26, 54, 82, 110, 138, 166],
     &[6, 30, 58, 86, 114, 142, 170],
+];
+
+// number of codewords in a given code version
+pub const CODEWORDS: [u32; 40] = [
+    26, 44, 70, 100, 134, 172, 196, 242, 292, 346, 404, 466, 532, 581, 655, 733, 815, 901, 991,
+    1085, 1156, 1258, 1364, 1474, 1588, 1706, 1828, 1921, 2051, 2185, 2323, 2465, 2611, 2761, 2876,
+    3034, 3196, 3362, 3532, 3706,
+];
+
+// the possible amounts of error correction codewords, ordered by size
+pub const ERROR_CORRECTION_CODEWORDS: [u32; 31] = [
+    7, 10, 13, 15, 16, 17, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 40, 42, 44, 46, 48, 50, 52, 54,
+    56, 58, 60, 62, 64, 66, 68,
 ];
