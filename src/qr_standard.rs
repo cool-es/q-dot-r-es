@@ -174,7 +174,7 @@ fn penalty_split<T: QR>(input: &T) -> [u32; 4] {
 mod penalties {
     use super::*;
     const DEBUG: bool = true;
-    const SUB_INEVITABLE_SCORE: bool = true;
+    const SUB_INEVITABLE_SCORE: bool = false;
 
     // Adjacent modules in row/column in same color
     pub(super) fn adjacent<T: QR>(input: &T) -> u32 {

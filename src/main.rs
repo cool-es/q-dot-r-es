@@ -11,6 +11,26 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
+    _print_exp_log_tables();
+}
+
+#[test]
+fn test_penalty() {
+    // essentially test to make sure the penalty function is monotonic
+    // for adding black pixels to a completely white square
+    let mask = &mut ImgRowAligned::new(125, 125);
+
+    let mut old = mask.qr_penalty();
+    let mut new: u32;
+    for i in 0..125 {
+        mask.set_bit((77 * i) % 125, i, true);
+        new = mask.qr_penalty();
+        assert!(new < old);
+        old = new;
+    }
+}
+
+fn gen_rdsm_polynomials() {
     let mut a = Vec::new();
     for i in ERROR_CORRECTION_CODEWORDS {
         a.push(make_rdsm_generator_polynomial(i));
@@ -20,7 +40,7 @@ fn main() {
         print!("&[");
         for &el in poly {
             let k = log(el);
-            print!("{},",k);
+            print!("{},", k);
         }
         print!("],");
     }
