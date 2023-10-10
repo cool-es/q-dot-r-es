@@ -1,5 +1,5 @@
+data entry 🥳 tables!! 🎊
 penalty routine still mysterious - do more troubleshooting
-write function that stitches bitstream into codewords
 
 PITEOG stuff:
 replace the "polynomial" type with the "codewords" type (convert functions, etc)?
