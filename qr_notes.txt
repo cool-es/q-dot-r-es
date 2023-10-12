@@ -34,6 +34,12 @@ generator polynomials: pg. 73
 
 symbol encoding example: pg. 90
 
+remainder bits per version (pg. 21):
+2..=6       7 bits
+14..=20     3 bits
+21..=27     4 bits
+28..=34     3 bits
+all other versions 0 bits
 
             ////// OTHER PATTERNS //////
 

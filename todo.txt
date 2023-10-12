@@ -1,13 +1,17 @@
-data entry 🥳 tables!! 🎊
-penalty routine still mysterious - do more troubleshooting
+• work on bitstream.rs, replicate the function of first_qr_code()
+• data entry 🥳 tables!! 🎊 ... specifically:
+    - bit lengths of character count indicators (pg. 24)
+    - remainder bits (see notes, pg 21)
+• penalty routine still mysterious - do more troubleshooting
+• update get_row() to handle sizes >128 (versions 28 and onward)
 
 going through the standards doc:
-data modes, mode switching (pg. 22)
-codeword blocks (pg. 52)
-version information (pgs. 61, 84)
-symbol encoding example (pg. 90)
-bitstream optimization  (pg. 92)
+• data modes, mode switching (pg. 22)
+• codeword blocks (pg. 52)
+• version information (pgs. 61, 84)
+• symbol encoding example (pg. 90)
+• bitstream optimization  (pg. 92)
 
 PITEOG stuff:
-replace the "polynomial" type with the "codewords" type (convert functions, etc)?
-deprecate the continuous-data "Img" type?
+• replace the "polynomial" type with the "codewords" type (convert functions, etc)?
+• deprecate the continuous-data "Img" type?

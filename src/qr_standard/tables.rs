@@ -1,23 +1,3 @@
-pub fn alignment_pattern_coords(version: u32) -> Vec<(usize, usize)> {
-    if !(1..=40).contains(&version) {
-        panic!()
-    }
-    let indices = AP_COORD_INDICES[version as usize - 1];
-    let mut output = Vec::new();
-
-    for &x in indices {
-        for &y in indices {
-            if [x, y].contains(&6) {
-                if x == y || [x, y].contains(&indices.last().unwrap()) {
-                    continue;
-                }
-            }
-            output.push((x, y));
-        }
-    }
-    output
-}
-
 // the centers of alignment patterns in both x and y dimensions
 pub(super) const AP_COORD_INDICES: [&[usize]; 40] = [
     &[],
@@ -62,6 +42,26 @@ pub(super) const AP_COORD_INDICES: [&[usize]; 40] = [
     &[6, 30, 58, 86, 114, 142, 170],
 ];
 
+pub fn alignment_pattern_coords(version: u32) -> Vec<(usize, usize)> {
+    if !(1..=40).contains(&version) {
+        panic!()
+    }
+    let indices = AP_COORD_INDICES[version as usize - 1];
+    let mut output = Vec::new();
+
+    for &x in indices {
+        for &y in indices {
+            if [x, y].contains(&6) {
+                if x == y || [x, y].contains(&indices.last().unwrap()) {
+                    continue;
+                }
+            }
+            output.push((x, y));
+        }
+    }
+    output
+}
+
 // number of codewords in a given code version
 pub const CODEWORDS: [u32; 40] = [
     26, 44, 70, 100, 134, 172, 196, 242, 292, 346, 404, 466, 532, 581, 655, 733, 815, 901, 991,
@@ -74,3 +74,30 @@ pub const ERROR_CORRECTION_CODEWORDS: [u32; 31] = [
     7, 10, 13, 15, 16, 17, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 40, 42, 44, 46, 48, 50, 52, 54,
     56, 58, 60, 62, 64, 66, 68,
 ];
+
+// table of characters for the alphanumeric encoding, ordered by index
+// the ascii indices are +48 for numbers, +55 for letters,
+// and for special chars, -4, -1, -1, 3, 3, 4, 4, 4, 14
+// (special chars have indices 36..=44 in this table)
+pub(super) const ALPHANUMERIC_TABLE: [char; 45] = [
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
+    'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ' ', '$',
+    '%', '*', '+', '-', '.', '/', ':',
+];
+
+pub(super) fn find_alphanum(input: char) -> u16 {
+    u16::from(match input {
+        '0'..='9' => (input as u8) - 48,
+        'A'..='Z' => (input as u8) - 55,
+        ' ' => 36,
+        '$' => 37,
+        '%' => 38,
+        '*' => 39,
+        '+' => 40,
+        '-' => 41,
+        '.' => 42,
+        '/' => 43,
+        ':' => 44,
+        _ => panic!(),
+    })
+}
