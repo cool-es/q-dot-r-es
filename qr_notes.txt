@@ -1,4 +1,4 @@
-~~~ notes on qr encoding/decoding ~~~
+            ////// MODES //////
 
 qr symbols contain a bitstream which is not aligned to its constituent 8-bit codewords (pg. 20)
 
@@ -8,7 +8,6 @@ the bitstream consists of:
 • character count indicator (8 / 9 / 10)
 • data bit stream
 • terminator: 0000
-i believe the format allows for consecutive streams of different data spliced together
 
 byte mode is shift-jis (pg. 29), which i believe is ascii-adjacent
 
@@ -20,6 +19,7 @@ alphabet (41 - 5A)
 reference on data modes: pg. 22, mixing data modes: pg. 92
 
 
+            ////// BITS AND CODEWORDS //////
 
 codewords are aligned in columns of width 2,
 are always read right-to-left in rows either up or down,
@@ -35,6 +35,7 @@ generator polynomials: pg. 73
 symbol encoding example: pg. 90
 
 
+            ////// OTHER PATTERNS //////
 
 symbol size is 21 + 4 * (version -1) for version between 1 and 40
 
