@@ -50,7 +50,9 @@ enum Token {
 
     // one character, which can vary in length
     // between 4 and 13 bits
-    Character(Mode, u16),
+    // mode, bit length, bit value
+    // the mode field might be superfluous...
+    Character(Mode, usize, u16),
 
     // the bit sequence 0000
     Terminator,
@@ -73,7 +75,7 @@ impl Token {
     fn maxsize(&self) -> usize {
         match self {
             ModeAndCount(..) => 20,
-            Character(mode, _) => mode.max_char_size(),
+            Character(_, size, _) => *size,
             Terminator => 4,
         }
     }
@@ -85,18 +87,13 @@ fn string_to_ascii(input: &str) -> Vec<Token> {
     }
     let mut output: Vec<Token> = vec![ModeAndCount(ASCII, input.len() as u16)];
     for i in input.chars() {
-        output.push(Character(ASCII, u16::from(i as u8)));
+        output.push(Character(ASCII, 8, u16::from(i as u8)));
     }
     output
 }
 
 // work in progress
 fn string_to_numeric(input: &str) -> Vec<Token> {
-    if input.len() % 3 != 0 {
-        // for now, while i figure out how
-        // to index this string in a better way
-        panic!()
-    }
     for i in (&input).chars() {
         if !i.is_ascii_digit() {
             panic!()
@@ -104,24 +101,41 @@ fn string_to_numeric(input: &str) -> Vec<Token> {
     }
     let mut output: Vec<Token> = vec![ModeAndCount(Numeric, input.len() as u16)];
 
-    // i don't know whether this syntax works
-    // how do i deal with the 1 and 2 digit cases?
-    for i in 0..(input.len() / 3) {
-        let a = input[i..(i + 3)].parse().unwrap();
-        output.push(Character(Numeric, a));
+    for i in input
+        .chars()
+        .map(|x| x.to_digit(10).unwrap() as u16)
+        .collect::<Vec<u16>>()
+        .chunks(3)
+    {
+        if i.len() == 3 {
+            output.push(Character(AlphaNum, 11, i[0] * 100 + i[1] * 10 + i[2]));
+        } else if i.len() == 2 {
+            output.push(Character(AlphaNum, 7, i[0] * 10 + i[1]));
+        } else {
+            output.push(Character(AlphaNum, 4, i[0]));
+        }
     }
     output
 }
 
 fn string_to_alphanum(input: &str) -> Vec<Token> {
-    for i in (&input).chars() {
-        if !super::ALPHANUMERIC_TABLE.contains(&i) {
-            panic!()
-        }
-    }
+    // for i in (&input).chars() {
+    //     if !super::ALPHANUMERIC_TABLE.contains(&i) {
+    //         panic!()
+    //     }
+    // }
     let mut output: Vec<Token> = vec![ModeAndCount(AlphaNum, input.len() as u16)];
-    for i in input.chars() {
-        output.push(Character(AlphaNum, find_alphanum(i.to_ascii_uppercase())));
+    for i in input
+        .chars()
+        .map(|x| find_alphanum(x))
+        .collect::<Vec<u16>>()
+        .chunks(2)
+    {
+        if i.len() == 2 {
+            output.push(Character(AlphaNum, 11, i[0] * 45 + i[1]));
+        } else {
+            output.push(Character(AlphaNum, 6, i[0]));
+        }
     }
     output
 }
