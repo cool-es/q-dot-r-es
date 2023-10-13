@@ -2,12 +2,15 @@
 • data entry 🥳 tables!! 🎊 ... specifically:
     - bit lengths of character count indicators (pg. 24)
     - remainder bits (see notes, pg 21)
+    - data codewords as function of version / error correction (pg. 34)
+    - error correction characteristics (pg. 41)
+    - version info (pg. 85)
 • penalty routine still mysterious - do more troubleshooting
 • update get_row() to handle sizes >128 (versions 28 and onward)
 
 going through the standards doc:
 • data modes, mode switching (pg. 22)
-• codeword blocks (pg. 52)
+• codeword blocks (pg. 52, refer pg. 54)
 • version information (pgs. 61, 84)
 • symbol encoding example (pg. 90)
 • bitstream optimization  (pg. 92)

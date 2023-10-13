@@ -90,14 +90,26 @@ fn string_to_ascii(input: &str) -> Vec<Token> {
     output
 }
 
+// work in progress
 fn string_to_numeric(input: &str) -> Vec<Token> {
+    if input.len() % 3 != 0 {
+        // for now, while i figure out how
+        // to index this string in a better way
+        panic!()
+    }
     for i in (&input).chars() {
         if !i.is_ascii_digit() {
             panic!()
         }
     }
     let mut output: Vec<Token> = vec![ModeAndCount(Numeric, input.len() as u16)];
-    todo!();
+
+    // i don't know whether this syntax works
+    // how do i deal with the 1 and 2 digit cases?
+    for i in 0..(input.len() / 3) {
+        let a = input[i..(i + 3)].parse().unwrap();
+        output.push(Character(Numeric, a));
+    }
     output
 }
 
@@ -109,7 +121,7 @@ fn string_to_alphanum(input: &str) -> Vec<Token> {
     }
     let mut output: Vec<Token> = vec![ModeAndCount(AlphaNum, input.len() as u16)];
     for i in input.chars() {
-        output.push(Character(AlphaNum, find_alphanum(i)));
+        output.push(Character(AlphaNum, find_alphanum(i.to_ascii_uppercase())));
     }
     output
 }

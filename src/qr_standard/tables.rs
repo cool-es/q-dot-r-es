@@ -75,6 +75,33 @@ pub const ERROR_CORRECTION_CODEWORDS: [u32; 31] = [
     56, 58, 60, 62, 64, 66, 68,
 ];
 
+// reverse-lookup to find the index for precomputed.rs > RDSM_GENERATOR_POLYNOMIALS
+pub fn find_errc(input: usize) -> Option<usize> {
+    Some(
+        (input
+            - match input {
+                7 | 17 => 7,
+                13 | 15 => 9,
+                x if x % 2 == 1 => return None,
+                18..=36 => 6,
+                10 | 16 | 40..=68 => 8,
+                _ => return None,
+            })
+            / 2,
+    )
+}
+
+pub fn find_errc2(input: u32) -> Option<usize> {
+    ERROR_CORRECTION_CODEWORDS.iter().position(|&a| a == input)
+}
+
+#[test]
+fn test_errc() {
+    for i in 0..70 {
+        assert!(find_errc(i) == find_errc2(i as u32));
+    }
+}
+
 // table of characters for the alphanumeric encoding, ordered by index
 // the ascii indices are +48 for numbers, +55 for letters,
 // and for special chars, -4, -1, -1, 3, 3, 4, 4, 4, 14
@@ -85,6 +112,7 @@ pub(super) const ALPHANUMERIC_TABLE: [char; 45] = [
     '%', '*', '+', '-', '.', '/', ':',
 ];
 
+// tested, works
 pub(super) fn find_alphanum(input: char) -> u16 {
     u16::from(match input {
         '0'..='9' => (input as u8) - 48,
@@ -100,4 +128,8 @@ pub(super) fn find_alphanum(input: char) -> u16 {
         ':' => 44,
         _ => panic!(),
     })
+}
+
+pub fn find_alphanum2(input: char) -> Option<usize> {
+    ALPHANUMERIC_TABLE.iter().position(|&a| a == input)
 }
