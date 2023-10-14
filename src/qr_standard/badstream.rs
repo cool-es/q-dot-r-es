@@ -42,7 +42,11 @@ pub fn pad_to(codeword_length: usize, stream: &mut Badstream) {
     if stream.len() % 8 != 0 {
         stream.resize(stream.len() + (8 - stream.len() % 8), false);
     }
-    for i in 0..(codeword_length - (stream.len() / 8)) {
+    // for i in 0..(codeword_length - (stream.len() / 8)) {
+    for i in 0..(codeword_length
+        .checked_sub(stream.len() / 8)
+        .unwrap_or_default())
+    {
         let a = [0xEC, 0x11][i % 2];
         for k in (0..=7).rev() {
             stream.push((a & (1 << k)) != 0);

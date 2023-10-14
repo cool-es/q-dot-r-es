@@ -11,17 +11,41 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    let version = 5;
+    let version = 1;
+    let cwords = CODEWORDS[version as usize - 1];
+    let ecwords = 7;
     for mask in 0..=7 {
         let message: &mut Badstream = &mut invoke_modes(
             &[
-                (0, "01234567"),
-                // (1, "WELCOME... TO NUMBERS 323232"),
+                /* (2, "this is ASCII mode! it has 255 chars. "),
+                (
+                    1,
+                    "THIS IS ALPHANUMERIC. IT HAS 45 CHARS. AND NUMERIC MODE ONLY HAS 10: ",
+                ),
+                (0, "01234565789"), */
+                // (1, "THIS IS ALPHANUMERIC MODE"),
+                // (1, "$$$$$$$$$$$$$$$$$$$$$$$$$"),
+                (2, "this is ascii >w<"),
+                // (0, "12345678901234567890123456789012345678901"),
+                // (0, "111111111111111111111111111111111111111111"),
+                //   (2,"the constant Pi is approximately 3."),
+                    //   (0,"1415926"),
+                    //   (1," ... AND I AM SO ANGRY AB"),
+                    //   (2,"out it... no i'm Calm now :)"),
             ],
             version,
         );
 
-       /*  for p in message {
+        if message.len() / 8 > (cwords - ecwords) as usize {
+            panic!(
+                "{} too many message codewords:\n   allowed: {}\n   message: {}",
+                (message.len() / 8) - (cwords - ecwords) as usize,
+                (cwords - ecwords) as usize,
+                (message.len() / 8)
+            )
+        }
+
+        /*  for p in message {
             print!("{}", u8::from(*p));
         } */
         println!();
@@ -31,13 +55,19 @@ fn main() {
             // let mask = todo!();
             let bitmap = &mut ImgRowAligned::new_blank_qr(version);
 
-            pad_to(134 - 26, message);
-            let code = encode_message(&badstream_to_poly(message), 26);
+            pad_to((cwords - ecwords) as usize, message);
+            let code = encode_message(&badstream_to_poly(message), ecwords as u32);
 
+            let mut count = 0;
             for (a, &i) in (&code).iter().enumerate() {
                 print!("{:02X} ", i);
-                if a % 8 == 7 {
+                count += 1;
+                if a + 1 == (cwords - ecwords) as usize {
+                    println!("\n");
+                    count = 0;
+                } else if count % 8 == 7 {
                     println!();
+                    count = 0;
                 }
             }
             println!();
@@ -50,10 +80,16 @@ fn main() {
                     .as_slice(),
                 encoded_message,
             );
-            set_fcode(bitmap, 5, (0, 0), data_to_fcode(0b01, mask).unwrap());
+            set_fcode(
+                bitmap,
+                version,
+                (0, 0),
+                data_to_fcode([0b01, 0b00, 0b11, 0b10][0], mask).unwrap(),
+            );
             write_badstream_to_bitmap(encoded_message, bitmap);
             bitmap.qr_mask_xor(mask);
             _debug_print_qr(bitmap);
+            println!("{}", bitmap.qr_penalty());
             println!();
         }
     }

@@ -8,6 +8,12 @@
 • penalty routine still mysterious - do more troubleshooting
 • update get_row() to handle sizes >128 (versions 28 and onward)
 
+• mode edge cases:
+    (0, "123456789012345678901234567890123456789012") version 1L
+        renders but unreadable
+    (0, "111111111111111111111111111111111111111111") version 1L
+        tries to write string of wrong length to bitmap
+
 going through the standards doc:
 • data modes, mode switching (pg. 22)
 • codeword blocks (pg. 52, refer pg. 54)

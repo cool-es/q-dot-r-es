@@ -60,7 +60,7 @@ enum Token {
 
 fn string_to_ascii(input: &str) -> Vec<Token> {
     if !input.is_ascii() {
-        panic!()
+        panic!("not ascii")
     }
     let mut output: Vec<Token> = vec![ModeAndCount(ASCII, input.len() as u16)];
     for i in input.chars() {
@@ -72,7 +72,7 @@ fn string_to_ascii(input: &str) -> Vec<Token> {
 fn string_to_numeric(input: &str) -> Vec<Token> {
     for i in (&input).chars() {
         if !i.is_ascii_digit() {
-            panic!()
+            panic!("not numeric")
         }
     }
     let mut output: Vec<Token> = vec![ModeAndCount(Numeric, input.len() as u16)];

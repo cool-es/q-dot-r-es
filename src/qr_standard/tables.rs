@@ -126,7 +126,7 @@ pub(super) fn find_alphanum(input: char) -> u16 {
         '.' => 42,
         '/' => 43,
         ':' => 44,
-        _ => panic!(),
+        _ => panic!("not alphanumeric"),
     })
 }
 
