@@ -14,7 +14,7 @@ something that's really complicated is deciding what level of complexity/abstrac
 and i was stuck choosing between 2 and 3, where either option would make it really complicated to skip over the missing step. so i chose to do both
 */
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 enum Mode {
     // not implementing ECI at this time
 
@@ -58,29 +58,6 @@ enum Token {
     Terminator,
 }
 
-impl Mode {
-    // maximum number of bits taken up by a character
-    fn max_char_size(&self) -> usize {
-        match self {
-            ASCII => 8,
-            Numeric => 10,
-            AlphaNum => 11,
-            Kanji => 13,
-        }
-    }
-}
-
-impl Token {
-    // maximum number of bits taken up by a token
-    fn maxsize(&self) -> usize {
-        match self {
-            ModeAndCount(..) => 20,
-            Character(_, size, _) => *size,
-            Terminator => 4,
-        }
-    }
-}
-
 fn string_to_ascii(input: &str) -> Vec<Token> {
     if !input.is_ascii() {
         panic!()
@@ -92,7 +69,6 @@ fn string_to_ascii(input: &str) -> Vec<Token> {
     output
 }
 
-// work in progress
 fn string_to_numeric(input: &str) -> Vec<Token> {
     for i in (&input).chars() {
         if !i.is_ascii_digit() {
@@ -108,7 +84,7 @@ fn string_to_numeric(input: &str) -> Vec<Token> {
         .chunks(3)
     {
         if i.len() == 3 {
-            output.push(Character(AlphaNum, 11, i[0] * 100 + i[1] * 10 + i[2]));
+            output.push(Character(AlphaNum, 10, i[0] * 100 + i[1] * 10 + i[2]));
         } else if i.len() == 2 {
             output.push(Character(AlphaNum, 7, i[0] * 10 + i[1]));
         } else {
@@ -119,11 +95,6 @@ fn string_to_numeric(input: &str) -> Vec<Token> {
 }
 
 fn string_to_alphanum(input: &str) -> Vec<Token> {
-    // for i in (&input).chars() {
-    //     if !super::ALPHANUMERIC_TABLE.contains(&i) {
-    //         panic!()
-    //     }
-    // }
     let mut output: Vec<Token> = vec![ModeAndCount(AlphaNum, input.len() as u16)];
     for i in input
         .chars()
@@ -136,6 +107,59 @@ fn string_to_alphanum(input: &str) -> Vec<Token> {
         } else {
             output.push(Character(AlphaNum, 6, i[0]));
         }
+    }
+    output
+}
+
+// KISS
+fn push_token_to_badstream(stream: &mut Badstream, token: Token, version: u32) {
+    match token {
+        ModeAndCount(mode, count) => {
+            let a: (usize, &str) = match mode {
+                Numeric => (0, "0001"),
+                AlphaNum => (1, "0010"),
+                ASCII => (2, "0100"),
+                Kanji => (3, "1000"),
+            };
+            let b = match version {
+                1..=9 => 0,
+                10..=26 => 1,
+                27..=40 => 2,
+                _ => panic!(),
+            };
+
+            // number of bits in char count indicator - see pg. 24
+            let width: usize = [[10, 9, 8, 8], [12, 11, 16, 10], [14, 13, 16, 12]][b][a.0];
+            let string = format!("{:016b}", count);
+
+            push_bits(a.1, stream);
+            push_bits(&string[(16 - width)..], stream);
+        }
+        Character(_, width, address) => {
+            let string = format!("{:016b}", address);
+            push_bits(&string[(16 - width)..], stream);
+        }
+        Terminator => {
+            push_bits("0000", stream);
+        }
+    }
+}
+
+pub fn invoke_modes(input: &[(u8, &str)], version: u32) -> Badstream {
+    let mut stream: Vec<Token> = Vec::new();
+    for (mode, data) in input {
+        stream.extend(match mode {
+            0 => string_to_numeric(&data),
+            1 => string_to_alphanum(&data),
+            2 => string_to_ascii(&data),
+            _ => panic!(),
+        });
+    }
+    stream.push(Terminator);
+
+    let mut output: Badstream = Vec::new();
+    for token in stream {
+        push_token_to_badstream(&mut output, token, version);
     }
     output
 }

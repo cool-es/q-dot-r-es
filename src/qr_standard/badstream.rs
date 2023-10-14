@@ -72,29 +72,6 @@ pub fn push_bits(bits: &str, stream: &mut Badstream) {
     }
 }
 
-// incorrect - refer to pg. 26
-// pub fn add_numeric_to_badstream(nums: u32, stream: &mut Badstream) {
-//     let size = {
-//         if let Some(k) = nums.checked_ilog10() {
-//             k + 1
-//         } else {
-//             0
-//         }
-//     };
-
-//     if size % 3 != 0 {
-//         // ???
-//         todo!()
-//     }
-
-//     for i in (1..(size / 3)).rev() {
-//         let a = (nums / (1000 * i)) as usize;
-//         for k in (0..=10).rev() {
-//             stream.push((a & (1 << k)) != 0);
-//         }
-//     }
-// }
-
 pub fn write_badstream_to_bitmap<T: QR>(stream: &Badstream, bitmap: &mut T) {
     let version = bitmap.qr_version().unwrap();
     let max = version_to_max_index(version);
