@@ -819,6 +819,10 @@ fn new_blank_qr_code<T: image::Bitmap>(version: u32) -> T {
         }
     }
 
+    // draw version patterns
+    {
+        set_vcode(&mut output, version, qr_generate_vcode(version));
+    }
     output
 }
 
@@ -829,8 +833,75 @@ fn unmask<T: QR>(input: &mut T) {
     input.qr_mask_xor(mask);
 }
 
-pub fn errc<T:QR>(input: &T) ->u8 {
+pub fn errc<T: QR>(input: &T) -> u8 {
     let version = input.qr_version().unwrap();
     let fcode = get_fcode(input, version, (0, 0)).unwrap();
     interpret_format(fcode).unwrap().1
+}
+
+// generate the 18-bit version info data (versions 7 and up)
+// tested, works!
+fn qr_generate_vcode(version: u32) -> u32 {
+    // version code generator for (18,6) BCH code:
+    // 0x1F25 = 0b1111100100101
+    ((version << 12) | carryless_divide(version << 12, 0x1F25)) as u32
+}
+
+#[test]
+fn test_version_block() {
+    let table = [
+        (7u32, 0xc94u32),
+        (8, 0x5bc),
+        (9, 0xa99),
+        (10, 0x4d3),
+        (11, 0xbf6),
+        (12, 0x762),
+        (13, 0x847),
+        (14, 0x60d),
+        (15, 0x928),
+        (16, 0xb78),
+        (17, 0x45d),
+        (18, 0xa17),
+        (26, 0xfab),
+        (36, 0xb0b),
+        (40, 0xc69),
+    ];
+    for (a, i) in table {
+        let artificial = (a << 12) + i;
+        let real = qr_generate_vcode(a);
+        assert!(artificial == real);
+    }
+}
+
+// in the style of format_info_coords. again:
+// this function gives pairs of coordinates (x1, y1), (x2, y2)
+// relative to top left module of the finder pattern
+// from LSB (0) to MSB (17) (see pg. 61)
+fn version_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize, usize))> {
+    if bad_version(version) || version < 7 || bit > 17 {
+        // undefined
+        return None;
+    }
+
+    let max = version_to_max_index(version);
+    let bit = bit as usize;
+
+    let short = bit % 3 + max - 10;
+    let long = bit / 3;
+
+    // diagonal mirror symmetry
+    let coord1 = (short, long);
+    let coord2 = (long, short);
+
+    Some((coord1, coord2))
+}
+
+// in the style of set_fcode
+pub fn set_vcode<T: image::Bitmap>(input: &mut T, version: u32, vcode: u32) {
+    for bit in 0..=17 {
+        let ((x1, y1), (x2, y2)) = version_info_coords(version, bit).unwrap();
+        let value = vcode & (1 << bit) != 0;
+        input.set_bit(x1, y1, value);
+        input.set_bit(x2, y2, value);
+    }
 }

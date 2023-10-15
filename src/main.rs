@@ -11,27 +11,36 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
+    let name = "nicelunch";
+    println!(
+        "{}// {}.xbm",
+        <ImgRowAligned as QR>::new_blank_qr(40).as_xbm(name),
+        name
+    );
+}
+
+fn gen_qr_using_modes() {
     let version = 1;
     let cwords = CODEWORDS[version as usize - 1];
     let ecwords = 7;
     for mask in 0..=7 {
         let message: &mut Badstream = &mut invoke_modes(
             &[
-                /* (2, "this is ASCII mode! it has 255 chars. "),
-                (
-                    1,
-                    "THIS IS ALPHANUMERIC. IT HAS 45 CHARS. AND NUMERIC MODE ONLY HAS 10: ",
-                ),
-                (0, "01234565789"), */
+                // (2, "this is ASCII mode! it has 255 chars. "),
+                // (
+                //     1,
+                //     "THIS IS ALPHANUMERIC. IT HAS 45 CHARS. AND NUMERIC MODE ONLY HAS 10: ",
+                // ),
+                // (0, "01234565789"),
                 // (1, "THIS IS ALPHANUMERIC MODE"),
                 // (1, "$$$$$$$$$$$$$$$$$$$$$$$$$"),
                 (2, "this is ascii >w<"),
                 // (0, "12345678901234567890123456789012345678901"),
                 // (0, "111111111111111111111111111111111111111111"),
-                //   (2,"the constant Pi is approximately 3."),
-                    //   (0,"1415926"),
-                    //   (1," ... AND I AM SO ANGRY AB"),
-                    //   (2,"out it... no i'm Calm now :)"),
+                // (2, "the constant Pi is approximately 3."),
+                // (0, "1415926"),
+                // (1, " ... AND I AM SO ANGRY AB"),
+                // (2, "out it... no i'm Calm now :)"),
             ],
             version,
         );

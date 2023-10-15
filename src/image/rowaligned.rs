@@ -142,9 +142,10 @@ impl ImgRowAligned {
             if n < self.bits.len() - 1 {
                 output.push_str(",");
             } else {
-                output.push_str(" }};");
+                output.push_str(" };\n");
             }
         }
+        // output.push_str(format!("// run with:\n// cargo r -q > {}.xbm\n",name).as_str());
         output
     }
 

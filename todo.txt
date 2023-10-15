@@ -1,6 +1,5 @@
 • work on bitstream.rs, replicate the function of first_qr_code()
 • data entry 🥳 tables!! 🎊 ... specifically:
-    - bit lengths of character count indicators (pg. 24)
     - remainder bits (see notes, pg 21)
     - data codewords as function of version / error correction (pg. 34)
     - error correction characteristics (pg. 41)
@@ -16,11 +15,11 @@
 
 going through the standards doc:
 • data modes, mode switching (pg. 22)
+    mostly done!! great job me!! kanji and ECI remain
 • codeword blocks (pg. 52, refer pg. 54)
 • version information (pgs. 61, 84)
 • symbol encoding example (pg. 90)
 • bitstream optimization  (pg. 92)
 
 PITEOG stuff:
-• replace the "polynomial" type with the "codewords" type (convert functions, etc)?
 • deprecate the continuous-data "Img" type?
