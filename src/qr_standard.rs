@@ -820,7 +820,7 @@ fn new_blank_qr_code<T: image::Bitmap>(version: u32) -> T {
     }
 
     // draw version patterns
-    {
+    if version >= 7 {
         set_vcode(&mut output, version, qr_generate_vcode(version));
     }
     output

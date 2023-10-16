@@ -39,14 +39,29 @@ pub fn push_ascii(text: &str, stream: &mut Badstream) {
 // ref. pg. 34
 // 0xEC and 0x11 are the pad codewords, 11101100 and 00010001
 pub fn pad_to(codeword_length: usize, stream: &mut Badstream) {
-    if stream.len() % 8 != 0 {
-        stream.resize(stream.len() + (8 - stream.len() % 8), false);
+    // stream is too long
+    if stream.len().div_ceil(8) > codeword_length {
+        panic!(
+            "padding operation out of bounds: stream is {} bits but bound is {}",
+            stream.len(),
+            8 * codeword_length
+        )
+    } else if stream.len().div_ceil(8) > codeword_length - 1 && stream.len() % 8 != 0 {
+        panic!(
+            "padding operation error: {} bits away from bound; code will not scan",
+            codeword_length * 8 - stream.len()
+        )
     }
-    // for i in 0..(codeword_length - (stream.len() / 8)) {
-    for i in 0..(codeword_length
-        .checked_sub(stream.len() / 8)
-        .unwrap_or_default())
-    {
+
+    // pad to next codeword boundary with zeros
+    if stream.len() % 8 != 0 {
+        stream.resize(stream.len().next_multiple_of(8), false);
+    }
+
+    // for i in 0..(codeword_length
+    //     .checked_sub(stream.len() / 8)
+    //     .unwrap_or_default())
+    for i in 0..(codeword_length - (stream.len() / 8)) {
         let a = [0xEC, 0x11][i % 2];
         for k in (0..=7).rev() {
             stream.push((a & (1 << k)) != 0);

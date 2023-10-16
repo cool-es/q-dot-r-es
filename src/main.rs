@@ -11,46 +11,120 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    let name = "nicelunch";
-    println!(
-        "{}// {}.xbm",
-        <ImgRowAligned as QR>::new_blank_qr(40).as_xbm(name),
-        name
-    );
+    fn n(x: usize) -> String {
+        "1234567890".chars().cycle().take(x).collect::<String>()
+    }
+
+    let string = n(3);
+    let s = string.as_str();
+
+    gen_qr_using_modes(Some(&[
+        // 1
+        // (0, "123456789012345678901234567890123456789012"),
+
+        // 2
+        (1, "3."),
+        (0, "1415926535897"),
+        (2, "e"),
+        (2, "e"),
+        (2, "e"),
+        // // 3
+        // (1, "22"),
+        // (0, "11111111111111"),
+        // (2, "e"),
+        // (0, "0"),
+        // (1, "E"),
+        // // 4
+        // (0, "1234567890123456"),
+        // (1, "12345678901"),
+        // // 5
+        // (1, "1234567890123456789"),
+        // (1, "12"),
+        // (2, n(17).as_str()),
+        // thank you
+        // the good
+        // (2,"hello my baby,")
+        // the bad
+        // (0, s),
+        // (1, s),
+        // (2, s),
+        // (1, "123"),
+        // (2, "123"),
+        // (2,"12345"),(0,"123456789012345678901234567")
+        // (1,"12345"),(0,"1234567"),
+        // (1, "22"),(0, "1111111111111"),(2, "e"),(0, "0"),(1, "E")
+        // (0,"12345678901234567890123456789012345678901235")
+        // (0,"1234567890123456"),(1,"12345678901")
+        // (0, n(8).as_str()),(0, n(26).as_str()),
+        // (0, n(3).as_str()),(0, n(33).as_str()),
+        // (1, n(3).as_str()),
+        // (0, n(33).as_str()),
+        // (0, n(15).as_str()),
+        // (2, n(8).as_str()),
+        // (0, n(17).as_str()),(2, n(8).as_str()),
+        // (1, n(1).as_str()),(2, n(14).as_str()),
+        // (1,"1234567890123456789"),(1,"12")
+        // (0,"12345678901234567890123456789"),(2,"123")
+        // (1,"123456789012"),(2,"1234567")
+        // (0,""),
+        // (2,""),
+    ]));
+    // let name = "testimage";
+    // println!(
+    //     "{}// {}.xbm",
+    //     <ImgRowAligned as QR>::new_blank_qr(8).as_xbm(name),
+    //     name
+    // );
 }
 
-fn gen_qr_using_modes() {
+fn gen_qr_using_modes(custom_input: Option<&[(u8, &str)]>) {
     let version = 1;
     let cwords = CODEWORDS[version as usize - 1];
     let ecwords = 7;
     for mask in 0..=7 {
         let message: &mut Badstream = &mut invoke_modes(
-            &[
-                // (2, "this is ASCII mode! it has 255 chars. "),
-                // (
-                //     1,
-                //     "THIS IS ALPHANUMERIC. IT HAS 45 CHARS. AND NUMERIC MODE ONLY HAS 10: ",
-                // ),
-                // (0, "01234565789"),
-                // (1, "THIS IS ALPHANUMERIC MODE"),
-                // (1, "$$$$$$$$$$$$$$$$$$$$$$$$$"),
-                (2, "this is ascii >w<"),
-                // (0, "12345678901234567890123456789012345678901"),
-                // (0, "111111111111111111111111111111111111111111"),
-                // (2, "the constant Pi is approximately 3."),
-                // (0, "1415926"),
-                // (1, " ... AND I AM SO ANGRY AB"),
-                // (2, "out it... no i'm Calm now :)"),
-            ],
+            {
+                if let Some(goods) = custom_input {
+                    goods
+                } else {
+                    &[
+                        // (2, "this is ASCII mode! it has 255 chars. "),
+                        // (
+                        //     1,
+                        //     "THIS IS ALPHANUMERIC. IT HAS 45 CHARS. AND NUMERIC MODE ONLY HAS 10: ",
+                        // ),
+                        // (0, "01234565789"),
+                        // (1, "THIS IS ALPHANUMERIC MODE"),
+                        // (1, "$$$$$$$$$$$$$$$$$$$$$$$$$"),
+                        (2, "this is ascii >w<"),
+                        // (0, "12345678901234567890123456789012345678901"),
+                        // (0, "111111111111111111111111111111111111111111"),
+                        // (2, "the constant Pi is approximately 3."),
+                        // (0, "1415926"),
+                        // (1, " ... AND I AM SO ANGRY AB"),
+                        // (2, "out it... no i'm Calm now :)"),
+                    ]
+                }
+            },
             version,
         );
 
-        if message.len() / 8 > (cwords - ecwords) as usize {
+        println!("--- unpadded length is {} + terminator", message.len() - 4);
+        // println!("contents:\n   {}", {
+        //     let mut string = String::new();
+        //     for i in (&message).iter() {
+        //         string.push(if *i { '1' } else { '0' });
+        //     }
+        //     string
+        // });
+
+        // this took so long to fix...
+        if message.len().div_ceil(8) > (cwords - ecwords) as usize {
             panic!(
                 "{} too many message codewords:\n   allowed: {}\n   message: {}",
-                (message.len() / 8) - (cwords - ecwords) as usize,
+                (message.len().div_ceil(8)) - (cwords - ecwords) as usize,
                 (cwords - ecwords) as usize,
-                (message.len() / 8)
+                (message.len().div_ceil(8))
             )
         }
 

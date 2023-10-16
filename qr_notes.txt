@@ -20,6 +20,11 @@ reference on data modes: pg. 22, mixing data modes: pg. 92
 
 numeric mode has an avg size of (10*i+1)/3 bits for i digits
 
+number of bits in char count indicator - pg. 24
+    [10,  9,  8,  8] 1..=9
+    [12, 11, 16, 10] 10..=26
+    [14, 13, 16, 12] 27..=40
+     Nu  AN  By  Kj
 
             ////// BITS AND CODEWORDS //////
 

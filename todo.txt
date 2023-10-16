@@ -3,23 +3,32 @@
     - remainder bits (see notes, pg 21)
     - data codewords as function of version / error correction (pg. 34)
     - error correction characteristics (pg. 41)
-    - version info (pg. 85)
 • penalty routine still mysterious - do more troubleshooting
-• update get_row() to handle sizes >128 (versions 28 and onward)
+• update penalty functions to not use get_row()
+• mode overhead calculation for when to switch modes
+• fix this: data ending in the last codeword is corrupted
+
 
 • mode edge cases:
-    (0, "123456789012345678901234567890123456789012") version 1L
-        renders but unreadable
-    (0, "111111111111111111111111111111111111111111") version 1L
-        tries to write string of wrong length to bitmap
+    renders but unreadable:
+        (1, "3."),(0, "1415926535897"),(2, "e"),(2, "e"),(2, "e") version 1L, 146 bits
+        (1, "22"),(0, "11111111111111"),(2, "e"),(0, "0"),(1, "E") version 1L, 146 bits 
+        (0,"1234567890123456"),(1,"12345678901") version 1L, 146 bits 
+        (1,"1234567890123456789"),(1,"12") version 1L, 146 bits 
+    good working codes, to compare against:
+        (2, "this is ascii >w<") version 1L, 152 bits (max length)
+        (1, "3."),(0, "141592653589"),(2, "e"),(2, "e"),(2, "e") version 1L, 138 bits
+        (1, "11"),(0, "11111111111"),(2, "1"),(2, "1"),(2, "1")
+        (0, n(3).as_str()),(0, n(33).as_str()) 148+t.
 
 going through the standards doc:
 • data modes, mode switching (pg. 22)
     mostly done!! great job me!! kanji and ECI remain
 • codeword blocks (pg. 52, refer pg. 54)
-• version information (pgs. 61, 84)
 • symbol encoding example (pg. 90)
 • bitstream optimization  (pg. 92)
 
 PITEOG stuff:
 • deprecate the continuous-data "Img" type?
+• update get_row() to handle sizes >128 (versions 28 and onward)
+    idk if this is necessary
