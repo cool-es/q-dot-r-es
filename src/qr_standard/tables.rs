@@ -133,3 +133,18 @@ pub(super) fn find_alphanum(input: char) -> u16 {
 pub fn find_alphanum2(input: char) -> Option<usize> {
     ALPHANUMERIC_TABLE.iter().position(|&a| a == input)
 }
+
+// remainder bits per version (pg. 21):
+// 2..=6       7 bits
+// 14..=20     3 bits
+// 21..=27     4 bits
+// 28..=34     3 bits
+// all other versions 0 bits
+pub fn remainder(version: u32) -> u8 {
+    match version {
+        2..=6 => 7,
+        14..=20 | 28..=34 => 3,
+        21..=27 => 4,
+        _ => 0,
+    }
+}
