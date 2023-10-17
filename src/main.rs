@@ -11,18 +11,17 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    fn n(x: usize) -> String {
-        "1234567890".chars().cycle().take(x).collect::<String>()
-    }
+    // fn n(x: usize) -> String {
+    //     "1234567890".chars().cycle().take(x).collect::<String>()
+    // }
 
-    let string = n(3);
-    let s = string.as_str();
+    // let string = n(3);
+    // let s = string.as_str();
 
-    gen_qr_using_modes(Some(&[
-        // hi
-        (2, "hello!"),
-
-    ]));
+    // gen_qr_using_modes(Some(&[(2, "hello!")]));
+    // println!("{{");
+    print_block_table();
+    // println!("}}");
 }
 
 fn gen_qr_using_modes(custom_input: Option<&[(u8, &str)]>) {
