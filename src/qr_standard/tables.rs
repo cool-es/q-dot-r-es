@@ -1,5 +1,3 @@
-use core::num;
-
 // the centers of alignment patterns in both x and y dimensions
 pub(super) const AP_COORD_INDICES: [&[usize]; 40] = [
     &[],
@@ -157,7 +155,7 @@ pub fn remainder(version: u32) -> u8 {
 // data format is:
 // ec block count, total codewords per block, data codewords per block
 // if there is just one block variant, the other pair member will be None
-pub(super) const EC_BLOCK_TABLE: &[[(usize, usize, usize, Option<(usize, usize, usize)>); 4]] = &[
+pub(super) const EC_BLOCK_TABLE: [[(usize, usize, usize, Option<(usize, usize, usize)>); 4]; 40] = [
     [
         // version 1
         (1, 26, 19, None),
@@ -200,237 +198,302 @@ pub(super) const EC_BLOCK_TABLE: &[[(usize, usize, usize, Option<(usize, usize, 
         (4, 43, 19, None),
         (4, 43, 15, None),
     ],
+    [
+        // version 7
+        (2, 98, 78, None),
+        (4, 49, 31, None),
+        (2, 32, 14, Some((4, 33, 15))),
+        (4, 39, 13, Some((1, 40, 14))),
+    ],
+    [
+        // version 8
+        (2, 121, 97, None),
+        (2, 60, 38, Some((2, 61, 39))),
+        (4, 40, 18, Some((2, 41, 19))),
+        (4, 40, 14, Some((2, 41, 15))),
+    ],
+    [
+        // version 9
+        (2, 146, 116, None),
+        (3, 58, 36, Some((2, 59, 37))),
+        (4, 36, 16, Some((4, 37, 17))),
+        (4, 36, 12, Some((4, 37, 13))),
+    ],
+    [
+        // version 10
+        (2, 86, 68, Some((2, 87, 69))),
+        (4, 69, 43, Some((1, 70, 44))),
+        (6, 43, 19, Some((2, 44, 20))),
+        (6, 43, 15, Some((2, 44, 16))),
+    ],
+    [
+        // version 11
+        (4, 101, 81, None),
+        (1, 80, 50, Some((4, 81, 51))),
+        (4, 50, 22, Some((4, 51, 23))),
+        (3, 36, 12, Some((8, 37, 13))),
+    ],
+    [
+        // version 12
+        (2, 116, 92, Some((2, 117, 93))),
+        (6, 58, 36, Some((2, 59, 37))),
+        (4, 46, 20, Some((6, 47, 21))),
+        (7, 42, 14, Some((4, 43, 15))),
+    ],
+    [
+        // version 13
+        (4, 133, 107, None),
+        (8, 59, 37, Some((1, 60, 38))),
+        (8, 44, 20, Some((4, 45, 21))),
+        (12, 33, 11, Some((4, 34, 12))),
+    ],
+    [
+        // version 14
+        (3, 145, 115, Some((1, 146, 116))),
+        (4, 64, 40, Some((5, 65, 41))),
+        (11, 36, 16, Some((5, 37, 17))),
+        (11, 36, 12, Some((5, 37, 13))),
+    ],
+    [
+        // version 15
+        (5, 109, 87, Some((1, 110, 88))),
+        (5, 65, 41, Some((5, 66, 42))),
+        (5, 54, 24, Some((7, 55, 25))),
+        (11, 36, 12, Some((7, 37, 13))),
+    ],
+    [
+        // version 16
+        (5, 122, 98, Some((1, 123, 99))),
+        (7, 73, 45, Some((3, 74, 46))),
+        (15, 43, 19, Some((2, 44, 20))),
+        (3, 45, 15, Some((13, 46, 16))),
+    ],
+    [
+        // version 17
+        (1, 135, 107, Some((5, 136, 108))),
+        (10, 74, 46, Some((1, 75, 47))),
+        (1, 50, 22, Some((15, 51, 23))),
+        (2, 42, 14, Some((17, 43, 15))),
+    ],
+    [
+        // version 18
+        (5, 150, 120, Some((1, 151, 121))),
+        (9, 69, 43, Some((4, 70, 44))),
+        (17, 50, 22, Some((1, 51, 23))),
+        (2, 42, 14, Some((19, 43, 15))),
+    ],
+    [
+        // version 19
+        (3, 141, 113, Some((4, 142, 114))),
+        (3, 70, 44, Some((11, 71, 45))),
+        (17, 47, 21, Some((4, 48, 22))),
+        (9, 39, 13, Some((16, 40, 14))),
+    ],
+    [
+        // version 20
+        (3, 135, 107, Some((5, 136, 108))),
+        (3, 67, 41, Some((13, 68, 42))),
+        (15, 54, 24, Some((5, 55, 25))),
+        (15, 43, 15, Some((10, 44, 16))),
+    ],
+    [
+        // version 21
+        (4, 144, 116, Some((4, 145, 117))),
+        (17, 68, 42, None),
+        (17, 50, 22, Some((6, 51, 23))),
+        (19, 46, 16, Some((6, 47, 17))),
+    ],
+    [
+        // version 22
+        (2, 139, 111, Some((7, 140, 112))),
+        (17, 74, 46, None),
+        (7, 54, 24, Some((16, 55, 25))),
+        (34, 37, 13, None),
+    ],
+    [
+        // version 23
+        (4, 151, 121, Some((5, 152, 122))),
+        (4, 75, 47, Some((14, 76, 48))),
+        (11, 54, 24, Some((14, 55, 25))),
+        (16, 45, 15, Some((14, 46, 16))),
+    ],
+    [
+        // version 24
+        (6, 147, 117, Some((4, 148, 118))),
+        (6, 73, 45, Some((14, 74, 46))),
+        (11, 54, 24, Some((16, 55, 25))),
+        (30, 46, 16, Some((2, 47, 17))),
+    ],
+    [
+        // version 25
+        (8, 132, 106, Some((4, 133, 107))),
+        (8, 75, 47, Some((13, 76, 48))),
+        (7, 54, 15, Some((22, 55, 25))),
+        (22, 45, 15, Some((13, 46, 16))),
+    ],
+    [
+        // version 26
+        (10, 142, 114, Some((2, 143, 115))),
+        (19, 74, 46, Some((4, 75, 47))),
+        (28, 50, 22, Some((6, 51, 23))),
+        (33, 46, 16, Some((4, 47, 17))),
+    ],
+    [
+        // version 27
+        (8, 152, 122, Some((4, 153, 123))),
+        (22, 73, 45, Some((3, 74, 46))),
+        (8, 53, 23, Some((26, 54, 24))),
+        (12, 45, 15, Some((28, 46, 16))),
+    ],
+    [
+        // version 28
+        (3, 147, 117, Some((10, 148, 118))),
+        (3, 73, 45, Some((23, 74, 46))),
+        (4, 54, 24, Some((31, 55, 25))),
+        (11, 45, 15, Some((31, 46, 16))),
+    ],
+    [
+        // version 29
+        (7, 146, 116, Some((7, 147, 117))),
+        (21, 73, 45, Some((7, 74, 46))),
+        (1, 53, 23, Some((37, 54, 24))),
+        (19, 45, 15, Some((26, 46, 16))),
+    ],
+    [
+        // version 30
+        (5, 145, 115, Some((10, 146, 116))),
+        (19, 75, 47, Some((10, 76, 48))),
+        (15, 54, 24, Some((25, 55, 25))),
+        (23, 45, 15, Some((25, 46, 16))),
+    ],
+    [
+        // version 31
+        (13, 145, 115, Some((3, 146, 116))),
+        (2, 74, 46, Some((29, 75, 47))),
+        (42, 54, 24, Some((1, 55, 25))),
+        (23, 45, 15, Some((28, 46, 16))),
+    ],
+    [
+        // version 32
+        (17, 145, 115, None),
+        (10, 74, 46, Some((23, 75, 47))),
+        (10, 54, 24, Some((35, 55, 25))),
+        (19, 45, 15, Some((35, 46, 16))),
+    ],
+    [
+        // version 33
+        (17, 145, 115, Some((1, 146, 116))),
+        (14, 74, 46, Some((21, 75, 47))),
+        (29, 54, 24, Some((19, 55, 25))),
+        (11, 45, 15, Some((46, 46, 16))),
+    ],
+    [
+        // version 34
+        (13, 145, 115, Some((6, 146, 116))),
+        (14, 74, 46, Some((23, 75, 47))),
+        (44, 54, 24, Some((7, 55, 25))),
+        (59, 46, 16, Some((1, 47, 17))),
+    ],
+    [
+        // version 35
+        (12, 151, 121, Some((7, 152, 122))),
+        (12, 75, 47, Some((26, 76, 48))),
+        (39, 54, 24, Some((14, 55, 25))),
+        (22, 45, 15, Some((41, 46, 16))),
+    ],
+    [
+        // version 36
+        (6, 151, 121, Some((14, 152, 122))),
+        (6, 75, 47, Some((34, 76, 48))),
+        (46, 54, 24, Some((10, 55, 25))),
+        (2, 45, 15, Some((64, 46, 16))),
+    ],
+    [
+        // version 37
+        (17, 152, 122, Some((4, 153, 123))),
+        (29, 74, 46, Some((14, 75, 47))),
+        (49, 54, 24, Some((10, 55, 25))),
+        (24, 45, 15, Some((46, 46, 16))),
+    ],
+    [
+        // version 38
+        (4, 152, 122, Some((18, 153, 123))),
+        (13, 74, 46, Some((32, 75, 47))),
+        (48, 54, 24, Some((14, 55, 25))),
+        (42, 45, 15, Some((32, 46, 16))),
+    ],
+    [
+        // version 39
+        (20, 147, 117, Some((4, 148, 118))),
+        (40, 75, 47, Some((7, 76, 48))),
+        (43, 54, 24, Some((22, 55, 25))),
+        (10, 45, 15, Some((67, 46, 16))),
+    ],
+    [
+        // version 40
+        (19, 148, 118, Some((6, 149, 119))),
+        (18, 75, 47, Some((31, 76, 48))),
+        (34, 54, 24, Some((34, 55, 25))),
+        (20, 45, 15, Some((61, 46, 16))),
+    ],
 ];
 
-pub const EC_BLOCK_STR: &[&str] = &[
-    //
-    "version 7
-2 98 78
-4 49 31
-2 32 14, 4 33 15
-4 39 13, 1 40 14",
-    //
-    "version 8
-2 121 97
-2 60 38, 2 61 39
-4 40 18, 2 41 19
-4 40 14, 2 41 15",
-    //
-    "version 9
-2 146 116
-3 58 36, 2 59 37
-4 36 16, 4 37 17
-4 36 12, 4 37 13",
-    //
-    "version 10
-2 86 68, 2 87 69
-4 69 43, 1 70 44
-6 43 19, 2 44 20
-6 43 15, 2 44 16",
-    //
-    "version 11
-4 101 81
-1 80 50, 4 81 51
-4 50 22, 4 51 23
-3 36 12, 8 37 13",
-    //
-    "version 12
-2 116 92, 2 117 93
-6 58 36, 2 59 37
-4 46 20, 6 47 21
-7 42 14, 4 43 15",
-    //
-    "version 13
-4 133 107
-8 59 37, 1 60 38
-8 44 20, 4 45 21
-12 33 11, 4 34 12",
-    //
-    "version 14
-3 145 115, 1 146 116
-4 64 40, 5 65 41
-11 36 16, 5 37 17
-11 36 12, 5 37 13",
-    //
-    "version 15
-5 109 87, 1 110 88
-5 65 41, 5 66 42
-5 54 24, 7 55 25
-11 36 12, 7 37 13",
-    //
-    "version 16
-5 122 98, 1 123 99
-7 73 45, 3 74 46
-15 43 19, 2 44 20
-3 45 15, 13 46 16",
-    //
-    "version 17
-1 135 107, 5 136 108
-10 74 46, 1 75 47
-1 50 22, 15 51 23
-2 42 14, 17 43 15",
-    //
-    "version 18
-5 150 120, 1 151 121
-9 69 43, 4 70 44
-17 50 22, 1 51 23
-2 42 14, 19 14 15",
-    //
-    "version 19
-3 141 113, 4 142 114
-3 70 44, 11 71 45
-17 47 21, 4 48 22
-9 39 13, 16 40 14",
-    //
-    "version 20
-3 135 107, 5 136 108
-3 67 41, 13 68 42
-15 54 24, 5 55 25
-15 43 15, 10 44 16",
-    //
-    "version 21
-4 144 116, 4 145 117
-17 68 42
-17 50 22, 6 51 23
-19 46 16, 6 47 17",
-    //
-    "version 22
-2 139 111, 7 140 112
-17 74 46
-7 54 24, 16 55 25
-34 37 13",
-    //
-    "version 23
-4 151 121, 5 152 122
-4 75 47, 14 76 48
-11 54 24, 14 55 25
-16 45 15, 14 46 16",
-    //
-    "version 24
-6 147 117, 4 148 118
-6 73 45, 14 74 46
-11 54 24, 16 55 25
-30 46 16, 2 47 17",
-    //
-    "version 25
-8 132 106, 4 133 107
-8 75 47, 13 76 48
-7 54 15, 22 55 25
-22 45 15, 13 46 16",
-    //
-    "version 26
-10 142 114, 2 143 115
-19 74 46, 4 75 47
-28 50 22, 6 51 23
-33 46 16, 4 47 17",
-    //
-    "version 27
-8 152 122, 4 153 123
-22 73 45, 3 74 46
-8 53 23, 26 54 24
-12 45 15, 28 46 16",
-    //
-    "version 28
-3 147 117, 10 148 118
-3 73 45, 23 74 46
-4 54 24, 31 55 25
-11 45 15, 31 46 16",
-    //
-    "version 29
-7 146 116, 7 147 117
-21 73 45, 7 74 46
-1 53 23, 37 54 24
-19 45 15, 26 46 16",
-    //
-    "version 30
-5 145 115, 10 146 116
-19 75 47, 10 76 48
-15 54 24, 25 55 25
-23 45 15, 25 46 16",
-    //
-    "version 31
-13 145 115, 3 146 116
-2 74 46, 29 75 47
-42 54 24, 1 55 25
-23 45 15, 28 46 16",
-    //
-    "version 32
-17 145 115
-10 74 46, 23 75 47
-10 54 24, 35 55 25
-19 45 15, 35 46 16",
-    //
-    "version 33
-17 145 115, 1 146 116
-14 74 46, 21 75 47
-29 54 24, 19 55 25
-11 45 15, 46 46 16",
-    //
-    "version 34
- 13 145 115, 6 146 116
- 14 74 46, 23 75 47
- 44 54 24, 7 55 25
- 59 46 16, 1 47 17",
-    //
-    "version 35
-12 151 121, 7 152 122
-12 75 47, 26 76 48
-39 54 24, 14 55 25
-22 45 15, 41 46 15",
-    //
-    "version 36
-6 151 121, 14 152 122
-6 75 47, 34 76 48
-46 54 24, 10 55 25
-2 45 15, 64 46 16",
-    //
-    "version 37
-17 152 122, 4 153 123
-29 74 46, 14 75 47
-49 54 24, 10 55 25
-24 45 15, 46 46 16",
-    //
-    "version 38
-4 152 122, 18 153 123
-13 74 46, 32 75 47
-48 54 24, 14 55 25
-42 45 15, 32 46 16",
-    //
-    "version 39
-20 147 117, 4 148 118
-40 75 47, 7 76 48
-43 54 24, 22 55 25
-10 45 15, 67 46 16",
-    //
-    "version 40
-19 148 118, 6 149 119
-18 75 47, 31 76 48
-34 54 24, 34 55 25
-20 45 15, 61 46 16",
-    //
-];
-
-pub fn print_block_table() -> Option<()> {
-    for version in &EC_BLOCK_STR[..10] {
-        let mut lines = version.lines();
-        let vnum = lines.next()?.split_once(' ')?.1;
-
-        print!("[// version {}\n", vnum);
-
-        for number_line in lines {
-            if let Some((primary, secondary)) = number_line.split_once(',') {
-                print!(
-                    "({},Some(({}))),",
-                    primary.trim().replace(' ', ","),
-                    secondary.trim().replace(' ', ",")
+#[test]
+fn ec_block_tests() {
+    // ec block count, total codewords per block, data codewords per block
+    // test that the no. of codewords add up,
+    // that the no. of error-correcting codewords is increasing,
+    // and that the optional blocks have a larger number of codewords
+    for (index, &a) in EC_BLOCK_TABLE.iter().enumerate() {
+        let codeword_total = CODEWORDS[index] as usize;
+        let mut last_ecwords = 0;
+        for (ec_lvl, &contents) in a.iter().enumerate() {
+            let (block_count, cwords, dcwords, optional) = contents;
+            if let Some((block_count_2, cwords_2, dcwords_2)) = optional {
+                // codewords match
+                assert!(
+                    block_count * cwords + block_count_2 * cwords_2 == codeword_total,
+                    "version {}, error correction {} - codeword count mismatch",
+                    index + 1,
+                    ec_lvl
                 );
+
+                // ec codewords increasing
+                assert!(
+                    last_ecwords
+                        < block_count * (cwords - dcwords) + block_count_2 * (cwords_2 - dcwords_2),
+                    "version {}, error correction {} - ec codewords not monotonic",
+                    index + 1,
+                    ec_lvl
+                );
+                last_ecwords =
+                    block_count * (cwords - dcwords) + block_count_2 * (cwords_2 - dcwords_2);
+
+                // optional block bigger
+                assert!(
+                    cwords < cwords_2,
+                    "version {}, error correction {} - optional block too small",
+                    index + 1,
+                    ec_lvl
+                )
             } else {
-                print!("({},None),", number_line.trim().replace(' ', ","));
+                // codewords match
+                assert!(
+                    block_count * cwords == codeword_total,
+                    "version {}, error correction {} - codeword count mismatch",
+                    index + 1,
+                    ec_lvl
+                );
+
+                // ec codewords increasing
+                assert!(
+                    last_ecwords < block_count * (cwords - dcwords),
+                    "version {}, error correction {} - ec codewords not monotonic",
+                    index + 1,
+                    ec_lvl
+                );
+                last_ecwords = block_count * (cwords - dcwords);
             }
         }
-        print!("],");
     }
-
-    println!();
-    Some(())
 }

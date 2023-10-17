@@ -20,7 +20,7 @@ fn main() {
 
     // gen_qr_using_modes(Some(&[(2, "hello!")]));
     // println!("{{");
-    print_block_table();
+    // print_block_table();
     // println!("}}");
 }
 
