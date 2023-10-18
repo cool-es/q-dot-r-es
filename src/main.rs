@@ -11,17 +11,30 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    // fn n(x: usize) -> String {
-    //     "1234567890".chars().cycle().take(x).collect::<String>()
-    // }
+    for (a, &i) in EC_BLOCK_TABLE.iter().enumerate() {
+        println!("    {:2}     {:4}", a + 1, CODEWORDS[a]);
 
-    // let string = n(3);
-    // let s = string.as_str();
-
-    // gen_qr_using_modes(Some(&[(2, "hello!")]));
-    // println!("{{");
-    // print_block_table();
-    // println!("}}");
+        for (contents, name) in i.iter().zip("LMQH".chars()) {
+            let (block_count, cwords, dcwords, optional) = contents;
+            if let Some((block_count_2, cwords_2, dcwords_2)) = optional {
+                println!(
+                    "                  {}     {:4}      {:3}",
+                    name,
+                    block_count * (cwords - dcwords) + block_count_2 * (cwords_2 - dcwords_2),
+                    block_count
+                );
+                println!("                                  {:3}", block_count_2);
+            } else {
+                println!(
+                    "                  {}     {:4}      {:3}\n",
+                    name,
+                    block_count * (cwords - dcwords),
+                    block_count
+                );
+            }
+        }
+        println!();
+    }
 }
 
 fn gen_qr_using_modes(custom_input: Option<&[(u8, &str)]>) {

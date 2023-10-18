@@ -155,7 +155,7 @@ pub fn remainder(version: u32) -> u8 {
 // data format is:
 // ec block count, total codewords per block, data codewords per block
 // if there is just one block variant, the other pair member will be None
-pub(super) const EC_BLOCK_TABLE: [[(usize, usize, usize, Option<(usize, usize, usize)>); 4]; 40] = [
+pub const EC_BLOCK_TABLE: [[(usize, usize, usize, Option<(usize, usize, usize)>); 4]; 40] = [
     [
         // version 1
         (1, 26, 19, None),
@@ -328,7 +328,7 @@ pub(super) const EC_BLOCK_TABLE: [[(usize, usize, usize, Option<(usize, usize, u
         // version 25
         (8, 132, 106, Some((4, 133, 107))),
         (8, 75, 47, Some((13, 76, 48))),
-        (7, 54, 15, Some((22, 55, 25))),
+        (7, 54, 24, Some((22, 55, 25))),
         (22, 45, 15, Some((13, 46, 16))),
     ],
     [
@@ -458,6 +458,15 @@ fn ec_block_tests() {
                     ec_lvl
                 );
 
+                // ec codewords match
+                assert!(
+                    ERROR_CORRECTION_CODEWORDS.contains(&((cwords - dcwords) as u32))
+                        && ERROR_CORRECTION_CODEWORDS.contains(&((cwords_2 - dcwords_2) as u32)),
+                    "version {}, error correction {} - ec codeword count mismatch",
+                    index + 1,
+                    ec_lvl
+                );
+
                 // ec codewords increasing
                 assert!(
                     last_ecwords
@@ -475,12 +484,28 @@ fn ec_block_tests() {
                     "version {}, error correction {} - optional block too small",
                     index + 1,
                     ec_lvl
-                )
+                );
+
+                // number of ec codewords equal between blocks
+                assert!(
+                    cwords - dcwords == cwords_2 - dcwords_2,
+                    "version {}, error correction {} - error-correcting codewords not equal",
+                    index + 1,
+                    ec_lvl
+                );
             } else {
                 // codewords match
                 assert!(
                     block_count * cwords == codeword_total,
                     "version {}, error correction {} - codeword count mismatch",
+                    index + 1,
+                    ec_lvl
+                );
+
+                // ec codewords match
+                assert!(
+                    ERROR_CORRECTION_CODEWORDS.contains(&((cwords - dcwords) as u32)),
+                    "version {}, error correction {} - ec codeword count mismatch",
                     index + 1,
                     ec_lvl
                 );

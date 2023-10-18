@@ -68,3 +68,21 @@ version : n where n^2-3 is no. of alignment patterns:
 timing patterns (dotted lines) are at x = 6, y = 6
 
 version info data blocks: pgs. 60 (graphical layout of bits), 84 (example of encryption)
+
+data (i'm assuming after padding it out to the fill the alotted data space) is divided into blocks, each block individually error-corrected, divided into codewords, and then interleaved. the shorter blocks come first. a code with this block division:
+[d1 d2 e1] [d3 d4 e2] [d5 d6 d7 e3] [d8 d9 d10 e4]
+would be regarded as:
+[d1 d2     e1]
+[d3 d4     e2]
+[d5 d6 d7  e3]
+[d8 d9 d10 e4]
+and the final codeword sequence would be:
+d1 d3 d5 d8, d2 d4 d6 d9, d7 d10, e1 e2 e3 e4
+
+to do this i need to:
+convert bit sequence back to a list of bytes
+divide the list into multiple smaller lists
+error-correct each list individually
+do more list-dividing, or use some clever math, to get a new single list of bytes
+convert that list into bit sequence
+write
