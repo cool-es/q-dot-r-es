@@ -1,3 +1,4 @@
+• finish polynomials.rs > split_to_blocks_and_encode()
 • work on bitstream.rs, replicate the function of first_qr_code()
 • data entry 🥳 tables!! 🎊 ... specifically:
     - error correction characteristics (pg. 41)

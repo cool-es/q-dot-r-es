@@ -149,13 +149,15 @@ pub fn remainder(version: u32) -> u8 {
     }
 }
 
+pub type VersionBlockInfo = (usize, usize, usize, Option<(usize, usize, usize)>);
+
 // error correction data (pg. 41...)
 // access with ERROR_CORRECTION_TABLE[version-1][correction level]
 // correction levels are ordered L - M - Q - H
 // data format is:
 // ec block count, total codewords per block, data codewords per block
 // if there is just one block variant, the other pair member will be None
-pub const EC_BLOCK_TABLE: [[(usize, usize, usize, Option<(usize, usize, usize)>); 4]; 40] = [
+pub const EC_BLOCK_TABLE: [[VersionBlockInfo; 4]; 40] = [
     [
         // version 1
         (1, 26, 19, None),

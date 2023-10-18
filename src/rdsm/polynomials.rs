@@ -368,14 +368,40 @@ pub fn prettyprint(poly: &Polynomial) {
     println!("{}", output);
 }
 
-pub fn string_to_polynomial(text: &str) -> Polynomial {
-    text.chars()
-        .map(|c| {
-            if (c as u32) < 256 {
-                c as Element
-            } else {
-                ' ' as Element
-            }
-        })
-        .collect()
+pub fn split_to_blocks_and_encode(
+    polynomial: &Polynomial,
+    info: crate::qr_standard::VersionBlockInfo,
+) -> Vec<Polynomial> {
+    // number of blocks of this type, codewords per block, data codewords per block
+    // note that the number of error correcting codewords is the same for all blocks!
+    let (bc, cw, dcw, optional) = info;
+    // let (bc2, _, dcw2) = optional.unwrap_or((0, 0, 1));
+
+    if optional.is_some() {
+        panic!("multiple block types are not supported yet")
+    }
+    let (bc2, dcw2) = (0, 0);
+
+    // check to make sure poly will split evenly
+    assert!(
+        polynomial.len() == dcw * bc + dcw2 * bc2,
+        "could not split to blocks - stream is {} codewords but alotted space is {}",
+        polynomial.len(),
+        dcw * bc + dcw2 * bc2
+    );
+
+    let mut unencoded: Vec<Polynomial> = Vec::new();
+
+    for i in 0..bc {
+        let (a, b) = (i * dcw, (i + 1) * dcw);
+        unencoded.push(polynomial[a..b].to_vec());
+    }
+
+    let mut output = Vec::new();
+
+    for i in unencoded {
+        output.push(encode_message(&i, (cw - dcw) as u32));
+    }
+
+    output
 }
