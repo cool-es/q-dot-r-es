@@ -11,11 +11,19 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    let mode_data = &[(2, "this is ascii >w<")];
-    for mask in 0..7 {
-        _debug_print_qr(&generate_qr_code(mode_data, 7, 0, mask));
-        println!("mask {}\n\n", mask);
-    }
+    let _binding = String::from("1234567890".chars().cycle().take(300).collect::<String>());
+    let mode_data = &[
+        //
+        (1, "PUBLIC SERVICE ANNOUNCEMENT - "),
+        //
+        // (2,"i got the block-shuffling code working (i think) and as such i am da Fuckin Best. thank you.")
+        //
+    ];
+    // for mask in 0..7 {
+    //     _debug_print_qr(&generate_qr_code(mode_data, 7, 0, mask));
+    //     println!("mask {}\n\n", mask);
+    println!("{}", generate_qr_code(mode_data, 30, 3, 4).as_xbm("big"));
+    // }
     // gen_qr_using_modes(Some(mode_data));
 }
 

@@ -1,5 +1,5 @@
 // quick and dirty solution to start entering data into qr codes
-// #![allow(unused_mut, unused_variables)]
+#![allow(unused_mut, unused_variables)]
 
 const HELLOMSG: [u8; 8] = [0x40, 0x66, 0x86, 0x56, 0xC6, 0xC6, 0xF2, 0x10];
 
@@ -120,7 +120,13 @@ pub fn write_badstream_to_bitmap<T: QR>(stream: &Badstream, bitmap: &mut T) {
         if let Some((x2, y2)) = next_data_bit(x, y, version) {
             (x, y) = (x2, y2);
         } else {
-            assert_eq!(a + 1, stream.len());
+            assert!(
+                a + 1 == stream.len(),
+                "🚨 write_badstream_to_bitmap(): bitstream is {} bits but image only fits {} (difference: {} bits)",
+                stream.len(),
+                a + 1,
+                stream.len() as i32 - (a + 1) as i32,
+            );
             break;
         }
     }
@@ -140,9 +146,10 @@ pub fn split_to_blocks_and_encode(poly: &Polynomial, info: VersionBlockInfo) -> 
     // check to make sure poly will split evenly
     assert!(
         poly.len() == dcw * bc + dcw2 * bc2,
-        "could not split to blocks - stream is {} codewords but alotted space is {}",
+        "could not split to blocks - stream is {} codewords but alotted space is {}\nversion info: {:?}",
         poly.len(),
-        dcw * bc + dcw2 * bc2
+        dcw * bc + dcw2 * bc2,
+        info
     );
 
     let mut unencoded: Vec<Polynomial> = Vec::new();
@@ -198,20 +205,31 @@ pub fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstre
     let polys = split_to_blocks_and_encode(&poly, info);
 
     let mut output = Vec::new();
+    let mut dummy_out = Vec::new();
 
     // enter data codewords
     for i in 0..max_dcw {
         for block in &polys {
-            if i < block.len() {
+            if i < block.len() - ec_cw {
                 push_byte(block[i] as u8, &mut output);
+                dummy_out.push(block[i]);
             }
         }
     }
 
+    assert!(
+        output.len() == 8 * total_dcw,
+        "full_block_encode(): version {} level {}: number of codewords should be {} but is {}\norig. data {:?}\noutput {:?}",version,level,
+        total_dcw,
+        output.len() / 8,
+        polys,
+        dummy_out,
+    );
+
     // enter EC codewords
     for i in 0..ec_cw {
         for block in &polys {
-            let offset = block.len()  - ec_cw;
+            let offset = block.len() - ec_cw;
             push_byte(block[offset + i] as u8, &mut output);
         }
     }
@@ -285,4 +303,64 @@ pub fn generate_qr_code(
         }
     }
     // variants[best.1].clone()
+}
+
+#[test]
+fn block_encode_is_consistent() {
+    for version in 1..=40 {
+        let (bc, cw, dcw, opt) = get_block_info(version, 3);
+        let data_limit = if let Some((bc2, cw2, dcw2)) = opt {
+            bc * dcw + bc2 + dcw2
+        } else {
+            bc * dcw
+        };
+
+        let block = |level| {
+            full_block_encode(
+                &polynomial_to_badstream(&((100..200).cycle().take(data_limit - 3).collect())),
+                version,
+                level,
+            )
+            .len()
+        };
+        let (l, m, q, h) = (block(0), block(1), block(2), block(3));
+        assert!(
+            l == m && l == q && l == h,
+            "version {}, bit length inconsistent:\nl: {}\nm: {}\nq: {}\nh: {}",
+            version,
+            l,
+            m,
+            q,
+            h
+        );
+    }
+}
+
+#[test]
+fn split_to_blocks_is_consistent() {
+    for ver in 1..=40 {
+        let info = get_block_info(ver, 0);
+        let cw = if let Some((a, _, b)) = info.3 {
+            a * b + info.0 * info.2
+        } else {
+            info.0 * info.2
+        } as u32;
+        let list1 =
+            split_to_blocks_and_encode(&((1..=200).cycle().take(cw as usize).collect()), info);
+        let sum1 = list1.iter().map(|x| x.len()).sum::<usize>();
+
+        for level in 1..=3 {
+            let info2 = get_block_info(ver, level);
+            let cw2 = if let Some((a, _, b)) = info2.3 {
+                a * b + info2.0 * info2.2
+            } else {
+                info2.0 * info2.2
+            } as u32;
+            let list2 =
+                split_to_blocks_and_encode(&((1..=200).cycle().take(cw as usize).collect()), info2);
+
+            let sum2 = list2.iter().map(|x| x.len()).sum::<usize>();
+            assert!(sum1 == sum2, "version {}, level {}", ver, level);
+        }
+    }
 }
