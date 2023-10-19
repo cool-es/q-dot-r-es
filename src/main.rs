@@ -11,7 +11,12 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    _debug_print_qr(&generate_qr_code(&[(2, "this is ascii >w<")], 1, 0));
+    let mode_data = &[(2, "this is ascii >w<")];
+    for mask in 0..7 {
+        _debug_print_qr(&generate_qr_code(mode_data, 7, 0, mask));
+        println!("mask {}\n\n", mask);
+    }
+    // gen_qr_using_modes(Some(mode_data));
 }
 
 fn gen_qr_using_modes(custom_input: Option<&[(u8, &str)]>) {

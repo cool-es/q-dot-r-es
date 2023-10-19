@@ -147,7 +147,11 @@ pub fn split_to_blocks_and_encode(poly: &Polynomial, info: VersionBlockInfo) -> 
 
     let mut unencoded: Vec<Polynomial> = Vec::new();
 
-    let (first, second) = poly.split_at(bc * dcw);
+    let (first, second): (&[u32], &[u32]) = if optional.is_some() {
+        poly.split_at(bc * dcw)
+    } else {
+        (poly.as_slice(), &[])
+    };
 
     for i in 0..bc {
         let (a, b) = (i * dcw, (i + 1) * dcw);
@@ -178,7 +182,7 @@ pub fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstre
     } else {
         dcw
     };
-    let data_codewords = if let Some((bc2, _, dcw2)) = opt {
+    let total_dcw = if let Some((bc2, _, dcw2)) = opt {
         bc * dcw + bc2 * dcw2
     } else {
         bc * dcw
@@ -186,7 +190,7 @@ pub fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstre
 
     let padded_stream = {
         let mut stream_copy = stream.clone();
-        pad_to(data_codewords as usize, &mut stream_copy);
+        pad_to(total_dcw as usize, &mut stream_copy);
         stream_copy
     };
 
@@ -207,7 +211,7 @@ pub fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstre
     // enter EC codewords
     for i in 0..ec_cw {
         for block in &polys {
-            let offset = block.len() - 1 - ec_cw;
+            let offset = block.len()  - ec_cw;
             push_byte(block[offset + i] as u8, &mut output);
         }
     }
@@ -217,14 +221,48 @@ pub fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstre
     output
 }
 
-pub fn generate_qr_code(mode_data: &[(u8, &str)], version: u32, level: u8) -> ImgRowAligned {
+#[test]
+fn block_encode_is_well_behaved() {
+    let poly: Polynomial = (1..=19).collect();
+    let stream = polynomial_to_badstream(&poly);
+    let enc_poly = encode_message(&poly, 7);
+    let enc_stream = full_block_encode(&stream, 1, 0);
+    let polynomialized_stream = badstream_to_polynomial(&enc_stream);
+
+    assert!(
+        polynomialized_stream.len() == enc_poly.len(),
+        "mismatched lengths - is {}, should be {}",
+        polynomialized_stream.len(),
+        enc_poly.len(),
+    );
+
+    for i in 0..polynomialized_stream.len() {
+        assert!(
+            polynomialized_stream[i] == enc_poly[i],
+            "mismatch at index {} - byte is {:#04X}, should be {:#04X}\nbad  {:?}\ngood {:?}",
+            i,
+            polynomialized_stream[i],
+            enc_poly[i],
+            polynomialized_stream,
+            enc_poly,
+        );
+    }
+}
+
+pub fn generate_qr_code(
+    mode_data: &[(u8, &str)],
+    version: u32,
+    level: u8,
+    mask: u8,
+) -> ImgRowAligned {
     let stream: &mut Badstream = &mut invoke_modes(mode_data, version);
 
     let shuffled_stream = full_block_encode(stream, version, level);
 
-    let mut best = (0, 0);
-    let mut variants = Vec::new();
-    for mask in 0..=7 {
+    // let mut best = (0, 0);
+    // let mut variants = Vec::new();
+    /*   for mask in 0..=7  */
+    {
         {
             let mut bitmap = ImgRowAligned::new_blank_qr(version);
 
@@ -237,13 +275,14 @@ pub fn generate_qr_code(mode_data: &[(u8, &str)], version: u32, level: u8) -> Im
             write_badstream_to_bitmap(&shuffled_stream, &mut bitmap);
             bitmap.qr_mask_xor(mask);
 
-            if bitmap.qr_penalty() > best.0 {
-                best.0 = bitmap.qr_penalty();
-                best.1 = mask as usize;
-            }
+            // if bitmap.qr_penalty() > best.0 {
+            //     best.0 = bitmap.qr_penalty();
+            //     best.1 = mask as usize;
+            // }
 
-            variants.push(bitmap);
+            // variants.push(bitmap);
+            bitmap
         }
     }
-    variants[best.1].clone()
+    // variants[best.1].clone()
 }
