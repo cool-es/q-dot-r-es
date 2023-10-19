@@ -559,108 +559,6 @@ pub fn set_fcode<T: image::Bitmap>(
 //     todo!()
 // }
 
-// returns the next bit of data after this one
-pub fn _obsolete_next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)> {
-    // larger versions contain version information blocks which i haven't implemented yet
-    if version > 6 {
-        return None;
-    }
-
-    if !coord_is_data(x, y, version) {
-        return None;
-    }
-
-    // x coord is on the right-hand side of a codeword
-    // if x < 6, x needs to be odd; otherwise even
-    if (x % 2 == 0) ^ (x < 6) {
-        // ←
-        return Some((x - 1, y));
-    }
-
-    let max = version_to_max_index(version);
-
-    // the last bit in the pattern (assuming no version data!!)
-    if x == 0 && (max - y) == 8 {
-        return None;
-    }
-
-    // the only discontinuous part of the pattern - lower left corner
-    if (x, y) == (9, max) {
-        return Some((8, max - 8));
-    }
-
-    // the one skip over the vertical timing pattern
-    if (x, y) == (7, 9) {
-        return Some((5, 9));
-    }
-
-    // abbreviations
-    let is_ap = |xi, yi| coord_is_alignment_pattern(xi, yi, version);
-
-    // is the codeword being read from bottom to top (negative y direction)?
-    let up_codeword = (((max - x) / 2) % 2 == 0) ^ (x < 6);
-
-    if up_codeword {
-        // about to hit top, go left
-        if y == 0 {
-            return Some((x - 1, y));
-        }
-
-        // about to hit top left / top right position markers
-        if y == 9 && (x < 9 || (max - x) < 8) {
-            // if x == 0 {
-            //     return None;
-            // }
-            return Some((x - 1, y));
-        }
-
-        // about to hit timing pattern
-        if y == 7 {
-            return Some((x + 1, y - 2));
-        }
-
-        // about to hit an alignment pattern
-        if is_ap(x, y - 1) {
-            // we need to jump over it
-            return Some((x + 1, y - 6));
-        }
-        if is_ap(x + 1, y - 1) {
-            // we can sidle past it
-            return Some((x, y - 1));
-        }
-
-        // nothing in the way. all is well
-        return Some((x + 1, y - 1));
-    } else {
-        // about to hit bottom, go left
-        if y == max {
-            return Some((x - 1, y));
-        }
-
-        // about to hit lower left position marker
-        if y == max - 8 && (x < 9) {
-            // if x == 0 {
-            //     return None;
-            // }
-            return Some((x - 1, y));
-        }
-
-        // about to hit timing pattern
-        if y == 5 {
-            return Some((x + 1, y + 2));
-        }
-
-        // about to hit alignment pattern
-        if is_ap(x, y + 1) {
-            // we need to jump over it
-            return Some((x + 1, y + 6));
-        }
-
-        // nothing in the way
-        return Some((x + 1, y + 1));
-    }
-}
-
 pub fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)> {
     // naive, slow, and robust implementation of "next data bit"
     // simply zigzag as if the pattern was blank,
@@ -819,10 +717,16 @@ fn new_blank_qr_code<T: image::Bitmap>(version: u32) -> T {
         }
     }
 
+    // draw the singular black bit
+    {
+        set(8, max - 7);
+    }
+
     // draw version patterns
     if version >= 7 {
         set_vcode(&mut output, version, qr_generate_vcode(version));
     }
+
     output
 }
 

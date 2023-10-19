@@ -157,7 +157,7 @@ pub type VersionBlockInfo = (usize, usize, usize, Option<(usize, usize, usize)>)
 // data format is:
 // ec block count, total codewords per block, data codewords per block
 // if there is just one block variant, the other pair member will be None
-pub const EC_BLOCK_TABLE: [[VersionBlockInfo; 4]; 40] = [
+const EC_BLOCK_TABLE: [[VersionBlockInfo; 4]; 40] = [
     [
         // version 1
         (1, 26, 19, None),
@@ -523,4 +523,12 @@ fn ec_block_tests() {
             }
         }
     }
+}
+
+pub fn get_block_info(version: u32, level: u8) -> VersionBlockInfo {
+    assert!(
+        (1..=40).contains(&version) && level < 4,
+        "incorrect version request"
+    );
+    EC_BLOCK_TABLE[version as usize - 1][level as usize]
 }

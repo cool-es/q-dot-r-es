@@ -11,30 +11,7 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    for (a, &i) in EC_BLOCK_TABLE.iter().enumerate() {
-        println!("    {:2}     {:4}", a + 1, CODEWORDS[a]);
-
-        for (contents, name) in i.iter().zip("LMQH".chars()) {
-            let (block_count, cwords, dcwords, optional) = contents;
-            if let Some((block_count_2, cwords_2, dcwords_2)) = optional {
-                println!(
-                    "                  {}     {:4}      {:3}",
-                    name,
-                    block_count * (cwords - dcwords) + block_count_2 * (cwords_2 - dcwords_2),
-                    block_count
-                );
-                println!("                                  {:3}", block_count_2);
-            } else {
-                println!(
-                    "                  {}     {:4}      {:3}\n",
-                    name,
-                    block_count * (cwords - dcwords),
-                    block_count
-                );
-            }
-        }
-        println!();
-    }
+    _debug_print_qr(&generate_qr_code(&[(2, "this is ascii >w<")], 1, 0));
 }
 
 fn gen_qr_using_modes(custom_input: Option<&[(u8, &str)]>) {
@@ -99,7 +76,7 @@ fn gen_qr_using_modes(custom_input: Option<&[(u8, &str)]>) {
             let bitmap = &mut ImgRowAligned::new_blank_qr(version);
 
             pad_to((cwords - ecwords) as usize, message);
-            let code = encode_message(&badstream_to_poly(message), ecwords as u32);
+            let code = encode_message(&badstream_to_polynomial(message), ecwords as u32);
 
             let mut count = 0;
             for (a, &i) in (&code).iter().enumerate() {
@@ -115,14 +92,18 @@ fn gen_qr_using_modes(custom_input: Option<&[(u8, &str)]>) {
             }
             println!();
 
-            let encoded_message: &mut Badstream = &mut Vec::new();
-            push_codewords(
-                code.iter()
-                    .map(|&x| x as u8)
-                    .collect::<Vec<u8>>()
-                    .as_slice(),
-                encoded_message,
-            );
+            let encoded_message = &polynomial_to_badstream(&code);
+            // {
+            //     let encoded_message_2: &mut Badstream = &mut Vec::new();
+            //     push_codewords(
+            //         code.iter()
+            //             .map(|&x| x as u8)
+            //             .collect::<Vec<u8>>()
+            //             .as_slice(),
+            //         encoded_message_2,
+            //     );
+            //     assert!(*encoded_message == *encoded_message_2);
+            // }
             set_fcode(
                 bitmap,
                 version,
@@ -200,7 +181,7 @@ fn first_qr_code() {
         push_ascii(text, message);
         push_bits("0000", message);
         pad_to(134 - 26, message);
-        let code = encode_message(&badstream_to_poly(message), 26);
+        let code = encode_message(&badstream_to_polynomial(message), 26);
 
         for (a, &i) in (&code).iter().enumerate() {
             print!("{:02X} ", i);
@@ -246,7 +227,7 @@ fn qr_correctness_check() {
         }
     }
     println!();
-    let p = badstream_to_poly(&bits);
+    let p = badstream_to_polynomial(&bits);
     for &i in &p {
         print!("{i:02X} ");
     }
@@ -264,21 +245,6 @@ fn qr_correctness_check() {
     println!("result:");
     _doubleprint(&result);
     println!("{:?}", &result);
-}
-
-#[test]
-fn _lockstep_squiggle_test() {
-    for version in 1..=6 {
-        let size = version_to_size(version).unwrap() as usize;
-        for x in 0..size {
-            for y in 0..size {
-                assert_eq!(
-                    _obsolete_next_data_bit(x, y, version),
-                    next_data_bit(x, y, version)
-                );
-            }
-        }
-    }
 }
 
 fn read_bitstream() {

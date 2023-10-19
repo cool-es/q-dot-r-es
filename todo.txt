@@ -1,10 +1,13 @@
 • finish polynomials.rs > split_to_blocks_and_encode()
+• write a routine to automatically pick the pattern with least penalty
 • work on bitstream.rs, replicate the function of first_qr_code()
 • data entry 🥳 tables!! 🎊 ... specifically:
     - error correction characteristics (pg. 41)
 • penalty routine still mysterious - do more troubleshooting
 • update penalty functions to not use get_row()
 • mode overhead calculation for when to switch modes
+• file read/write capability
+• command line arguments
 
 going through the standards doc:
 • data modes, mode switching (pg. 22)
