@@ -267,13 +267,21 @@ fn block_encode_is_well_behaved() {
     }
 }
 
-pub fn generate_qr_code(
+pub fn make_qr(
     mode_data: &[(u8, &str)],
-    version: u32,
+    version_choice: Option<u32>,
     level: u8,
     mask: u8,
 ) -> ImgRowAligned {
-    let stream: &mut Badstream = &mut invoke_modes(mode_data, version);
+    let tokens = make_token_stream(mode_data);
+
+    let version = if let Some(choice) = version_choice {
+        choice
+    } else {
+        find_best_version(&tokens, level)
+    };
+
+    let stream: &mut Badstream = &mut tokens_to_badstream(tokens, version);
 
     let shuffled_stream = full_block_encode(stream, version, level);
 

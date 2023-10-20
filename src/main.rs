@@ -11,20 +11,64 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    let _binding = String::from("1234567890".chars().cycle().take(300).collect::<String>());
+    let _binding = String::from("1234567890".chars().cycle().take(50).collect::<String>());
     let mode_data = &[
+        (0, _binding.as_str()),
         //
-        (1, "PUBLIC SERVICE ANNOUNCEMENT - "),
+        // (1, "PUBLIC SERVICE ANNOUNCEMENT - "),
+        // (2,"hello!! so it seems as though my block division routine works, and i am now able to make \"fuck off\"-size qr codes with way way way too much data in them. i remember it as if it was only last week i only had the ability to say a few words in my qr code... such a tragic fate. but now i can just go on and on and on and bore everyone to death because this qr code just fits so much goshdarned data!!!\n\nso anyway here's my top list of girls i think are cute:\n\n1. dx. cute!!!\n2. can't say, she'll be mad at me ;_;\n3. this girl will also be mad at me if i say.\n4. puck. very cute girl!!\n5. ely. claims to not be girl but is cute nevertheless\n6. ypad. cute girl who goes on planes\n7. suzy. cute quake girl!!\n\nchrist almighty am i STILL allowed to go on??? how big is this thing??\n\nokay i , i guess i'll keep going then.\n\n8. vivian. cute bug girl!!!\n9. hikari. cute girl eat a pepsi\n10. me?? can i be the cute girl??? i hope so... maybe one day. ohh, to be the cute girl..... my heart aches ;3;\n\nso uh. how's everybody doing? i'm pretty pleased with how i made the qr codes work, personally. but like that's just me. i realize that we all have our separate struggles in life... not all girls are able to render qr codes. but i am. and actually that might be sort of a USP for when i'm dating? not everyone can say their gf made a qr code by herself. so maybe i get to be like a trophy gf?? well, a girl can dream...\n\nmaybe i should make a substack or something. maybe i can get people to pay me to listen to my stream of consciousness.\n\nwell anyway! hope you're all doing good out there. take care and i'll uhhhhhh keep posting about qr codes in the meantime i guess i don't really have much else going on.\n\nmwah mwah, xoxo...\n- es")
+
         //
         // (2,"i got the block-shuffling code working (i think) and as such i am da Fuckin Best. thank you.")
         //
     ];
+
+    // generate_codeword_table();
+
     // for mask in 0..7 {
-    //     _debug_print_qr(&generate_qr_code(mode_data, 7, 0, mask));
+    //     _debug_print_qr(&make_qr(mode_data, 7, 0, mask));
     //     println!("mask {}\n\n", mask);
-    println!("{}", generate_qr_code(mode_data, 30, 3, 4).as_xbm("big"));
     // }
+    _debug_print_qr(&make_qr(mode_data, None, 0, 3));
+
     // gen_qr_using_modes(Some(mode_data));
+}
+
+fn generate_inverse_codeword_table() {
+    let mut vec = Vec::new();
+
+    for version in 0..40 {
+        for level in 0..=3 {
+            vec.push((DATA_CODEWORDS[version][level], version, level));
+        }
+    }
+
+    vec.sort_by_key(|x| x.0);
+
+    print!("pub const INVERSE_DATA_CODEWORDS: [(u32,(u32,u32));160] = [");
+    for i in &vec {
+        let (x, version, level) = i;
+        print!("({:04},({:02},{})),", x, version + 1, level);
+    }
+    println!("];");
+}
+
+fn generate_codeword_table() {
+    print!("pub const DATA_CODEWORDS:[[u32;40];4]=[");
+    for level in 0..=3 {
+        print!("[");
+        for version in 1..=40 {
+            let (bc, cw, dcw, opt) = get_block_info(version, level);
+            let data_limit = if let Some((bc2, cw2, dcw2)) = opt {
+                bc * dcw + bc2 * dcw2
+            } else {
+                bc * dcw
+            };
+            print!("{:04},", data_limit);
+        }
+        print!("],");
+    }
+    println!("];");
 }
 
 fn gen_qr_using_modes(custom_input: Option<&[(u8, &str)]>) {

@@ -1,6 +1,4 @@
-• finish polynomials.rs > split_to_blocks_and_encode()
 • write a routine to automatically pick the pattern with least penalty
-• work on bitstream.rs, replicate the function of first_qr_code()
 • data entry 🥳 tables!! 🎊 ... specifically:
     - error correction characteristics (pg. 41)
 • penalty routine still mysterious - do more troubleshooting
@@ -8,12 +6,11 @@
 • mode overhead calculation for when to switch modes
 • file read/write capability
 • command line arguments
+• remainder bits
 
 going through the standards doc:
 • data modes, mode switching (pg. 22)
     mostly done!! great job me!! kanji and ECI remain
-• codeword blocks (pg. 52, refer pg. 54)
-    table is done and very probably accurate. now i only need the shuffling code
 • symbol encoding example (pg. 90)
 • bitstream optimization  (pg. 92)
 
