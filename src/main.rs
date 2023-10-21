@@ -5,21 +5,24 @@ mod image;
 mod qr_standard;
 mod rdsm;
 
+use qr_standard::Mode::*;
+
 use image::*;
 use qr_standard::*;
 use rdsm::*;
 // use testutil::*;
 
 fn main() {
-    let _binding = String::from("1234567890".chars().cycle().take(50).collect::<String>());
+    let _binding = String::from("1234567890".chars().cycle().take(1337).collect::<String>());
     let mode_data = &[
-        (0, _binding.as_str()),
+        // (0, _binding.as_str()),
         //
         // (1, "PUBLIC SERVICE ANNOUNCEMENT - "),
-        // (2,"hello!! so it seems as though my block division routine works, and i am now able to make \"fuck off\"-size qr codes with way way way too much data in them. i remember it as if it was only last week i only had the ability to say a few words in my qr code... such a tragic fate. but now i can just go on and on and on and bore everyone to death because this qr code just fits so much goshdarned data!!!\n\nso anyway here's my top list of girls i think are cute:\n\n1. dx. cute!!!\n2. can't say, she'll be mad at me ;_;\n3. this girl will also be mad at me if i say.\n4. puck. very cute girl!!\n5. ely. claims to not be girl but is cute nevertheless\n6. ypad. cute girl who goes on planes\n7. suzy. cute quake girl!!\n\nchrist almighty am i STILL allowed to go on??? how big is this thing??\n\nokay i , i guess i'll keep going then.\n\n8. vivian. cute bug girl!!!\n9. hikari. cute girl eat a pepsi\n10. me?? can i be the cute girl??? i hope so... maybe one day. ohh, to be the cute girl..... my heart aches ;3;\n\nso uh. how's everybody doing? i'm pretty pleased with how i made the qr codes work, personally. but like that's just me. i realize that we all have our separate struggles in life... not all girls are able to render qr codes. but i am. and actually that might be sort of a USP for when i'm dating? not everyone can say their gf made a qr code by herself. so maybe i get to be like a trophy gf?? well, a girl can dream...\n\nmaybe i should make a substack or something. maybe i can get people to pay me to listen to my stream of consciousness.\n\nwell anyway! hope you're all doing good out there. take care and i'll uhhhhhh keep posting about qr codes in the meantime i guess i don't really have much else going on.\n\nmwah mwah, xoxo...\n- es")
+        (ASCII,"hello!! so it seems as though my block division routine works, and i am now able to make \"fuck off\"-size qr codes with way way way too much data in them. i remember it as if it was only last week i only had the ability to say a few words in my qr code... such a tragic fate. but now i can just go on and on and on and bore everyone to death because this qr code just fits so much goshdarned data!!!\n\nso anyway here's my top list of girls i think are cute:\n\n1. dx. cute!!!\n2. can't say, she'll be mad at me ;_;\n3. this girl will also be mad at me if i say.\n4. puck. very cute girl!!\n5. ely. claims to not be girl but is cute nevertheless\n6. ypad. cute girl who goes on planes\n7. suzy. cute quake girl!!\n\nchrist almighty am i STILL allowed to go on??? how big is this thing??\n\nokay i , i guess i'll keep going then.\n\n8. vivian. cute bug girl!!!\n9. hikari. cute girl eat a pepsi\n10. me?? can i be the cute girl??? i hope so... maybe one day. ohh, to be the cute girl..... my heart aches ;3;\n\nso uh. how's everybody doing? i'm pretty pleased with how i made the qr codes work, personally. but like that's just me. i realize that we all have our separate struggles in life... not all girls are able to render qr codes. but i am. and actually that might be sort of a USP for when i'm dating? not everyone can say their gf made a qr code by herself. so maybe i get to be like a trophy gf?? well, a girl can dream...\n\nmaybe i should make a substack or something. maybe i can get people to pay me to listen to my stream of consciousness.\n\nwell anyway! hope you're all doing good out there. take care and i'll uhhhhhh keep posting about qr codes in the meantime i guess i don't really have much else going on.\n\nmwah mwah, xoxo...\n- es"),
+        // (ASCII,"me when she points a gun at me O_o;;"),
 
-        //
-        // (2,"i got the block-shuffling code working (i think) and as such i am da Fuckin Best. thank you.")
+        // (2,"this is ascii! >w<"),
+        // (2, "hi :)"),
         //
     ];
 
@@ -29,7 +32,9 @@ fn main() {
     //     _debug_print_qr(&make_qr(mode_data, 7, 0, mask));
     //     println!("mask {}\n\n", mask);
     // }
-    _debug_print_qr(&make_qr(mode_data, None, 0, 3));
+
+    // _debug_print_qr(&make_qr(mode_data, None, 0, 3));
+    println!("{}", (make_qr(mode_data, None, 0, None)).as_xbm("big"));
 
     // gen_qr_using_modes(Some(mode_data));
 }
@@ -58,8 +63,8 @@ fn generate_codeword_table() {
     for level in 0..=3 {
         print!("[");
         for version in 1..=40 {
-            let (bc, cw, dcw, opt) = get_block_info(version, level);
-            let data_limit = if let Some((bc2, cw2, dcw2)) = opt {
+            let (bc, _, dcw, opt) = get_block_info(version, level);
+            let data_limit = if let Some((bc2, _, dcw2)) = opt {
                 bc * dcw + bc2 * dcw2
             } else {
                 bc * dcw
@@ -71,7 +76,7 @@ fn generate_codeword_table() {
     println!("];");
 }
 
-fn gen_qr_using_modes(custom_input: Option<&[(u8, &str)]>) {
+fn gen_qr_using_modes(custom_input: Option<&[(Mode, &str)]>) {
     let version = 1;
     let cwords = CODEWORDS[version as usize - 1];
     let ecwords = 7;
@@ -90,7 +95,7 @@ fn gen_qr_using_modes(custom_input: Option<&[(u8, &str)]>) {
                         // (0, "01234565789"),
                         // (1, "THIS IS ALPHANUMERIC MODE"),
                         // (1, "$$$$$$$$$$$$$$$$$$$$$$$$$"),
-                        (2, "this is ascii >w<"),
+                        (ASCII, "this is ascii >w<"),
                         // (0, "12345678901234567890123456789012345678901"),
                         // (0, "111111111111111111111111111111111111111111"),
                         // (2, "the constant Pi is approximately 3."),

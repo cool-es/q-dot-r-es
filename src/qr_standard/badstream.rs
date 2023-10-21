@@ -267,11 +267,11 @@ fn block_encode_is_well_behaved() {
     }
 }
 
-pub fn make_qr(
-    mode_data: &[(u8, &str)],
+pub(crate) fn make_qr(
+    mode_data: &[(Mode, &str)],
     version_choice: Option<u32>,
     level: u8,
-    mask: u8,
+    mask_choice: Option<u8>,
 ) -> ImgRowAligned {
     let tokens = make_token_stream(mode_data);
 
@@ -282,35 +282,51 @@ pub fn make_qr(
     };
 
     let stream: &mut Badstream = &mut tokens_to_badstream(tokens, version);
-
     let shuffled_stream = full_block_encode(stream, version, level);
+    let mut bitmap = ImgRowAligned::new_blank_qr(version);
 
-    // let mut best = (0, 0);
-    // let mut variants = Vec::new();
-    /*   for mask in 0..=7  */
-    {
-        {
-            let mut bitmap = ImgRowAligned::new_blank_qr(version);
+    write_badstream_to_bitmap(&shuffled_stream, &mut bitmap);
+    let mask = if let Some(mask) = mask_choice {
+        mask
+    } else {
+        choose_best_mask(&bitmap)
+    };
+    apply_mask(&mut bitmap, version, level, mask);
 
-            set_fcode(
-                &mut bitmap,
-                version,
-                (0, 0),
-                data_to_fcode([0b01, 0b00, 0b11, 0b10][level as usize], mask).unwrap(),
-            );
-            write_badstream_to_bitmap(&shuffled_stream, &mut bitmap);
-            bitmap.qr_mask_xor(mask);
+    bitmap
+}
 
-            // if bitmap.qr_penalty() > best.0 {
-            //     best.0 = bitmap.qr_penalty();
-            //     best.1 = mask as usize;
-            // }
+fn apply_mask(bitmap: &mut ImgRowAligned, version: u32, level: u8, mask: u8) {
+    set_fcode(
+        bitmap,
+        version,
+        (0, 0),
+        data_to_fcode([0b01, 0b00, 0b11, 0b10][level as usize], mask).unwrap(),
+    );
+    bitmap.qr_mask_xor(mask);
+}
 
-            // variants.push(bitmap);
-            bitmap
+pub fn choose_best_mask(bitmap: &ImgRowAligned) -> u8 {
+    if bitmap.qr_version() > Some(27) {
+        eprintln!(
+            "choose_best_mask(): qr code too large for penalty routine, defaulting to mask 3"
+        );
+        return 3;
+    }
+    let mut best: ImgRowAligned;
+    let (mut best, mut penalty) = (u8::MAX, u32::MAX);
+    for mask in 0..=7 {
+        let pen = {
+            let mut clone = bitmap.clone();
+            clone.qr_mask_xor(mask);
+            clone.qr_penalty()
+        };
+        if pen < penalty {
+            best = mask;
+            penalty = pen;
         }
     }
-    // variants[best.1].clone()
+    best
 }
 
 #[test]

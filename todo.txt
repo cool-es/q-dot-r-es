@@ -1,4 +1,3 @@
-• write a routine to automatically pick the pattern with least penalty
 • data entry 🥳 tables!! 🎊 ... specifically:
     - error correction characteristics (pg. 41)
 • penalty routine still mysterious - do more troubleshooting
@@ -7,6 +6,9 @@
 • file read/write capability
 • command line arguments
 • remainder bits
+• xbm export that adds a 2px border to the image
+• check to see if arbitrary data is possible (emoji, etc)
+• clean up code
 
 going through the standards doc:
 • data modes, mode switching (pg. 22)

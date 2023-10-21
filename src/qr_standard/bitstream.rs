@@ -15,7 +15,7 @@ and i was stuck choosing between 2 and 3, where either option would make it real
 */
 
 #[derive(Clone, PartialEq)]
-pub(super) enum Mode {
+pub(crate) enum Mode {
     // not implementing ECI at this time
 
     // ascii/shift-jis byte
@@ -145,13 +145,13 @@ fn push_token_to_badstream(stream: &mut Badstream, token: Token, version: u32) {
     }
 }
 
-pub(super) fn make_token_stream(input: &[(u8, &str)]) -> Vec<Token> {
+pub(super) fn make_token_stream(input: &[(Mode, &str)]) -> Vec<Token> {
     let mut stream: Vec<Token> = Vec::new();
     for (mode, data) in input {
         stream.extend(match mode {
-            0 => string_to_numeric(&data),
-            1 => string_to_alphanum(&data),
-            2 => string_to_ascii(&data),
+            Numeric => string_to_numeric(&data),
+            AlphaNum => string_to_alphanum(&data),
+            ASCII => string_to_ascii(&data),
             _ => panic!(),
         });
     }
@@ -168,7 +168,7 @@ pub(super) fn tokens_to_badstream(stream: Vec<Token>, version: u32) -> Badstream
     output
 }
 
-pub fn invoke_modes(input: &[(u8, &str)], version: u32) -> Badstream {
+pub(crate) fn invoke_modes(input: &[(Mode, &str)], version: u32) -> Badstream {
     tokens_to_badstream(make_token_stream(input), version)
 }
 
@@ -239,54 +239,6 @@ pub(super) fn find_best_version(data: &Vec<Token>, level: u8) -> u32 {
         "no qr code of level {} fits this message",
         "LMQH".chars().collect::<Vec<_>>()[level as usize]
     )
-}
-
-mod unambitious {
-    use super::*;
-    fn bit_overhead(data: &Vec<Token>, version: u32) -> usize {
-        let v = match version {
-            1..=9 => 0,
-            10..=26 => 1,
-            27..=40 => 2,
-            _ => panic!(),
-        };
-
-        let mut sum = 0;
-
-        for i in data {
-            sum += match i {
-                ModeAndCount(mode, _) => {
-                    let m = match mode {
-                        Numeric => 0,
-                        AlphaNum => 1,
-                        ASCII => 2,
-                        Kanji => 3,
-                    };
-                    // 4 mode bits + no. of bits in char count indicator per version
-                    4 + [[10, 9, 8, 8], [12, 11, 16, 10], [14, 13, 16, 12]][v][m]
-                }
-                Character(_, length, _) => *length,
-                Terminator => 4,
-            }
-        }
-        sum
-    }
-
-    fn find_best_version(data: &Vec<Token>, level: u8) -> u32 {
-        assert!((0..=3).contains(&level));
-        let table = DATA_CODEWORDS[level as usize];
-
-        for version in 1..=40 {
-            if bit_overhead(data, version) < table[version as usize - 1] {
-                return version;
-            }
-        }
-
-        panic!(
-            "no qr code of level {} fits this message",
-            "LMQH".chars().collect::<Vec<_>>()[level as usize]
-        )
-    }
 }
 
 #[test]

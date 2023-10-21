@@ -1,11 +1,11 @@
 use super::*;
 
 mod tables;
-pub use tables::*;
+pub(crate) use tables::*;
 mod bitstream;
-pub use bitstream::*;
+pub(crate) use bitstream::*;
 mod badstream;
-pub use badstream::*;
+pub(crate) use badstream::*;
 
 pub trait QR: Bitmap {
     fn qr_mask_xor(&mut self, pattern: u8);
