@@ -149,8 +149,39 @@ impl ImgRowAligned {
         output
     }
 
-    pub fn from_xbm_debug() -> Self {
-        Self::from_xbm(XBM_EXAMPLE).unwrap()
+    // as_xbm but with an added 8px quiet-zone border on all sides
+    pub fn as_xbm_border(&self, name: &str) -> String {
+        let mut output = format!(
+            "#define {}_width {}\n#define {}_height {}\n",
+            name,
+            self.width + 16,
+            name,
+            self.height + 16,
+        );
+        output.push_str(format!("static unsigned char {}_bits[] = {{", name).as_str());
+        for _i in 0..(self.width + 16).div_ceil(8) {
+            output.push_str("0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ");
+        }
+        for n in 0..self.bits.len() {
+            // if n % 12 == 0 {
+            //     output.push_str("\n  ");
+            // }
+            if n % self.width.div_ceil(8) == 0 {
+                if n == 0 {
+                    output.push_str("0x00, ");
+                } else {
+                    output.push_str("0x00, 0x00, ");
+                }
+            }
+            output.push_str(format!("0x{:02x}, ", self.bits[n].reverse_bits()).as_str());
+        }
+        output.push_str("0x00, ");
+        for _i in 0..(self.width + 16).div_ceil(8) {
+            output.push_str("0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ");
+        }
+        output.push_str("\n};\n");
+        // output.push_str(format!("// run with:\n// cargo r -q > {}.xbm\n",name).as_str());
+        output
     }
 }
 
@@ -196,14 +227,6 @@ pub(super) fn index_to_xy(
     }
     Some((x, y))
 }
-
-const XBM_EXAMPLE: &str = "#define test_width 16
-#define test_height 16
-static unsigned char test_bits[] = {
-   0x01, 0x00, 0x02, 0x00, 0x04, 0x00, 0x08, 0x00, 0x10, 0x00, 0x20, 0x00,
-   0x40, 0x00, 0x80, 0x00, 0xfe, 0xff, 0xfd, 0xff, 0xfb, 0xff, 0xf7, 0xff,
-   0xef, 0xff, 0xdf, 0xff, 0xbf, 0xff, 0x7f, 0xff };
-";
 
 // implementing clone()
 impl Clone for ImgRowAligned {

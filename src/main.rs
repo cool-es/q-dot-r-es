@@ -12,12 +12,12 @@ use qr_standard::*;
 use rdsm::*;
 // use testutil::*;
 
-fn main() {
-    let _binding = String::from("1234567890".chars().cycle().take(1337).collect::<String>());
+fn main() -> std::io::Result<()> {
+    let _binding = String::from("1234567890".chars().cycle().take(150).collect::<String>());
     let mode_data = &[
-        // (0, _binding.as_str()),
+        // (Numeric, _binding.as_str()),
         //
-        // (1, "PUBLIC SERVICE ANNOUNCEMENT - "),
+        (AlphaNum, "PUBLIC SERVICE ANNOUNCEMENT - "),
         (ASCII,"hello!! so it seems as though my block division routine works, and i am now able to make \"fuck off\"-size qr codes with way way way too much data in them. i remember it as if it was only last week i only had the ability to say a few words in my qr code... such a tragic fate. but now i can just go on and on and on and bore everyone to death because this qr code just fits so much goshdarned data!!!\n\nso anyway here's my top list of girls i think are cute:\n\n1. dx. cute!!!\n2. can't say, she'll be mad at me ;_;\n3. this girl will also be mad at me if i say.\n4. puck. very cute girl!!\n5. ely. claims to not be girl but is cute nevertheless\n6. ypad. cute girl who goes on planes\n7. suzy. cute quake girl!!\n\nchrist almighty am i STILL allowed to go on??? how big is this thing??\n\nokay i , i guess i'll keep going then.\n\n8. vivian. cute bug girl!!!\n9. hikari. cute girl eat a pepsi\n10. me?? can i be the cute girl??? i hope so... maybe one day. ohh, to be the cute girl..... my heart aches ;3;\n\nso uh. how's everybody doing? i'm pretty pleased with how i made the qr codes work, personally. but like that's just me. i realize that we all have our separate struggles in life... not all girls are able to render qr codes. but i am. and actually that might be sort of a USP for when i'm dating? not everyone can say their gf made a qr code by herself. so maybe i get to be like a trophy gf?? well, a girl can dream...\n\nmaybe i should make a substack or something. maybe i can get people to pay me to listen to my stream of consciousness.\n\nwell anyway! hope you're all doing good out there. take care and i'll uhhhhhh keep posting about qr codes in the meantime i guess i don't really have much else going on.\n\nmwah mwah, xoxo...\n- es"),
         // (ASCII,"me when she points a gun at me O_o;;"),
 
@@ -34,9 +34,13 @@ fn main() {
     // }
 
     // _debug_print_qr(&make_qr(mode_data, None, 0, 3));
-    println!("{}", (make_qr(mode_data, None, 0, None)).as_xbm("big"));
+    // println!("{}", (make_qr(mode_data, None, 0, None)).as_xbm("big"));
 
+    let name = "big";
+    let output = make_qr(mode_data, None, 0, None).as_xbm_border(name);
+    std::fs::write(format!("{}.xbm", name), output)?;
     // gen_qr_using_modes(Some(mode_data));
+    Ok(())
 }
 
 fn generate_inverse_codeword_table() {
@@ -174,7 +178,7 @@ fn gen_qr_using_modes(custom_input: Option<&[(Mode, &str)]>) {
             );
             write_badstream_to_bitmap(encoded_message, bitmap);
             bitmap.qr_mask_xor(mask);
-            _debug_print_qr(bitmap);
+            debug_print_qr(bitmap);
             println!("{}", bitmap.qr_penalty());
             println!();
         }
@@ -264,7 +268,7 @@ fn first_qr_code() {
         set_fcode(bitmap, 5, (0, 0), data_to_fcode(0b01, mask).unwrap());
         write_badstream_to_bitmap(encoded_message, bitmap);
         bitmap.qr_mask_xor(mask);
-        _debug_print_qr(bitmap);
+        debug_print_qr(bitmap);
         println!();
     }
 }
@@ -272,7 +276,7 @@ fn first_qr_code() {
 fn qr_correctness_check() {
     let mut hello = testutil::hello1();
     hello.unmask();
-    _debug_print(&hello);
+    debug_print(&hello);
     let mut bits: Badstream = Vec::new();
     let (mut x, mut y) = (20, 20);
     bits.push(hello.get_bit(x, y).unwrap());
@@ -305,7 +309,7 @@ fn qr_correctness_check() {
     prettyprint(&divisor);
     let result = polynomial_remainder(&p, &divisor);
     println!("result:");
-    _doubleprint(&result);
+    doubleprint(&result);
     println!("{:?}", &result);
 }
 
@@ -327,7 +331,7 @@ fn read_bitstream() {
     }
 }
 
-fn _compare_mask_to_isdata() {
+fn compare_mask_to_isdata() {
     let mask = testutil::mask();
     let mut blank = testutil::blank();
     let size = version_to_size(1).unwrap() as usize;
@@ -339,12 +343,12 @@ fn _compare_mask_to_isdata() {
             }
         }
     }
-    _debug_print(&mask);
+    debug_print(&mask);
     println!();
-    _debug_print(&blank);
+    debug_print(&blank);
 }
 
-fn _full_squiggle_test() {
+fn full_squiggle_test() {
     let mut coordpairs = [[0; 256]; 256];
     let mut a = Img::new(21, 21);
     let (mut cx, mut cy) = (20, 20);
@@ -366,10 +370,10 @@ fn _full_squiggle_test() {
             break;
         }
     }
-    _debug_print(&a);
+    debug_print(&a);
 }
 
-fn _bugtest_squiggle(version: u32) {
+fn bugtest_squiggle(version: u32) {
     let size = version_to_size(version).unwrap() as usize;
     let mut coordpairs: Vec<Vec<&str>> = Vec::new();
     coordpairs.resize(size, {
@@ -429,7 +433,7 @@ fn _bugtest_squiggle(version: u32) {
     }
 }
 
-fn _highlight_codewords(version: u32) {
+fn highlight_codewords(version: u32) {
     let size = version_to_size(version).unwrap() as usize;
     let mut coordpairs: Vec<Vec<&str>> = Vec::new();
     coordpairs.resize(size, {
@@ -468,7 +472,7 @@ fn _highlight_codewords(version: u32) {
     }
 }
 
-fn _print_symbol_diagram(version: u32) {
+fn print_symbol_diagram(version: u32) {
     let size = version_to_size(version).unwrap() as usize;
     let mut coordpairs: Vec<Vec<&str>> = Vec::new();
     coordpairs.resize(size, {
@@ -497,7 +501,7 @@ fn _print_symbol_diagram(version: u32) {
     }
 }
 
-fn _test_polynomial_mult() {
+fn test_polynomial_mult() {
     // it works!!
     let cafebabe: Polynomial = Vec::from([0xca, 0xfe, 0xba, 0xbe]);
     let deadbeef: Polynomial = Vec::from([0xde, 0xad, 0xbe, 0xef]);
@@ -509,13 +513,13 @@ fn _test_polynomial_mult() {
     println!("{:?}", es_polynomial_multiply(&deadbeef, &cafebabe));
 }
 
-fn _doubleprint(input: &Polynomial) {
+fn doubleprint(input: &Polynomial) {
     charprint(input);
     prettyprint(input);
     println!();
 }
 
-fn _test_polynomial_div() {
+fn test_polynomial_div() {
     let cafebabe: Polynomial = Vec::from([0xca, 0xfe, 0xba, 0xbe]);
     // let deadbeef: Polynomial = Vec::from([0xde, 0xad, 0xbe, 0xef]);
     let big_1: Polynomial = (1..10).map(|x| (x * 541) % 256).collect();
@@ -527,30 +531,30 @@ fn _test_polynomial_div() {
     let sum_rem = polynomial_remainder(&sum, &cafebabe);
 
     println!("divisor:");
-    _doubleprint(&cafebabe);
+    doubleprint(&cafebabe);
     // prettyprint(&deadbeef);
 
     println!("\nbig polynomial 1:");
-    _doubleprint(&big_1);
+    doubleprint(&big_1);
     println!("big polynomial 2:");
-    _doubleprint(&big_2);
+    doubleprint(&big_2);
     println!("sum of bigs:");
-    _doubleprint(&sum);
+    doubleprint(&sum);
 
     println!("\nremainder of big 1:");
-    _doubleprint(&rem_1);
+    doubleprint(&rem_1);
     println!("remainder of big 2:");
-    _doubleprint(&rem_2);
+    doubleprint(&rem_2);
 
     println!("\nremainder of sums:");
-    _doubleprint(&sum_rem);
+    doubleprint(&sum_rem);
     println!("sum of remainders:");
-    _doubleprint(&rem_sum);
+    doubleprint(&rem_sum);
 
     assert_eq!(sum_rem, rem_sum);
 }
 
-fn _test_rdsm_generator() {
+fn test_rdsm_generator() {
     for i in [7, 10, 13, 15, 20, 22, 24, 68] {
         let a = make_rdsm_generator_polynomial(i);
         print!("{} -- ", i);
@@ -559,10 +563,10 @@ fn _test_rdsm_generator() {
     }
 }
 
-fn _remasking_test() {
+fn remasking_test() {
     let code = xbm_filepath_into_bitmap("hellocode_smol.xbm");
 
-    _debug_print_qr(&code);
+    debug_print_qr(&code);
     let penalties = code.qr_penalty_split();
     println!("penalty: {}", &penalties.iter().sum::<u32>());
     println!(
@@ -593,7 +597,7 @@ fn unmask(input: &mut ImgRowAligned) {
     input.qr_mask_xor(mask);
 }
 // this function works perfectly!! it's great
-fn _qr_remask_v1_symbol(input: &ImgRowAligned, mask_pattern: u8) -> Option<ImgRowAligned> {
+fn qr_remask_v1_symbol(input: &ImgRowAligned, mask_pattern: u8) -> Option<ImgRowAligned> {
     let old_fcode = get_fcode(input, 1, (0, 0))?;
     let (correction_level, old_mask_pattern) = interpret_format(old_fcode)?;
     if mask_pattern == old_mask_pattern {
@@ -613,14 +617,14 @@ fn _qr_remask_v1_symbol(input: &ImgRowAligned, mask_pattern: u8) -> Option<ImgRo
     Some(image)
 }
 
-fn _print_qr_mask_patterns() {
+fn print_qr_mask_patterns() {
     let x = ImgRowAligned::new(25, 25);
     // let x = image_type::continuous::Img::new(25,25);
     for i in 0..8 {
         let mut masky = x.clone();
         masky.qr_mask_xor(i);
         println!();
-        _debug_print(&masky);
+        debug_print(&masky);
     }
 }
 
@@ -639,7 +643,7 @@ fn _print_qr_mask_patterns() {
 //     debug_print(&qr);
 // }
 
-fn _test_format_parsing(path: &str) {
+fn test_format_parsing(path: &str) {
     let xbm_string = std::fs::read_to_string(path).unwrap();
     let xbm_bitmap = ImgRowAligned::from_xbm(&xbm_string).unwrap();
     let fcode = get_fcode(&xbm_bitmap, 1, (0, 0)).unwrap();
@@ -658,7 +662,7 @@ fn _test_format_parsing(path: &str) {
             }
         });
         println!("masking pattern {:#05b}", mask);
-        _debug_print(&xbm_bitmap);
+        debug_print(&xbm_bitmap);
         /* for mask in  0..=7 */
         {
             let mut code_for_masking = xbm_bitmap.clone();
@@ -683,20 +687,20 @@ fn _test_format_parsing(path: &str) {
             // println!();
             code_for_masking.mask_set(&xbm_bitmap, &pixelmask);
             println!("mask {}:", mask);
-            _debug_print(&xor_mask_pattern);
+            debug_print(&xor_mask_pattern);
             println!();
-            _debug_print(&code_for_masking);
+            debug_print(&code_for_masking);
         }
     }
 }
 
-fn _debug_print<T: Bitmap>(input: &T) {
+fn debug_print<T: Bitmap>(input: &T) {
     for y in 0..input.dims().1 {
         println!("{}", debug_print_row(input, y, true).unwrap())
     }
 }
 
-fn _debug_print_qr<T: Bitmap>(input: &T) {
+fn debug_print_qr<T: Bitmap>(input: &T) {
     let throwaway_hack = || {
         for _i in 0..2 {
             for _y in 0..input.dims().1 + 4 {
@@ -730,7 +734,7 @@ fn debug_print_row<T: Bitmap>(input: &T, y: usize, emoji: bool) -> Option<String
     Some(output)
 }
 
-fn _test_xbm_output() {
+fn test_xbm_output() {
     println!(
         "{}",
         ImgRowAligned::as_xbm(
@@ -746,7 +750,7 @@ fn _test_xbm_output() {
     );
 }
 
-fn _test_xbm(path: &str) {
+fn test_xbm(path: &str) {
     let input = std::fs::read_to_string(path).unwrap();
     let x = ImgRowAligned::from_xbm(&input).unwrap();
     let mut vector: Vec<ImgRowAligned> = Vec::new();
@@ -769,7 +773,7 @@ fn xbm_filepath_into_bitmap(path: &str) -> ImgRowAligned {
     ImgRowAligned::from_xbm(&input).unwrap()
 }
 // tests qr format check, assuming debug printing is enabled
-fn _test_checkfmt() {
+fn test_checkfmt() {
     for i in 10..20 {
         qr_fcode_remainder((2u32.pow(15) - 20) + i);
         println!();
@@ -779,7 +783,7 @@ fn _test_checkfmt() {
 // just the example taken from the tutorial
 // returns 0001010001111010 and 0000000011000011 (correct)
 #[test]
-pub fn _test_gf() {
+pub fn test_gf() {
     /*
         >>> a = 0b10001001
         >>> b = 0b00101010
@@ -850,7 +854,7 @@ pub fn _test_gf() {
     // );
 }
 
-fn _test_reed_solomon(test: u8) {
+fn test_reed_solomon(test: u8) {
     // time to generate a qr code (clueless)
     let mut lookup_tables = BLANK_EXP_LOG_LUTS;
     generate_exp_log_tables(&mut lookup_tables);

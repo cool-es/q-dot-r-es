@@ -1,14 +1,18 @@
-• data entry 🥳 tables!! 🎊 ... specifically:
-    - error correction characteristics (pg. 41)
-• penalty routine still mysterious - do more troubleshooting
 • update penalty functions to not use get_row()
 • mode overhead calculation for when to switch modes
 • file read/write capability
+    started work, but needs some refinement
 • command line arguments
+    how do i go about testing this?
 • remainder bits
-• xbm export that adds a 2px border to the image
+    this might not be necessary since it works implicitly
+    (though might be good to add explicit bounds checking)
 • check to see if arbitrary data is possible (emoji, etc)
-• clean up code
+• clean up code (remove the allow(dead_code))
+
+maybe:
+• penalty routine still mysterious - do more troubleshooting
+    idk if i need to, it's kind of a technicality whether it works right or not
 
 going through the standards doc:
 • data modes, mode switching (pg. 22)

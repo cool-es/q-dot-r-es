@@ -226,7 +226,6 @@ pub(super) fn find_best_version(data: &Vec<Token>, level: u8) -> u32 {
 
     for version in 1..=40 {
         let diff =
-            // compute_bit_overhead(overhead, version).checked_sub(8 * table[version as usize - 1]);
             (8 * table[version as usize - 1]).checked_sub(compute_bit_overhead(overhead, version));
         if let Some(x) = diff {
             if x == 0 || x > 7 {
