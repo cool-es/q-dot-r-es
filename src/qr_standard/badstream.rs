@@ -268,7 +268,7 @@ fn block_encode_is_well_behaved() {
 }
 
 pub(crate) fn make_qr(
-    mode_data: &[(Mode, &str)],
+    mode_data: Vec<(Mode, String)>,
     version_choice: Option<u32>,
     level: u8,
     mask_choice: Option<u8>,

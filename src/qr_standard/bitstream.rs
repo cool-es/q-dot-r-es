@@ -145,7 +145,7 @@ fn push_token_to_badstream(stream: &mut Badstream, token: Token, version: u32) {
     }
 }
 
-pub(super) fn make_token_stream(input: &[(Mode, &str)]) -> Vec<Token> {
+pub(super) fn make_token_stream(input: Vec<(Mode, String)>) -> Vec<Token> {
     let mut stream: Vec<Token> = Vec::new();
     for (mode, data) in input {
         stream.extend(match mode {
@@ -168,7 +168,7 @@ pub(super) fn tokens_to_badstream(stream: Vec<Token>, version: u32) -> Badstream
     output
 }
 
-pub(crate) fn invoke_modes(input: &[(Mode, &str)], version: u32) -> Badstream {
+pub(crate) fn invoke_modes(input: Vec<(Mode, String)>, version: u32) -> Badstream {
     tokens_to_badstream(make_token_stream(input), version)
 }
 
