@@ -14,32 +14,39 @@ use rdsm::*;
 
 fn main() -> std::io::Result<()> {
     let _binding = String::from("1234567890".chars().cycle().take(150).collect::<String>());
-    let mode_data = vec![
+    // let mode_data = vec![
     //     // (Numeric, _binding.as_str()),
     //     //
     //     // (AlphaNum, "PUBLIC SERVICE ANNOUNCEMENT - "),
     //     // (ASCII,"hello!! so it seems as though my block division routine works, and i am now able to make \"fuck off\"-size qr codes with way way way too much data in them. i remember it as if it was only last week i only had the ability to say a few words in my qr code... such a tragic fate. but now i can just go on and on and on and bore everyone to death because this qr code just fits so much goshdarned data!!!\n\nso anyway here's my top list of girls i think are cute:\n\n1. dx. cute!!!\n2. can't say, she'll be mad at me ;_;\n3. this girl will also be mad at me if i say.\n4. puck. very cute girl!!\n5. ely. claims to not be girl but is cute nevertheless\n6. ypad. cute girl who goes on planes\n7. suzy. cute quake girl!!\n\nchrist almighty am i STILL allowed to go on??? how big is this thing??\n\nokay i , i guess i'll keep going then.\n\n8. vivian. cute bug girl!!!\n9. hikari. cute girl eat a pepsi\n10. me?? can i be the cute girl??? i hope so... maybe one day. ohh, to be the cute girl..... my heart aches ;3;\n\nso uh. how's everybody doing? i'm pretty pleased with how i made the qr codes work, personally. but like that's just me. i realize that we all have our separate struggles in life... not all girls are able to render qr codes. but i am. and actually that might be sort of a USP for when i'm dating? not everyone can say their gf made a qr code by herself. so maybe i get to be like a trophy gf?? well, a girl can dream...\n\nmaybe i should make a substack or something. maybe i can get people to pay me to listen to my stream of consciousness.\n\nwell anyway! hope you're all doing good out there. take care and i'll uhhhhhh keep posting about qr codes in the meantime i guess i don't really have much else going on.\n\nmwah mwah, xoxo...\n- es"),
     //     // (ASCII,"me when she points a gun at me O_o;;"),
-        (AlphaNum,"HELLO MY BABY HELLO MY HONEY HELLO MY RAGTIME GAL. SEND ME A KISS BY WIRE. DARLING MY HEART IS ON FIRE. IF YOU REFUSE ME HONEY YOU WILL LOSE ME THEN YOU WILL BE LEFT ALONE. OH BABY TELEPHONE AND TELL ME I AM YOUR OWN.".to_string())
+        // (AlphaNum,"HELLO MY BABY HELLO MY HONEY HELLO MY RAGTIME GAL. SEND ME A KISS BY WIRE. DARLING MY HEART IS ON FIRE. IF YOU REFUSE ME HONEY YOU WILL LOSE ME THEN YOU WILL BE LEFT ALONE. OH BABY TELEPHONE AND TELL ME I AM YOUR OWN.".to_string())
     //     // (2,"this is ascii! >w<"),
     //     // (2, "hi :)"),
     //     //
-    ];
+    // ];
 
-    // let mut mode_data = Vec::new();
+    let mut mode_data = Vec::new();
     let name = Option::<String>::None;
-    // let mut args = std::env::args();
-    // args.next();
-    // while let Some(argument) = args.next() {
-    //     match argument.as_str() {
-    //         "-num" => {
-    //             let number_str = args.next().expect("no data for numeric mode");
-    //             mode_data.push((Numeric, number_str))
-    //         }
-
-    //         _ => panic!("incorrect argument"),
-    //     }
-    // }
+    let mut args = std::env::args();
+    args.next();
+    while let Some(argument) = args.next() {
+        match argument.as_str() {
+            "-num" => {
+                let number_string = args.next().expect("no data for numeric mode");
+                mode_data.push((Numeric, number_string));
+            }
+            "-aln" => {
+                let alphanum_string = args.next().expect("no data for alphanumeric mode");
+                mode_data.push((AlphaNum, alphanum_string));
+            }
+            "-asc" => {
+                let ascii_string = args.next().expect("no data for ASCII mode");
+                mode_data.push((ASCII, ascii_string));
+            }
+            _ => println!("{} - incorrect argument", argument),
+        }
+    }
     let name = if let Some(n) = name {
         n
     } else {
