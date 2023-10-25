@@ -529,20 +529,14 @@ pub fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u16> {
     crate::rdsm::qr_generate_fcode((correction_level << 3) | mask_pattern)
 }
 
-pub fn set_fcode<T: image::Bitmap>(
-    input: &mut T,
-    version: u32,
-    offset: (usize, usize),
-    fcode: u16,
-) {
-    let (ox, oy) = offset;
+pub fn set_fcode<T: image::Bitmap>(input: &mut T, version: u32, fcode: u16) {
     let mask = 0b0101_0100_0001_0010u16;
 
     for bit in 0..=14 {
         let ((x1, y1), (x2, y2)) = format_info_coords(version, bit).unwrap();
         let value = (fcode ^ mask) & (1 << bit) != 0;
-        input.set_bit(x1 + ox, y1 + oy, value);
-        input.set_bit(x2 + ox, y2 + oy, value);
+        input.set_bit(x1, y1, value);
+        input.set_bit(x2, y2, value);
     }
 }
 

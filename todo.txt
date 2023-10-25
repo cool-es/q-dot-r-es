@@ -17,7 +17,6 @@ maybe:
 going through the standards doc:
 • data modes, mode switching (pg. 22)
     mostly done!! great job me!! kanji and ECI remain
-• symbol encoding example (pg. 90)
 • bitstream optimization  (pg. 92)
 
 PITEOG stuff:

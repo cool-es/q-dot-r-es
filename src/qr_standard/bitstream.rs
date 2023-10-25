@@ -14,7 +14,7 @@ something that's really complicated is deciding what level of complexity/abstrac
 and i was stuck choosing between 2 and 3, where either option would make it really complicated to skip over the missing step. so i chose to do both
 */
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Copy)]
 pub(crate) enum Mode {
     // not implementing ECI at this time
 
@@ -98,7 +98,7 @@ fn string_to_alphanum(input: &str) -> Vec<Token> {
     let mut output: Vec<Token> = vec![ModeAndCount(AlphaNum, input.len() as u16)];
     for i in input
         .chars()
-        .map(|x| find_alphanum(x))
+        .map(|x| find_alphanum(x).expect("character is not alphanumeric"))
         .collect::<Vec<u16>>()
         .chunks(2)
     {
@@ -152,7 +152,7 @@ pub(super) fn make_token_stream(input: Vec<(Mode, String)>) -> Vec<Token> {
             Numeric => string_to_numeric(&data),
             AlphaNum => string_to_alphanum(&data),
             ASCII => string_to_ascii(&data),
-            _ => panic!(),
+            _ => panic!("unsupported mode"),
         });
     }
     stream.push(Terminator);
@@ -218,7 +218,11 @@ pub(super) fn bit_overhead(data: &Vec<Token>, version: u32) -> usize {
 }
 
 pub(super) fn find_best_version(data: &Vec<Token>, level: u8) -> u32 {
-    assert!((0..=3).contains(&level));
+    assert!(
+        (0..=3).contains(&level),
+        "invalid error correction level \"{}\" selected",
+        level
+    );
     let table = DATA_CODEWORDS[level as usize];
     let overhead = bit_overhead_template(data);
 
@@ -237,7 +241,7 @@ pub(super) fn find_best_version(data: &Vec<Token>, level: u8) -> u32 {
 
     panic!(
         "no qr code of level {} fits this message",
-        "LMQH".chars().collect::<Vec<_>>()[level as usize]
+        b"LMQH"[level as usize] as char
     )
 }
 
@@ -272,4 +276,78 @@ fn bit_overhead_good() {
 
         assert!(check_len == output.len(), "bit overhead calculation");
     }
+}
+
+pub fn compute_bit_hypothetical() {
+    let modes = [ASCII, AlphaNum, Numeric];
+    for (i, a) in [1, 10, 27].into_iter().enumerate() {
+        println!("class {} (version {}..):", i + 1, a);
+        for m1 in 0..3 {
+            for m2 in m1..3 {
+                for switch_len in 0..200 {
+                    let l = "11111111111".to_string();
+                    let m = ['1']
+                        .into_iter()
+                        .cycle()
+                        .take(switch_len)
+                        .collect::<String>();
+                    let n = "1111111111111111".to_string();
+
+                    let mode1 = modes[m1];
+                    let mode2 = modes[m2];
+
+                    let single = make_token_stream(vec![(mode1, format!("{}{}{}", l, m, n))]);
+                    let multi = make_token_stream(vec![(mode1, l), (mode2, m), (mode1, n)]);
+
+                    if bit_overhead(&single, a) > bit_overhead(&multi, a) {
+                        let n = ["ascii", "alphanumeric", "numeric"];
+                        println!(
+                            "{}-{}-{} beats only {} at {} characters",
+                            n[m1], n[m2], n[m1], n[m1], switch_len,
+                        );
+                        break;
+                    }
+                }
+            }
+        }
+        for switch_len in 0..200 {
+            let l = "11111111111".to_string();
+            let m = ['1']
+                .into_iter()
+                .cycle()
+                .take(switch_len)
+                .collect::<String>();
+            let n = "1111111111111111".to_string();
+
+            let single =
+                make_token_stream(vec![(ASCII, l.clone()), (AlphaNum, format!("{}{}", m, n))]);
+            let multi = make_token_stream(vec![(ASCII, l), (Numeric, m), (AlphaNum, n)]);
+
+            if bit_overhead(&single, a) > bit_overhead(&multi, a) {
+                let n = ["ascii", "alphanumeric", "numeric"];
+                println!(
+                    "ascii-num-aln beats an immediate switch to aln at {} characters",
+                    switch_len,
+                );
+                break;
+            }
+        }
+    }
+}
+
+// returns the smallest subset x is part of:
+// Numeric ⊂ AlphaNum ⊂ ASCII
+// to use for a "greedy" mode-switch algorithm
+fn char_status(x: char) -> Option<Mode> {
+    Some({
+        if x.is_digit(10) {
+            Numeric
+        } else if find_alphanum(x).is_some() {
+            AlphaNum
+        } else if x.is_ascii() {
+            ASCII
+        } else {
+            return None;
+        }
+    })
 }

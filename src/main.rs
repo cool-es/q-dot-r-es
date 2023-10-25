@@ -213,7 +213,6 @@ fn gen_qr_using_modes(custom_input: Option<&[(Mode, &str)]>) {
             set_fcode(
                 bitmap,
                 version,
-                (0, 0),
                 data_to_fcode([0b01, 0b00, 0b11, 0b10][0], mask).unwrap(),
             );
             write_badstream_to_bitmap(encoded_message, bitmap);
@@ -305,7 +304,7 @@ fn first_qr_code() {
                 .as_slice(),
             encoded_message,
         );
-        set_fcode(bitmap, 5, (0, 0), data_to_fcode(0b01, mask).unwrap());
+        set_fcode(bitmap, 5, data_to_fcode(0b01, mask).unwrap());
         write_badstream_to_bitmap(encoded_message, bitmap);
         bitmap.qr_mask_xor(mask);
         debug_print_qr(bitmap);
@@ -652,7 +651,7 @@ fn qr_remask_v1_symbol(input: &ImgRowAligned, mask_pattern: u8) -> Option<ImgRow
     image.mask_set(input, &pixelmask);
     let fcode = data_to_fcode(correction_level, mask_pattern).unwrap();
     // println!("fcode\n{:015b}\n\nold fcode\n{:015b}\n", fcode, old_fcode);
-    set_fcode(&mut image, 1, (0, 0), fcode);
+    set_fcode(&mut image, 1, fcode);
 
     Some(image)
 }

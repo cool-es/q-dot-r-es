@@ -275,10 +275,24 @@ pub(crate) fn make_qr(
 ) -> ImgRowAligned {
     let tokens = make_token_stream(mode_data);
 
-    let version = if let Some(choice) = version_choice {
-        choice
+    let best_ver = find_best_version(&tokens, level);
+    let version = if let Some(chosen_ver) = version_choice {
+        assert!(
+            !bad_version(chosen_ver),
+            "invalid version {} chosen",
+            chosen_ver
+        );
+        assert!(
+            best_ver <= chosen_ver,
+            "QR version {}-{} can't fit the data - best option is {}-{}",
+            chosen_ver,
+            b"LMQH"[level as usize] as char,
+            best_ver,
+            b"LMQH"[level as usize] as char,
+        );
+        chosen_ver
     } else {
-        find_best_version(&tokens, level)
+        best_ver
     };
 
     let stream: &mut Badstream = &mut tokens_to_badstream(tokens, version);
@@ -300,7 +314,6 @@ fn apply_mask(bitmap: &mut ImgRowAligned, version: u32, level: u8, mask: u8) {
     set_fcode(
         bitmap,
         version,
-        (0, 0),
         data_to_fcode([0b01, 0b00, 0b11, 0b10][level as usize], mask).unwrap(),
     );
     bitmap.qr_mask_xor(mask);

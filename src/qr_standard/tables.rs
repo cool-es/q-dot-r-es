@@ -113,8 +113,8 @@ pub(super) const ALPHANUMERIC_TABLE: [char; 45] = [
 ];
 
 // tested, works
-pub(super) fn find_alphanum(input: char) -> u16 {
-    u16::from(match input {
+pub(super) fn find_alphanum(input: char) -> Option<u16> {
+    Some(u16::from(match input {
         '0'..='9' => (input as u8) - 48,
         'A'..='Z' => (input as u8) - 55,
         ' ' => 36,
@@ -126,8 +126,8 @@ pub(super) fn find_alphanum(input: char) -> u16 {
         '.' => 42,
         '/' => 43,
         ':' => 44,
-        _ => panic!("not alphanumeric"),
-    })
+        _ => return None,
+    }))
 }
 
 pub fn find_alphanum2(input: char) -> Option<usize> {
@@ -556,3 +556,21 @@ pub const DATA_CODEWORDS: [[usize; 40]; 4] = [
         1142, 1222, 1276,
     ],
 ];
+
+
+// class 1 (version 1..):
+// ascii-alphanumeric-ascii beats only ascii at 11 characters
+// ascii-numeric-ascii beats only ascii at 6 characters
+// alphanumeric-numeric-alphanumeric beats only alphanumeric at 14 characters
+// ascii-num-aln beats an immediate switch to aln at 7 characters
+// class 2 (version 10..):
+// ascii-alphanumeric-ascii beats only ascii at 15 characters
+// ascii-numeric-ascii beats only ascii at 8 characters
+// alphanumeric-numeric-alphanumeric beats only alphanumeric at 15 characters
+// ascii-num-aln beats an immediate switch to aln at 8 characters
+// class 3 (version 27..):
+// ascii-alphanumeric-ascii beats only ascii at 16 characters
+// ascii-numeric-ascii beats only ascii at 9 characters
+// alphanumeric-numeric-alphanumeric beats only alphanumeric at 17 characters
+// ascii-num-aln beats an immediate switch to aln at 9 characters
+pub const MODE_ECONOMY: [[u32; 4]; 3] = [[11, 6, 14, 7], [15, 8, 15, 8], [16, 9, 17, 9]];

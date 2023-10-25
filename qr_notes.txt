@@ -26,6 +26,26 @@ number of bits in char count indicator - pg. 24
     [14, 13, 16, 12] 27..=40
      Nu  AN  By  Kj
 
+
+mode-switching economy:
+
+class 1 (version 1..):
+ascii-alphanumeric-ascii beats only ascii at 11 characters
+ascii-numeric-ascii beats only ascii at 6 characters
+alphanumeric-numeric-alphanumeric beats only alphanumeric at 14 characters
+ascii-num-aln beats an immediate switch to aln at 7 characters
+class 2 (version 10..):
+ascii-alphanumeric-ascii beats only ascii at 15 characters
+ascii-numeric-ascii beats only ascii at 8 characters
+alphanumeric-numeric-alphanumeric beats only alphanumeric at 15 characters
+ascii-num-aln beats an immediate switch to aln at 8 characters
+class 3 (version 27..):
+ascii-alphanumeric-ascii beats only ascii at 16 characters
+ascii-numeric-ascii beats only ascii at 9 characters
+alphanumeric-numeric-alphanumeric beats only alphanumeric at 17 characters
+ascii-num-aln beats an immediate switch to aln at 9 characters
+
+
             ////// BITS AND CODEWORDS //////
 
 codewords are aligned in columns of width 2,
