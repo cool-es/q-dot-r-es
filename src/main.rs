@@ -13,19 +13,10 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() -> std::io::Result<()> {
-    let _binding = String::from("1234567890".chars().cycle().take(150).collect::<String>());
-    // let mode_data = vec![
-    //     // (Numeric, _binding.as_str()),
-    //     //
-    //     // (AlphaNum, "PUBLIC SERVICE ANNOUNCEMENT - "),
-    //     // (ASCII,"hello!! so it seems as though my block division routine works, and i am now able to make \"fuck off\"-size qr codes with way way way too much data in them. i remember it as if it was only last week i only had the ability to say a few words in my qr code... such a tragic fate. but now i can just go on and on and on and bore everyone to death because this qr code just fits so much goshdarned data!!!\n\nso anyway here's my top list of girls i think are cute:\n\n1. dx. cute!!!\n2. can't say, she'll be mad at me ;_;\n3. this girl will also be mad at me if i say.\n4. puck. very cute girl!!\n5. ely. claims to not be girl but is cute nevertheless\n6. ypad. cute girl who goes on planes\n7. suzy. cute quake girl!!\n\nchrist almighty am i STILL allowed to go on??? how big is this thing??\n\nokay i , i guess i'll keep going then.\n\n8. vivian. cute bug girl!!!\n9. hikari. cute girl eat a pepsi\n10. me?? can i be the cute girl??? i hope so... maybe one day. ohh, to be the cute girl..... my heart aches ;3;\n\nso uh. how's everybody doing? i'm pretty pleased with how i made the qr codes work, personally. but like that's just me. i realize that we all have our separate struggles in life... not all girls are able to render qr codes. but i am. and actually that might be sort of a USP for when i'm dating? not everyone can say their gf made a qr code by herself. so maybe i get to be like a trophy gf?? well, a girl can dream...\n\nmaybe i should make a substack or something. maybe i can get people to pay me to listen to my stream of consciousness.\n\nwell anyway! hope you're all doing good out there. take care and i'll uhhhhhh keep posting about qr codes in the meantime i guess i don't really have much else going on.\n\nmwah mwah, xoxo...\n- es"),
-    //     // (ASCII,"me when she points a gun at me O_o;;"),
-        // (AlphaNum,"HELLO MY BABY HELLO MY HONEY HELLO MY RAGTIME GAL. SEND ME A KISS BY WIRE. DARLING MY HEART IS ON FIRE. IF YOU REFUSE ME HONEY YOU WILL LOSE ME THEN YOU WILL BE LEFT ALONE. OH BABY TELEPHONE AND TELL ME I AM YOUR OWN.".to_string())
-    //     // (2,"this is ascii! >w<"),
-    //     // (2, "hi :)"),
-    //     //
-    // ];
+    main_qr_generator()
+}
 
+fn main_qr_generator() -> Result<(), std::io::Error> {
     let mut mode_data = Vec::new();
     let name = Option::<String>::None;
     let mut args = std::env::args();
@@ -54,6 +45,39 @@ fn main() -> std::io::Result<()> {
     };
     let output = make_qr(mode_data, None, 0, None).as_xbm_border(name.as_str());
     std::fs::write(format!("{}.xbm", name), output)?;
+    Ok(())
+}
+
+fn export_one_of_every_single_variant_to_folder() -> Result<(), std::io::Error> {
+    // to export as an animation i used these commands:
+    // for i in *.xbm; do ffmpeg -y -loglevel quiet -i "$i" -vf scale=800x800:flags=neighbor ./pngs/"${i%.*}".png && echo "$i";  done
+    // ffmpeg -framerate 30 -pattern_type glob -i '*.png' -c:v libx264 -pix_fmt yuv420p out.mp4
+    let mut mask = 0;
+    for version in 1..=40 {
+        for level in 0..=3 {
+            let mut binding = format!("{}-{}:\n\n", version, b"LMQH"[level as usize] as char);
+            binding.push_str( String::from(
+                "what a beautiful face\ni have found in this place\nthat is circling all round the sun\nwhat a beautiful dream\nthat could flash on the screen\nin a blink of an eye and be gone from me....\nsOFT AND SWEET!!!!\nLET ME HOLD IT CLOSE AND KEEP IT HERE WITH ME\n\nand one day we will die\nand our ashes will fly from the aeroplane over the sea\nbut for now we are young\nlet us lay in the sun\nand count every beautiful thing we can see\nLOVE TO BE!!!!!!\nIN THE ARMS OF ALL I'M KEEPING HERE WITH MEEEEEEEEEEEE\n\n[trombone solo]\n\nwhat a curious life\nwe have found here tonight\nthere is music that sounds from the street\nthere are lights in the clouds\nanna's ghost all around\nhear her voice as it's rolling and ringing through me\nsofT AND SWEET!!!!!!!\nHOW THE NOTES ALL BEND AND REACH ABOVE THE TREES\n\noh how i remember you\nhow i would push my fingers through\nyour mouth to make those muscles move\nthat made your voice so smooth and sweet\nbut now we keep where we don't know\nall secrets sleep in winter clothes\nwith one you loved so long ago\nnow he don't even know his name :( :(\n\nwhat a beautiful face\ni have found in this place\nthat is circling all round the sun\nand when we meet on a cloud\ni'll be laughing out loud\ni'll be laughing with everyone i see\ncan't believe how strange it is to be anything at all....\n\n\n"
+                    .chars()
+                    .cycle()
+                    .take(DATA_CODEWORDS[level as usize][version as usize - 1].checked_sub(4+ binding.len()).unwrap_or_default())
+                    .collect::<String>(),
+            ).as_str());
+            let len = binding.len();
+            let mode_data = vec![(ASCII, binding)];
+            let name = format!(
+                "{:02}{}",
+                version,
+                "abcd".chars().collect::<Vec<_>>()[level as usize]
+            );
+            let output = make_qr(mode_data, Some(version), level, Some(mask % 8))
+                .as_xbm_border(name.as_str());
+            std::fs::write(format!("./animation/{}.xbm", name), output)?;
+            print!("{} length {}; ", name, len);
+            mask += 1;
+        }
+        println!();
+    }
     Ok(())
 }
 

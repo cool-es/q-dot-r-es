@@ -803,7 +803,7 @@ fn version_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize
 // in the style of set_fcode
 pub fn set_vcode<T: image::Bitmap>(input: &mut T, version: u32, vcode: u32) {
     for bit in 0..=17 {
-        let ((x1, y1), (x2, y2)) = version_info_coords(version, bit).unwrap();
+        let ((x1, y1), (x2, y2)) = version_info_coords(version, bit).expect("bad version");
         let value = vcode & (1 << bit) != 0;
         input.set_bit(x1, y1, value);
         input.set_bit(x2, y2, value);

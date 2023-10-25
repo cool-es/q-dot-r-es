@@ -183,15 +183,13 @@ fn bit_overhead_template(data: &Vec<Token>) -> Overhead {
     for i in data {
         match i {
             ModeAndCount(mode, _) => {
-                let m = match mode {
+                bit_sum += 4;
+                count_indicators[match mode {
                     Numeric => 0,
                     AlphaNum => 1,
                     ASCII => 2,
                     Kanji => 3,
-                };
-
-                bit_sum += 4;
-                count_indicators[m] += 1;
+                }] += 1;
             }
             Character(_, length, _) => bit_sum += *length,
             Terminator => bit_sum += 4,
@@ -225,9 +223,12 @@ pub(super) fn find_best_version(data: &Vec<Token>, level: u8) -> u32 {
     let overhead = bit_overhead_template(data);
 
     for version in 1..=40 {
+        // total number of bits that fit in the qr code, minus bit length of message
         let diff =
             (8 * table[version as usize - 1]).checked_sub(compute_bit_overhead(overhead, version));
         if let Some(x) = diff {
+            // check to see that the bitstream either fits perfectly,
+            // or has at least one byte to spare
             if x == 0 || x > 7 {
                 return version;
             }
