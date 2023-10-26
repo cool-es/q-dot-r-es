@@ -151,37 +151,55 @@ impl ImgRowAligned {
 
     // as_xbm but with an added 8px quiet-zone border on all sides
     pub fn as_xbm_border(&self, name: &str) -> String {
-        let mut output = format!(
-            "#define {}_width {}\n#define {}_height {}\n",
+        // handle data separately
+        let mut data = String::new();
+        for _i in 0..(self.width + 16).next_multiple_of(8) {
+            // 8 rows on top
+            data.push_str("0x00,");
+        }
+        for n in 0..self.bits.len() {
+            if n % self.width.div_ceil(8) == 0 {
+                if n == 0 {
+                    // 8 columns to the left
+                    data.push_str("0x00,");
+                } else {
+                    // 8 columns to the right,
+                    // then 8 to the left
+                    data.push_str("0x00,0x00,");
+                }
+            }
+            data.push_str(format!("0x{:02x},", self.bits[n].reverse_bits()).as_str());
+        }
+        // 8 columns to the right
+        data.push_str("0x00,");
+        for _i in 0..(self.width + 16).next_multiple_of(8) {
+            // 8 rows at the bottom
+            data.push_str("0x00,");
+        }
+        // remove the last comma
+        data.pop();
+
+        // divide into 12 columns
+        let mut nicedata = String::new();
+        for string_chunk in Vec::from_iter(data.split(",")).chunks(12) {
+            nicedata.push_str("    ");
+            for byte in string_chunk.into_iter() {
+                nicedata.push_str(byte);
+                nicedata.push_str(", ")
+            }
+            nicedata.pop();
+            nicedata.push('\n');
+        }
+
+        format!(
+            "#define {}_width {}\n#define {}_height {}\nstatic unsigned char {}_bits[] = {{\n{}}};\n",
             name,
             self.width + 16,
             name,
             self.height + 16,
-        );
-        output.push_str(format!("static unsigned char {}_bits[] = {{", name).as_str());
-        for _i in 0..(self.width + 16).div_ceil(8) {
-            output.push_str("0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ");
-        }
-        for n in 0..self.bits.len() {
-            // if n % 12 == 0 {
-            //     output.push_str("\n  ");
-            // }
-            if n % self.width.div_ceil(8) == 0 {
-                if n == 0 {
-                    output.push_str("0x00, ");
-                } else {
-                    output.push_str("0x00, 0x00, ");
-                }
-            }
-            output.push_str(format!("0x{:02x}, ", self.bits[n].reverse_bits()).as_str());
-        }
-        output.push_str("0x00, ");
-        for _i in 0..(self.width + 16).div_ceil(8) {
-            output.push_str("0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ");
-        }
-        output.push_str("\n};\n");
-        // output.push_str(format!("// run with:\n// cargo r -q > {}.xbm\n",name).as_str());
-        output
+            name,
+            nicedata,
+        )
     }
 }
 
