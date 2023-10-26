@@ -715,32 +715,6 @@ fn qr_generate_vcode(version: u32) -> u32 {
     ((version << 12) | carryless_divide(version << 12, 0x1F25)) as u32
 }
 
-#[test]
-fn test_version_block() {
-    let table = [
-        (7u32, 0xc94u32),
-        (8, 0x5bc),
-        (9, 0xa99),
-        (10, 0x4d3),
-        (11, 0xbf6),
-        (12, 0x762),
-        (13, 0x847),
-        (14, 0x60d),
-        (15, 0x928),
-        (16, 0xb78),
-        (17, 0x45d),
-        (18, 0xa17),
-        (26, 0xfab),
-        (36, 0xb0b),
-        (40, 0xc69),
-    ];
-    for (a, i) in table {
-        let artificial = (a << 12) + i;
-        let real = qr_generate_vcode(a);
-        assert!(artificial == real);
-    }
-}
-
 // in the style of format_info_coords. again:
 // this function gives pairs of coordinates (x1, y1), (x2, y2)
 // relative to top left module of the finder pattern
@@ -771,5 +745,36 @@ pub fn set_vcode<T: image::Bitmap>(input: &mut T, version: u32, vcode: u32) {
         let value = vcode & (1 << bit) != 0;
         input.set_bit(x1, y1, value);
         input.set_bit(x2, y2, value);
+    }
+}
+
+mod tests {
+    #[allow(unused_imports)]
+    use super::*;
+
+    #[test]
+    fn test_version_block() {
+        let table = [
+            (7u32, 0xc94u32),
+            (8, 0x5bc),
+            (9, 0xa99),
+            (10, 0x4d3),
+            (11, 0xbf6),
+            (12, 0x762),
+            (13, 0x847),
+            (14, 0x60d),
+            (15, 0x928),
+            (16, 0xb78),
+            (17, 0x45d),
+            (18, 0xa17),
+            (26, 0xfab),
+            (36, 0xb0b),
+            (40, 0xc69),
+        ];
+        for (a, i) in table {
+            let artificial = (a << 12) + i;
+            let real = qr_generate_vcode(a);
+            assert!(artificial == real);
+        }
     }
 }

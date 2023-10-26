@@ -16,7 +16,7 @@ fn main() -> std::io::Result<()> {
     main_qr_generator()
 }
 
-fn main_qr_generator() -> Result<(), std::io::Error> {
+fn main_qr_generator() -> std::io::Result<()> {
     let mut mode_data = Vec::new();
     let mut name = Option::<String>::None;
     let mut level = 0;
@@ -49,7 +49,7 @@ fn main_qr_generator() -> Result<(), std::io::Error> {
     Ok(())
 }
 
-fn export_one_of_every_single_variant_to_folder() -> Result<(), std::io::Error> {
+fn export_one_of_every_single_variant_to_folder() -> std::io::Result<()> {
     // to export as an animation i used these commands:
     // for i in *.xbm; do ffmpeg -y -loglevel quiet -i "$i" -vf scale=800x800:flags=neighbor ./pngs/"${i%.*}".png && echo "$i";  done
     // ffmpeg -framerate 30 -pattern_type glob -i '*.png' -c:v libx264 -pix_fmt yuv420p out.mp4
@@ -222,22 +222,6 @@ fn gen_qr_using_modes(custom_input: Option<&[(Mode, &str)]>) {
             println!("{}", bitmap.qr_penalty());
             println!();
         }
-    }
-}
-
-#[test]
-fn test_penalty() {
-    // essentially test to make sure the penalty function is monotonic
-    // for adding black pixels to a completely white square
-    let mask = &mut ImgRowAligned::new(125, 125);
-
-    let mut old = mask.qr_penalty();
-    let mut new: u32;
-    for i in 0..125 {
-        mask.set_bit((77 * i) % 125, i, true);
-        new = mask.qr_penalty();
-        assert!(new < old);
-        old = new;
     }
 }
 
@@ -822,77 +806,6 @@ fn test_checkfmt() {
 
 // just the example taken from the tutorial
 // returns 0001010001111010 and 0000000011000011 (correct)
-#[test]
-pub fn test_gf() {
-    /*
-        >>> a = 0b10001001
-        >>> b = 0b00101010
-        >>> print bin(gf_mult_noLUT(a, b, 0)) # multiplication only
-        0b1010001111010
-        >>> print bin(gf_mult_noLUT(a, b, 0x11d)) # multiplication + modular reduction
-        0b11000011
-    */
-    let a = 0b10001001;
-    let b = 0b00101010;
-    // println!("{:016b}", galois_multiply(a, b, 0));
-    // println!("{:016b}", galois_multiply(a, b, QR_CODEWORD_GEN));
-
-    // works!
-    assert!(galois_multiply(a, b, 0) == 0b0001010001111010);
-    assert!(galois_multiply(a, b, QR_CODEWORD_GEN) == 0b0000000011000011);
-    assert!(table_multiply(a, b) == 0b0000000011000011);
-
-    println!("basic tests passed! now here's the real trial:");
-
-    let mut hits = [false; 255];
-
-    for i in 0..255 {
-        let k = table_pow(0b10, i);
-        assert!(log(k) == i as usize);
-        hits[(k - 1) as usize] = true;
-    }
-    assert!(!hits.contains(&false));
-
-    println!("you are a master multiplication table !!");
-
-    for x in 0..255 {
-        for y in 0..x {
-            let a =
-                galois_multiply(x, y, QR_CODEWORD_GEN) == galois_multiply(y, x, QR_CODEWORD_GEN);
-            let b = galois_multiply(x, y, QR_CODEWORD_GEN) == table_multiply(x, y);
-            let c = {
-                if x * y != 0 {
-                    (log(x) + log(y)) % 255 == log(galois_multiply(x, y, QR_CODEWORD_GEN))
-                } else {
-                    true
-                }
-            };
-            if !(a && b && c) {
-                println!("({:03},{:03}) failed {}", x, y, {
-                    let mut text = String::new();
-                    if !a {
-                        text.push('a')
-                    }
-                    if !b {
-                        text.push('b')
-                    }
-                    if !c {
-                        text.push('c')
-                    }
-                    text
-                });
-            }
-        }
-    }
-
-    println!("wowza!!");
-
-    // println!("{:016b}", galois_multiply_peasant_full(a, b, 0, 256, true));
-    // println!(
-    //     "{:016b}",
-    //     galois_multiply_peasant_full(a, b, 0x11d, 256, true)
-    // );
-}
 
 fn test_reed_solomon(test: u8) {
     // time to generate a qr code (clueless)
@@ -1008,5 +921,98 @@ mod testutil {
     }
     pub fn blank() -> ImgRowAligned {
         ImgRowAligned::new(21, 21)
+    }
+}
+
+mod tests {
+    #[allow(unused_imports)]
+    use super::*;
+
+    #[test]
+    fn test_penalty() {
+        // essentially test to make sure the penalty function is monotonic
+        // for adding black pixels to a completely white square
+        let mask = &mut ImgRowAligned::new(125, 125);
+
+        let mut old = mask.qr_penalty();
+        let mut new: u32;
+        for i in 0..125 {
+            mask.set_bit((77 * i) % 125, i, true);
+            new = mask.qr_penalty();
+            assert!(new < old);
+            old = new;
+        }
+    }
+
+    #[test]
+    pub fn test_gf() {
+        /*
+            >>> a = 0b10001001
+            >>> b = 0b00101010
+            >>> print bin(gf_mult_noLUT(a, b, 0)) # multiplication only
+            0b1010001111010
+            >>> print bin(gf_mult_noLUT(a, b, 0x11d)) # multiplication + modular reduction
+            0b11000011
+        */
+        let a = 0b10001001;
+        let b = 0b00101010;
+        // println!("{:016b}", galois_multiply(a, b, 0));
+        // println!("{:016b}", galois_multiply(a, b, QR_CODEWORD_GEN));
+
+        // works!
+        assert!(galois_multiply(a, b, 0) == 0b0001010001111010);
+        assert!(galois_multiply(a, b, QR_CODEWORD_GEN) == 0b0000000011000011);
+        assert!(table_multiply(a, b) == 0b0000000011000011);
+
+        println!("basic tests passed! now here's the real trial:");
+
+        let mut hits = [false; 255];
+
+        for i in 0..255 {
+            let k = table_pow(0b10, i);
+            assert!(log(k) == i as usize);
+            hits[(k - 1) as usize] = true;
+        }
+        assert!(!hits.contains(&false));
+
+        println!("you are a master multiplication table !!");
+
+        for x in 0..255 {
+            for y in 0..x {
+                let a = galois_multiply(x, y, QR_CODEWORD_GEN)
+                    == galois_multiply(y, x, QR_CODEWORD_GEN);
+                let b = galois_multiply(x, y, QR_CODEWORD_GEN) == table_multiply(x, y);
+                let c = {
+                    if x * y != 0 {
+                        (log(x) + log(y)) % 255 == log(galois_multiply(x, y, QR_CODEWORD_GEN))
+                    } else {
+                        true
+                    }
+                };
+                if !(a && b && c) {
+                    println!("({:03},{:03}) failed {}", x, y, {
+                        let mut text = String::new();
+                        if !a {
+                            text.push('a')
+                        }
+                        if !b {
+                            text.push('b')
+                        }
+                        if !c {
+                            text.push('c')
+                        }
+                        text
+                    });
+                }
+            }
+        }
+
+        println!("wowza!!");
+
+        // println!("{:016b}", galois_multiply_peasant_full(a, b, 0, 256, true));
+        // println!(
+        //     "{:016b}",
+        //     galois_multiply_peasant_full(a, b, 0x11d, 256, true)
+        // );
     }
 }

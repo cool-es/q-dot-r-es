@@ -14,7 +14,7 @@ something that's really complicated is deciding what level of complexity/abstrac
 and i was stuck choosing between 2 and 3, where either option would make it really complicated to skip over the missing step. so i chose to do both
 */
 
-#[derive(Clone, PartialEq, Copy)]
+#[derive(Clone, PartialEq, Copy, Debug)]
 pub(crate) enum Mode {
     // not implementing ECI at this time
 
@@ -35,11 +35,11 @@ pub(crate) enum Mode {
 }
 
 // level 2
-// #[derive(Clone)]
-// struct MarkedString {
-//     mode: Mode,
-//     string: String,
-// }
+#[derive(Clone)]
+struct MarkedString {
+    mode: Mode,
+    string: String,
+}
 
 // level 3
 #[derive(Clone)]
@@ -245,39 +245,6 @@ pub(super) fn find_best_version(data: &Vec<Token>, level: u8) -> u32 {
     )
 }
 
-#[test]
-fn bit_overhead_good() {
-    let input = &[
-        (0, "14"),
-        (2, "hello!\n\n"),
-        (1, "HOHO..."),
-        (0, "123123"),
-        (1, "OHH"),
-    ];
-    for version in 10..=40 {
-        // copy of invoke_modes, with changes
-        let mut stream: Vec<Token> = Vec::new();
-        for (mode, data) in input {
-            stream.extend(match mode {
-                0 => string_to_numeric(&data),
-                1 => string_to_alphanum(&data),
-                2 => string_to_ascii(&data),
-                _ => panic!(),
-            });
-        }
-        stream.push(Terminator);
-
-        let check_len = bit_overhead(&stream, version);
-
-        let mut output: Badstream = Vec::new();
-        for token in stream {
-            push_token_to_badstream(&mut output, token, version);
-        }
-
-        assert!(check_len == output.len(), "bit overhead calculation");
-    }
-}
-
 pub fn compute_bit_hypothetical() {
     let modes = [ASCII, AlphaNum, Numeric];
     for (i, a) in [1, 10, 27].into_iter().enumerate() {
@@ -339,15 +306,106 @@ pub fn compute_bit_hypothetical() {
 // Numeric ⊂ AlphaNum ⊂ ASCII
 // to use for a "greedy" mode-switch algorithm
 fn char_status(x: char) -> Option<Mode> {
-    Some({
-        if x.is_digit(10) {
-            Numeric
-        } else if find_alphanum(x).is_some() {
-            AlphaNum
-        } else if x.is_ascii() {
-            ASCII
-        } else {
-            return None;
-        }
+    Some(if x.is_digit(10) {
+        // ascii, alphanumeric and numeric
+        Numeric
+    } else if find_alphanum(x).is_some() {
+        // ascii and alphanumeric
+        AlphaNum
+    } else if x.is_ascii() {
+        // only ascii
+        ASCII
+    } else {
+        return None;
     })
+}
+
+fn is_alphanum(x: char) -> bool {
+    find_alphanum(x).is_some()
+}
+
+fn is_numeric(x: char) -> bool {
+    x.is_digit(10)
+}
+
+fn optimize_mode(input: String) -> Vec<MarkedString> {
+    // all right, so, how do i want to do this?
+    // the plan is to mark all characters with their mode,
+    // and then "look for patterns" in the data.
+    // the issue is that version size determines the "economy",
+    // so i end up with a cyclic definition:
+    // version implies economy implies data size implies version.
+    // maybe just calculate all three and decide afterwards which one is best?
+
+    todo!()
+}
+
+// verified accurate
+fn bit_cost(count: usize, class: usize, mode: Mode) -> usize {
+    4 + match mode {
+        Numeric => 4 + [10, 12, 14][class] + ((10 * count + 1) as f32 / 3.0).round() as usize,
+        AlphaNum => 4 + [9, 11, 13][class] + 11 * (count / 2) + 6 * (count % 2),
+        ASCII => 4 + [8, 16, 16][class] + 8 * count,
+        Kanji => todo!(),
+    }
+}
+
+mod tests {
+    #[allow(unused_imports)]
+    use super::*;
+
+    #[test]
+    fn bit_overhead_good() {
+        let input = &[
+            (0, "14"),
+            (2, "hello!\n\n"),
+            (1, "HOHO..."),
+            (0, "123123"),
+            (1, "OHH"),
+        ];
+        for version in 10..=40 {
+            // copy of invoke_modes, with changes
+            let mut stream: Vec<Token> = Vec::new();
+            for (mode, data) in input {
+                stream.extend(match mode {
+                    0 => string_to_numeric(&data),
+                    1 => string_to_alphanum(&data),
+                    2 => string_to_ascii(&data),
+                    _ => panic!(),
+                });
+            }
+            stream.push(Terminator);
+
+            let check_len = bit_overhead(&stream, version);
+
+            let mut output: Badstream = Vec::new();
+            for token in stream {
+                push_token_to_badstream(&mut output, token, version);
+            }
+
+            assert!(check_len == output.len(), "bit overhead calculation");
+        }
+    }
+
+    #[test]
+    fn test_bit_cost() {
+        for count in 0..5000 {
+            for mode in [Numeric, AlphaNum, ASCII].into_iter() {
+                let string = vec![(mode, "1".chars().cycle().take(count).collect())];
+                let stream = make_token_stream(string);
+                let overhead = bit_overhead_template(&stream);
+                for (class, version) in [1, 10, 27].into_iter().enumerate() {
+                    assert!(
+                        bit_cost(count, class, mode) == compute_bit_overhead(overhead, version),
+                        "failure at {:?}, count {}, class {}: bit_cost = {}, actual overhead = {}",
+                        mode,
+                        count,
+                        class,
+                        bit_cost(count, class, mode),
+                        compute_bit_overhead(overhead, version)
+                    );
+                }
+            }
+        }
+    }
 }

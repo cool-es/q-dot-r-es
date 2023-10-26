@@ -95,13 +95,6 @@ pub fn find_errc2(input: u32) -> Option<usize> {
     ERROR_CORRECTION_CODEWORDS.iter().position(|&a| a == input)
 }
 
-#[test]
-fn test_errc() {
-    for i in 0..70 {
-        assert!(find_errc(i) == find_errc2(i as u32));
-    }
-}
-
 // table of characters for the alphanumeric encoding, ordered by index
 // the ascii indices are +48 for numbers, +55 for letters,
 // and for special chars, -4, -1, -1, 3, 3, 4, 4, 4, 14
@@ -440,91 +433,6 @@ const EC_BLOCK_TABLE: [[VersionBlockInfo; 4]; 40] = [
     ],
 ];
 
-#[test]
-fn ec_block_tests() {
-    // ec block count, total codewords per block, data codewords per block
-    // test that the no. of codewords add up,
-    // that the no. of error-correcting codewords is increasing,
-    // and that the optional blocks have a larger number of codewords
-    for (index, &a) in EC_BLOCK_TABLE.iter().enumerate() {
-        let codeword_total = CODEWORDS[index] as usize;
-        let mut last_ecwords = 0;
-        for (ec_lvl, &contents) in a.iter().enumerate() {
-            let (block_count, cwords, dcwords, optional) = contents;
-            if let Some((block_count_2, cwords_2, dcwords_2)) = optional {
-                // codewords match
-                assert!(
-                    block_count * cwords + block_count_2 * cwords_2 == codeword_total,
-                    "version {}, error correction {} - codeword count mismatch",
-                    index + 1,
-                    ec_lvl
-                );
-
-                // ec codewords match
-                assert!(
-                    ERROR_CORRECTION_CODEWORDS.contains(&((cwords - dcwords) as u32))
-                        && ERROR_CORRECTION_CODEWORDS.contains(&((cwords_2 - dcwords_2) as u32)),
-                    "version {}, error correction {} - ec codeword count mismatch",
-                    index + 1,
-                    ec_lvl
-                );
-
-                // ec codewords increasing
-                assert!(
-                    last_ecwords
-                        < block_count * (cwords - dcwords) + block_count_2 * (cwords_2 - dcwords_2),
-                    "version {}, error correction {} - ec codewords not monotonic",
-                    index + 1,
-                    ec_lvl
-                );
-                last_ecwords =
-                    block_count * (cwords - dcwords) + block_count_2 * (cwords_2 - dcwords_2);
-
-                // optional block bigger
-                assert!(
-                    cwords < cwords_2,
-                    "version {}, error correction {} - optional block too small",
-                    index + 1,
-                    ec_lvl
-                );
-
-                // number of ec codewords equal between blocks
-                assert!(
-                    cwords - dcwords == cwords_2 - dcwords_2,
-                    "version {}, error correction {} - error-correcting codewords not equal",
-                    index + 1,
-                    ec_lvl
-                );
-            } else {
-                // codewords match
-                assert!(
-                    block_count * cwords == codeword_total,
-                    "version {}, error correction {} - codeword count mismatch",
-                    index + 1,
-                    ec_lvl
-                );
-
-                // ec codewords match
-                assert!(
-                    ERROR_CORRECTION_CODEWORDS.contains(&((cwords - dcwords) as u32)),
-                    "version {}, error correction {} - ec codeword count mismatch",
-                    index + 1,
-                    ec_lvl
-                );
-
-                // ec codewords increasing
-                assert!(
-                    last_ecwords < block_count * (cwords - dcwords),
-                    "version {}, error correction {} - ec codewords not monotonic",
-                    index + 1,
-                    ec_lvl
-                );
-                last_ecwords = block_count * (cwords - dcwords);
-            }
-        }
-    }
-}
-
 pub fn get_block_info(version: u32, level: u8) -> VersionBlockInfo {
     assert!(
         (1..=40).contains(&version) && level < 4,
@@ -557,7 +465,6 @@ pub const DATA_CODEWORDS: [[usize; 40]; 4] = [
     ],
 ];
 
-
 // class 1 (version 1..):
 // ascii-alphanumeric-ascii beats only ascii at 11 characters
 // ascii-numeric-ascii beats only ascii at 6 characters
@@ -574,3 +481,102 @@ pub const DATA_CODEWORDS: [[usize; 40]; 4] = [
 // alphanumeric-numeric-alphanumeric beats only alphanumeric at 17 characters
 // ascii-num-aln beats an immediate switch to aln at 9 characters
 pub const MODE_ECONOMY: [[u32; 4]; 3] = [[11, 6, 14, 7], [15, 8, 15, 8], [16, 9, 17, 9]];
+
+mod tests {
+    #[allow(unused_imports)]
+    use super::*;
+
+    #[test]
+    fn test_errc() {
+        for i in 0..70 {
+            assert!(find_errc(i) == find_errc2(i as u32));
+        }
+    }
+
+    #[test]
+    fn ec_block_tests() {
+        // ec block count, total codewords per block, data codewords per block
+        // test that the no. of codewords add up,
+        // that the no. of error-correcting codewords is increasing,
+        // and that the optional blocks have a larger number of codewords
+        for (index, &a) in EC_BLOCK_TABLE.iter().enumerate() {
+            let codeword_total = CODEWORDS[index] as usize;
+            let mut last_ecwords = 0;
+            for (ec_lvl, &contents) in a.iter().enumerate() {
+                let (block_count, cwords, dcwords, optional) = contents;
+                if let Some((block_count_2, cwords_2, dcwords_2)) = optional {
+                    // codewords match
+                    assert!(
+                        block_count * cwords + block_count_2 * cwords_2 == codeword_total,
+                        "version {}, error correction {} - codeword count mismatch",
+                        index + 1,
+                        ec_lvl
+                    );
+
+                    // ec codewords match
+                    assert!(
+                        ERROR_CORRECTION_CODEWORDS.contains(&((cwords - dcwords) as u32))
+                            && ERROR_CORRECTION_CODEWORDS
+                                .contains(&((cwords_2 - dcwords_2) as u32)),
+                        "version {}, error correction {} - ec codeword count mismatch",
+                        index + 1,
+                        ec_lvl
+                    );
+
+                    // ec codewords increasing
+                    assert!(
+                        last_ecwords
+                            < block_count * (cwords - dcwords)
+                                + block_count_2 * (cwords_2 - dcwords_2),
+                        "version {}, error correction {} - ec codewords not monotonic",
+                        index + 1,
+                        ec_lvl
+                    );
+                    last_ecwords =
+                        block_count * (cwords - dcwords) + block_count_2 * (cwords_2 - dcwords_2);
+
+                    // optional block bigger
+                    assert!(
+                        cwords < cwords_2,
+                        "version {}, error correction {} - optional block too small",
+                        index + 1,
+                        ec_lvl
+                    );
+
+                    // number of ec codewords equal between blocks
+                    assert!(
+                        cwords - dcwords == cwords_2 - dcwords_2,
+                        "version {}, error correction {} - error-correcting codewords not equal",
+                        index + 1,
+                        ec_lvl
+                    );
+                } else {
+                    // codewords match
+                    assert!(
+                        block_count * cwords == codeword_total,
+                        "version {}, error correction {} - codeword count mismatch",
+                        index + 1,
+                        ec_lvl
+                    );
+
+                    // ec codewords match
+                    assert!(
+                        ERROR_CORRECTION_CODEWORDS.contains(&((cwords - dcwords) as u32)),
+                        "version {}, error correction {} - ec codeword count mismatch",
+                        index + 1,
+                        ec_lvl
+                    );
+
+                    // ec codewords increasing
+                    assert!(
+                        last_ecwords < block_count * (cwords - dcwords),
+                        "version {}, error correction {} - ec codewords not monotonic",
+                        index + 1,
+                        ec_lvl
+                    );
+                    last_ecwords = block_count * (cwords - dcwords);
+                }
+            }
+        }
+    }
+}
