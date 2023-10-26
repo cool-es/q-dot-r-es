@@ -18,7 +18,8 @@ fn main() -> std::io::Result<()> {
 
 fn main_qr_generator() -> Result<(), std::io::Error> {
     let mut mode_data = Vec::new();
-    let name = Option::<String>::None;
+    let mut name = Option::<String>::None;
+    let mut level = 0;
     let mut args = std::env::args();
     args.next();
     while let Some(argument) = args.next() {
@@ -43,7 +44,7 @@ fn main_qr_generator() -> Result<(), std::io::Error> {
     } else {
         "out".to_string()
     };
-    let output = make_qr(mode_data, None, 0, None).as_xbm_border(name.as_str());
+    let output = make_qr(mode_data, None, level, None).as_xbm_border(name.as_str());
     std::fs::write(format!("{}.xbm", name), output)?;
     Ok(())
 }
@@ -521,7 +522,7 @@ fn print_symbol_diagram(version: u32) {
     });
     for x in 0..size {
         for y in 0..size {
-            coordpairs[x][y] = match coord_status(x, y, version) {
+            coordpairs[x][y] = match coord_status(x, y, version).unwrap_or(u8::MAX) {
                 0 => "🟩",
                 1 => "🟨",
                 2 => "🟥",

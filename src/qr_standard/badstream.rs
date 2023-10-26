@@ -320,12 +320,6 @@ fn apply_mask(bitmap: &mut ImgRowAligned, version: u32, level: u8, mask: u8) {
 }
 
 pub fn choose_best_mask(bitmap: &ImgRowAligned) -> u8 {
-    if bitmap.qr_version() > Some(27) {
-        eprintln!(
-            "choose_best_mask(): qr code too large for penalty routine, defaulting to mask 3"
-        );
-        return 3;
-    }
     let mut best: ImgRowAligned;
     let (mut best, mut penalty) = (u8::MAX, u32::MAX);
     for mask in 0..=7 {

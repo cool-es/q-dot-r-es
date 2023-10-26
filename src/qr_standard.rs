@@ -181,16 +181,7 @@ mod penalties {
         let width = input.dims().0;
         let max = width - 1;
 
-        let bits = {
-            let mut rows = Vec::new();
-            for y in 0..=max {
-                rows.push(input.get_row(y).unwrap());
-            }
-            rows
-        };
-
-        // it's get_bit but fast (and instead of bounds checks you get panics)
-        let get = |x: usize, y: usize| bits[y] & (1 << (max - x)) != 0;
+        let get = |x, y| input.get_bit(x, y).expect("out of bounds");
 
         // penalty: 3 + i
         // i is the amount by which the number of adjacent modules of the same color exceeds 5
@@ -259,16 +250,7 @@ mod penalties {
         let width = input.dims().0;
         let max = width - 1;
 
-        let bits = {
-            let mut rows = Vec::new();
-            for y in 0..=max {
-                rows.push(input.get_row(y).unwrap());
-            }
-            rows
-        };
-
-        // it's get_bit but fast (and instead of bounds checks you get panics)
-        let get = |x: usize, y: usize| bits[y] & (1 << (max - x)) != 0;
+        let get = |x, y| input.get_bit(x, y).expect("out of bounds");
 
         // penalty: 3 * (m - 1) * (n - 1)
         // where the block size = m * n
@@ -351,16 +333,7 @@ mod penalties {
         let width = input.dims().0;
         let max = width - 1;
 
-        let bits = {
-            let mut rows = Vec::new();
-            for y in 0..=max {
-                rows.push(input.get_row(y).unwrap());
-            }
-            rows
-        };
-
-        // it's get_bit but fast (and instead of bounds checks you get panics)
-        let get = |x: usize, y: usize| bits[y] & (1 << (max - x)) != 0;
+        let get = |x, y| input.get_bit(x, y).expect("out of bounds");
 
         // penalty: 40
         let mut penalty = 0;
@@ -423,6 +396,11 @@ mod penalties {
     pub(super) fn proportion<T: QR>(input: &T) -> u32 {
         let width = input.dims().0;
         let max = width - 1;
+
+        if max > 127 {
+            // workaround - just skip this test
+            return 0;
+        }
 
         let bits = {
             let mut rows = Vec::new();
@@ -624,17 +602,17 @@ fn coord_is_alignment_pattern(x: usize, y: usize, version: u32) -> bool {
 }
 
 pub fn coord_is_data(x: usize, y: usize, version: u32) -> bool {
-    coord_status(x, y, version) == 0
+    coord_status(x, y, version).is_some_and(|c| c == 0)
 }
 
 // from 0 to 5:
 // data, position, timing, format, alignment, version, that one bit
-pub fn coord_status(x: usize, y: usize, version: u32) -> u8 {
+pub fn coord_status(x: usize, y: usize, version: u32) -> Option<u8> {
     if out_of_bounds(x, y, version) {
-        return u8::MAX;
+        return None;
     }
 
-    if coord_is_alignment_pattern(x, y, version) {
+    Some(if coord_is_alignment_pattern(x, y, version) {
         // alignment pattern
         4
     } else if x < 8 && y < 8 {
@@ -661,7 +639,7 @@ pub fn coord_status(x: usize, y: usize, version: u32) -> u8 {
             // data
             0
         }
-    }
+    })
 }
 
 fn new_blank_qr_code<T: image::Bitmap>(version: u32) -> T {
@@ -669,52 +647,44 @@ fn new_blank_qr_code<T: image::Bitmap>(version: u32) -> T {
     let mut output = T::new(max + 1, max + 1);
     let mut set = |x, y| output.set_bit(x as usize, y as usize, true);
 
-    {
-        //  draw alignment patters
-        let alignment_coords = alignment_pattern_coords(version);
-        for (x, y) in alignment_coords {
-            set(x, y);
-            for i in 0..=3 {
-                // draw it in a rotationally symmetric way, clockwise
-                set((x - 1) + i, y - 2); // top
-                set(x + 2, (y - 1) + i); // right
-                set((x + 1) - i, y + 2); // bottom
-                set(x - 2, (y + 1) - i); // left
-            }
+    //  draw alignment patters
+    let alignment_coords = alignment_pattern_coords(version);
+    for (x, y) in alignment_coords {
+        set(x, y);
+        for i in 0..=3 {
+            // draw it in a rotationally symmetric way, clockwise
+            set((x - 1) + i, y - 2); // top
+            set(x + 2, (y - 1) + i); // right
+            set((x + 1) - i, y + 2); // bottom
+            set(x - 2, (y + 1) - i); // left
         }
     }
 
-    {
-        // draw timing patterns
-        for i in 8..=(max - 8) {
-            if i % 2 == 0 {
-                set(i, 6);
-                set(6, i);
-            }
+    // draw timing patterns
+    for i in 8..=(max - 8) {
+        if i % 2 == 0 {
+            set(i, 6);
+            set(6, i);
         }
     }
 
     // draw position patterns
-    {
-        for x in 0..=6usize {
-            for y in 0..=6usize {
-                if (x.abs_diff(3) == 2 && y.abs_diff(3) != 3)
-                    || (y.abs_diff(3) == 2 && x.abs_diff(3) != 3)
-                {
-                    // the white ring around the center of the position pattern
-                    continue;
-                }
-                set(x, y);
-                set(y, max - x);
-                set(max - y, x);
+    for x in 0..=6usize {
+        for y in 0..=6usize {
+            if (x.abs_diff(3) == 2 && y.abs_diff(3) != 3)
+                || (y.abs_diff(3) == 2 && x.abs_diff(3) != 3)
+            {
+                // the white ring around the center of the position pattern
+                continue;
             }
+            set(x, y);
+            set(y, max - x);
+            set(max - y, x);
         }
     }
 
     // draw the singular black bit
-    {
-        set(8, max - 7);
-    }
+    set(8, max - 7);
 
     // draw version patterns
     if version >= 7 {

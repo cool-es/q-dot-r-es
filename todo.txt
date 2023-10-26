@@ -1,9 +1,5 @@
 • update penalty functions to not use get_row()
 • mode overhead calculation for when to switch modes
-• file read/write capability
-    started work, but needs some refinement
-• command line arguments
-    how do i go about testing this?
 • remainder bits
     this might not be necessary since it works implicitly
     (though might be good to add explicit bounds checking)
