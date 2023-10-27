@@ -1,6 +1,7 @@
 use super::{Bitmap, BitmapDebug};
 
 // image format with gaps in its byte data: start of rows are byte aligned
+#[derive(Clone)]
 pub struct ImgRowAligned {
     // width, height fields are private so that they can't be mutated
     pub(super) width: usize,
@@ -151,6 +152,10 @@ impl ImgRowAligned {
 
     // as_xbm but with an added 8px quiet-zone border on all sides
     pub fn as_xbm_border(&self, name: &str) -> String {
+        assert!(
+            name.is_ascii() && !name.contains(char::is_whitespace),
+            "name must be ascii and cannot contain whitespace"
+        );
         // handle data separately
         let mut data = String::new();
         for _i in 0..(self.width + 16).next_multiple_of(8) {
@@ -220,7 +225,7 @@ pub(super) fn xy_to_index(x: usize, y: usize, w: usize, h: usize) -> Option<(usi
         return None;
     }
 
-    let row_bytes = if w % 8 == 0 { w / 8 } else { w / 8 + 1 };
+    let row_bytes = w.div_ceil(8);
 
     let n = y * row_bytes + x / 8;
 
@@ -236,7 +241,7 @@ pub(super) fn index_to_xy(
     w: usize,
     h: usize,
 ) -> Option<(usize, usize)> {
-    let row_bytes = if w % 8 == 0 { w / 8 } else { w / 8 + 1 };
+    let row_bytes = w.div_ceil(8);
 
     let x = (vec_index % row_bytes) * 8 + (7 - bit_index) as usize;
     let y = vec_index / row_bytes;
@@ -244,18 +249,6 @@ pub(super) fn index_to_xy(
         return None;
     }
     Some((x, y))
-}
-
-// implementing clone()
-impl Clone for ImgRowAligned {
-    // returns a carbon copy of the original, including inaccessible bits
-    fn clone(&self) -> Self {
-        ImgRowAligned {
-            width: self.width,
-            height: self.height,
-            bits: self.bits.clone(),
-        }
-    }
 }
 
 impl Bitmap for ImgRowAligned {

@@ -1,10 +1,10 @@
-• update penalty functions to not use get_row()
 • mode overhead calculation for when to switch modes
 • remainder bits
     this might not be necessary since it works implicitly
     (though might be good to add explicit bounds checking)
 • check to see if arbitrary data is possible (emoji, etc)
 • clean up code (remove the allow(dead_code))
+• add stats printing (version, bit count, etc)
 
 maybe:
 • penalty routine still mysterious - do more troubleshooting

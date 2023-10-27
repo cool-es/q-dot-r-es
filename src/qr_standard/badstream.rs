@@ -240,11 +240,12 @@ pub fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstre
 pub(crate) fn make_qr(
     mode_data: Vec<(Mode, String)>,
     version_choice: Option<u32>,
-    level: u8,
+    level_choice: Option<u8>,
     mask_choice: Option<u8>,
 ) -> ImgRowAligned {
     let tokens = make_token_stream(mode_data);
 
+    let level = level_choice.unwrap_or(0);
     let best_ver = find_best_version(&tokens, level);
     let version = if let Some(chosen_ver) = version_choice {
         assert!(
@@ -369,7 +370,7 @@ mod tests {
         }
     }
 
-    // this is inaccurate, not sure why, 
+    // this is inaccurate, not sure why,
     // there's seemingly nothing wrong with split_to_blocks_and_encode...
     // but i don't see a reason to fix it nor remove it at this time
     // #[test]

@@ -337,7 +337,7 @@ fn optimize_mode(input: String) -> Vec<MarkedString> {
     // version implies economy implies data size implies version.
     // maybe just calculate all three and decide afterwards which one is best?
 
-    todo!()
+    todo!("there's nothing here yet")
 }
 
 // verified accurate
@@ -346,7 +346,7 @@ fn bit_cost(count: usize, class: usize, mode: Mode) -> usize {
         Numeric => 4 + [10, 12, 14][class] + ((10 * count + 1) as f32 / 3.0).round() as usize,
         AlphaNum => 4 + [9, 11, 13][class] + 11 * (count / 2) + 6 * (count % 2),
         ASCII => 4 + [8, 16, 16][class] + 8 * count,
-        Kanji => todo!(),
+        Kanji => todo!("refer to kanji bit information"),
     }
 }
 

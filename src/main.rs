@@ -19,7 +19,10 @@ fn main() -> std::io::Result<()> {
 fn main_qr_generator() -> std::io::Result<()> {
     let mut mode_data = Vec::new();
     let mut name = Option::<String>::None;
-    let mut level = 0;
+    let mut level_choice = Option::<u8>::None;
+    let mut mask_choice = Option::<u8>::None;
+    let mut version_choice = Option::<u32>::None;
+
     let mut args = std::env::args();
     args.next();
     while let Some(argument) = args.next() {
@@ -36,15 +39,57 @@ fn main_qr_generator() -> std::io::Result<()> {
                 let ascii_string = args.next().expect("no data for ASCII mode");
                 mode_data.push((ASCII, ascii_string));
             }
+
+            "-name" => {
+                if name.is_none() {
+                    name = Some(args.next().expect("no name submitted"));
+                } else {
+                    panic!("can't specify name twice")
+                }
+            }
+            "-level" => {
+                if level_choice.is_none() {
+                    level_choice = Some(
+                        args.next()
+                            .expect("no level submitted")
+                            .parse::<u8>()
+                            .expect("invalid level"),
+                    );
+                } else {
+                    panic!("can't specify level twice")
+                }
+            }
+            "-version" => {
+                if version_choice.is_none() {
+                    version_choice = Some(
+                        args.next()
+                            .expect("no version submitted")
+                            .parse::<u32>()
+                            .expect("invalid version"),
+                    );
+                } else {
+                    panic!("can't specify version twice")
+                }
+            }
+            "-mask" => {
+                if mask_choice.is_none() {
+                    mask_choice = Some(
+                        args.next()
+                            .expect("no mask submitted")
+                            .parse::<u8>()
+                            .expect("invalid mask"),
+                    );
+                } else {
+                    panic!("can't specify mask twice")
+                }
+            }
+
             _ => println!("{} - incorrect argument", argument),
         }
     }
-    let name = if let Some(n) = name {
-        n
-    } else {
-        "out".to_string()
-    };
-    let output = make_qr(mode_data, None, level, None).as_xbm_border(name.as_str());
+
+    let name = name.unwrap_or("out".to_string());
+    let output = make_qr(mode_data, version_choice, level_choice, mask_choice).as_xbm_border(&name);
     std::fs::write(format!("{}.xbm", name), output)?;
     Ok(())
 }
@@ -71,7 +116,7 @@ fn export_one_of_every_single_variant_to_folder() -> std::io::Result<()> {
                 version,
                 "abcd".chars().collect::<Vec<_>>()[level as usize]
             );
-            let output = make_qr(mode_data, Some(version), level, Some(mask % 8))
+            let output = make_qr(mode_data, Some(version), Some(level), Some(mask % 8))
                 .as_xbm_border(name.as_str());
             std::fs::write(format!("./animation/{}.xbm", name), output)?;
             print!("{} length {}; ", name, len);

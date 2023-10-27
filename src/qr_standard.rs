@@ -394,30 +394,14 @@ mod penalties {
     // #[allow(unused_variables)]
     // Proportion of dark modules in entire symbol
     pub(super) fn proportion<T: QR>(input: &T) -> u32 {
-        let width = input.dims().0;
-        let max = width - 1;
-
-        if max > 127 {
-            // workaround - just skip this test
-            return 0;
-        }
-
-        let bits = {
-            let mut rows = Vec::new();
-            for y in 0..=max {
-                rows.push(input.get_row(y).unwrap());
-            }
-            rows
-        };
-
-        // it's get_bit but fast (and instead of bounds checks you get panics)
-        // let get = |x: usize, y: usize| bits[y] & (1 << (max - x)) != 0;
-
         // penalty: 10 * k
         // k is the rating of the deviation of the proportion of dark modules in the symbol from 50% in steps of 5%
 
-        let black: u32 = bits.iter().map(|z| z.count_ones()).sum();
-        let proportion: f32 = (black as f32) / (width as f32).powi(2);
+        // this works fine assuming there's no extra "inaccessible" bits outside of
+        // the bitmap's graphical boundary
+        let area = input.dims().0.pow(2);
+        let black: u32 = input.debug_bits().into_iter().map(|x| x.count_ones()).sum();
+        let proportion: f32 = (black as f32) / (area as f32);
 
         10 * ((10.0 - 20.0 * proportion).abs().round() as u32)
     }
