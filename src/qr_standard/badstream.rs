@@ -120,7 +120,7 @@ pub fn write_badstream_to_bitmap<T: QR>(stream: &Badstream, bitmap: &mut T) {
         } else {
             assert!(
                 a + 1 == stream.len(),
-                "🚨 write_badstream_to_bitmap(): bitstream is {} bits but image only fits {} (difference: {} bits)",
+                "write_badstream_to_bitmap(): bitstream is {} bits but image only fits {} (difference: {} bits)",
                 stream.len(),
                 a + 1,
                 stream.len() as i32 - (a + 1) as i32,

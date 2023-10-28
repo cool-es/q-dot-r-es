@@ -17,5 +17,3 @@ going through the standards doc:
 
 PITEOG stuff:
 • deprecate the continuous-data "Img" type?
-• update get_row() to handle sizes >128 (versions 28 and onward)
-    idk if this is necessary

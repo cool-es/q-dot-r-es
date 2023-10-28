@@ -24,42 +24,59 @@ fn main_qr_generator() -> std::io::Result<()> {
     let mut version_choice = Option::<u32>::None;
 
     let mut args = std::env::args();
+
+    // option to not accept slight input errors
+    let mut nice = false;
+
     args.next();
     while let Some(argument) = args.next() {
-        match argument.as_str() {
-            "-num" => {
+        match argument.to_lowercase().as_str() {
+            "--numeric" | "-num" | "" => {
                 let number_string = args.next().expect("no data for numeric mode");
                 mode_data.push((Numeric, number_string));
             }
-            "-aln" => {
+            "--alphanum" | "-aln" => {
                 let alphanum_string = args.next().expect("no data for alphanumeric mode");
-                mode_data.push((AlphaNum, alphanum_string));
+                mode_data.push((AlphaNum, {
+                    if nice {
+                        alphanum_string.to_ascii_uppercase()
+                    } else {
+                        alphanum_string
+                    }
+                }));
             }
-            "-asc" => {
+            "--ascii" | "-asc" => {
                 let ascii_string = args.next().expect("no data for ASCII mode");
                 mode_data.push((ASCII, ascii_string));
             }
 
-            "-name" => {
+            "--name" | "-n" => {
                 if name.is_none() {
                     name = Some(args.next().expect("no name submitted"));
                 } else {
                     panic!("can't specify name twice")
                 }
             }
-            "-level" => {
+            "--level" | "-l" => {
                 if level_choice.is_none() {
                     level_choice = Some(
-                        args.next()
-                            .expect("no level submitted")
-                            .parse::<u8>()
-                            .expect("invalid level"),
+                        match args
+                            .next()
+                            .expect("no error correction level submitted")
+                            .trim()
+                        {
+                            "l" | "L" => 0,
+                            "m" | "M" => 1,
+                            "q" | "Q" => 2,
+                            "h" | "H" => 3,
+                            _ => panic!("invalid error correction level"),
+                        },
                     );
                 } else {
                     panic!("can't specify level twice")
                 }
             }
-            "-version" => {
+            "--version" | "-v" => {
                 if version_choice.is_none() {
                     version_choice = Some(
                         args.next()
@@ -71,7 +88,7 @@ fn main_qr_generator() -> std::io::Result<()> {
                     panic!("can't specify version twice")
                 }
             }
-            "-mask" => {
+            "--mask" | "-m" => {
                 if mask_choice.is_none() {
                     mask_choice = Some(
                         args.next()
@@ -84,7 +101,8 @@ fn main_qr_generator() -> std::io::Result<()> {
                 }
             }
 
-            _ => println!("{} - incorrect argument", argument),
+            "--nice" => nice = true,
+            _ => panic!("{} - incorrect argument", argument),
         }
     }
 

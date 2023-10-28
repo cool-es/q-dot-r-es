@@ -72,7 +72,7 @@ fn string_to_ascii(input: &str) -> Vec<Token> {
 fn string_to_numeric(input: &str) -> Vec<Token> {
     for i in (&input).chars() {
         if !i.is_ascii_digit() {
-            panic!("not numeric")
+            panic!("character \"{}\" is not numeric", i)
         }
     }
     let mut output: Vec<Token> = vec![ModeAndCount(Numeric, input.len() as u16)];
@@ -98,7 +98,9 @@ fn string_to_alphanum(input: &str) -> Vec<Token> {
     let mut output: Vec<Token> = vec![ModeAndCount(AlphaNum, input.len() as u16)];
     for i in input
         .chars()
-        .map(|x| find_alphanum(x).expect("character is not alphanumeric"))
+        .map(|x| {
+            find_alphanum(x).unwrap_or_else(|| panic!("character \"{}\" is not alphanumeric", x))
+        })
         .collect::<Vec<u16>>()
         .chunks(2)
     {
@@ -336,6 +338,12 @@ fn optimize_mode(input: String) -> Vec<MarkedString> {
     // so i end up with a cyclic definition:
     // version implies economy implies data size implies version.
     // maybe just calculate all three and decide afterwards which one is best?
+
+    // mark characters in input
+    let data_vec = input
+        .chars()
+        .map(|x| (x, char_status(x).expect("invalid character in input")))
+        .collect::<Vec<_>>();
 
     todo!("there's nothing here yet")
 }
