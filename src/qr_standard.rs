@@ -181,7 +181,17 @@ mod penalties {
         let width = input.dims().0;
         let max = width - 1;
 
-        let get = |x, y| input.get_bit(x, y).expect("out of bounds");
+        // vector of bools to avoid repetitive bit access
+        let bit = {
+            let mut bit_vector: Vec<bool> = Vec::new();
+            for x in 0..width {
+                for y in 0..width {
+                    bit_vector.push(input.get_bit(x, y).expect("out of bounds"));
+                }
+            }
+            bit_vector
+        };
+        let get = |x, y| bit[x * width + y];
 
         // penalty: 3 + i
         // i is the amount by which the number of adjacent modules of the same color exceeds 5
@@ -254,17 +264,20 @@ mod penalties {
         let max = width - 1;
 
         // vector of bools to avoid repetitive bit access
-        let mut bit_vector: Vec<bool> = Vec::new();
-        for x in 0..width {
-            for y in 0..width {
-                bit_vector.push(input.get_bit(x, y).expect("out of bounds"));
+        let bit = {
+            let mut bit_vector: Vec<bool> = Vec::new();
+            for x in 0..width {
+                for y in 0..width {
+                    bit_vector.push(input.get_bit(x, y).expect("out of bounds"));
+                }
             }
-        }
+            bit_vector
+        };
 
         // to create a version 40 code, this
         // function is called, approximately,
         // NINETY EIGHT MILLION TIMES !!!
-        let get = |x, y| bit_vector[x * width + y];
+        // let get = |x, y| bit[x * width + y];
 
         // penalty: 3 * (m - 1) * (n - 1)
         // where the block size = m * n
@@ -289,7 +302,7 @@ mod penalties {
             for y in 0..=(max - 1) {
                 'row: for starting_x in 0..=leeway {
                     if scored[starting_x * width + y]
-                        || get(starting_x, y) != get(starting_x, y + 1)
+                        || bit[starting_x * width + y] != bit[starting_x * width + y + 1]
                     {
                         // already scored, or can't be a valid rectangle
                         continue;
@@ -297,14 +310,14 @@ mod penalties {
                     /*
                     since we're looking for the widest rectangles first, there's no chance of the "discovery loop" breaking by hitting an already-scored pixel going sideways - that can only happen while going downwards. going sideways, the "discovery loop" will only ever be broken by hitting either a pixel of the other color or the side of the pattern
                     */
-                    let color = get(starting_x, y);
+                    let color = bit[starting_x * width + y];
                     for x_offset in 0..=rect_width {
                         let x = starting_x + x_offset;
 
                         // failure conditions, all of which
                         // make it a non-scoring pattern
-                        if (get(x, y) != color)
-                            || (get(x, y + 1) != color)
+                        if (bit[x * width + y] != color)
+                            || (bit[x * width + y + 1] != color)
                             || scored[x * width + y + 1]
                         {
                             if x > leeway {
@@ -321,7 +334,7 @@ mod penalties {
                     // extend rectangle downwards as far as possible
                     'extend: for y2 in (y + 2)..=max {
                         for x2 in starting_x..=(starting_x + rect_width) {
-                            if (get(x2, y2) != color) || scored[x2 * width + y2] {
+                            if (bit[x2 * width + y2] != color) || scored[x2 * width + y2] {
                                 break 'extend;
                             }
                         }
@@ -348,7 +361,17 @@ mod penalties {
         let width = input.dims().0;
         let max = width - 1;
 
-        let get = |x, y| input.get_bit(x, y).expect("out of bounds");
+        // vector of bools to avoid repetitive bit access
+        let bit = {
+            let mut bit_vector: Vec<bool> = Vec::new();
+            for x in 0..width {
+                for y in 0..width {
+                    bit_vector.push(input.get_bit(x, y).expect("out of bounds"));
+                }
+            }
+            bit_vector
+        };
+        let get = |x, y| bit[x * width + y];
 
         // penalty: 40
         let mut penalty = 0;
