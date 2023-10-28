@@ -19,6 +19,7 @@ pub trait QR: Bitmap {
     }
 }
 
+#[inline]
 fn bad_version(version: u32) -> bool {
     !(1..=40).contains(&version)
 }
@@ -623,6 +624,7 @@ fn coord_is_alignment_pattern(x: usize, y: usize, version: u32) -> bool {
     false
 }
 
+#[inline]
 pub fn coord_is_data(x: usize, y: usize, version: u32) -> bool {
     coord_status(x, y, version).is_some_and(|c| c == 0)
 }

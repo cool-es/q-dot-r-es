@@ -120,10 +120,12 @@ pub fn galois_multiply(x: Element, y: Element, primitive: Element) -> Element {
     }
 }
 
+#[inline]
 pub fn bit_length(n: Element) -> u32 {
-    match n {
-        0 => 0,
-        _ => n.ilog2() + 1,
+    if let Some(x) = n.checked_ilog2() {
+        x + 1
+    } else {
+        0
     }
 }
 
@@ -176,6 +178,7 @@ pub fn generate_exp_log_tables(tables: &mut ExpLogLUTs) {
 }
 
 // helper function, uses precomputed tables
+#[inline]
 pub fn exp(n: usize) -> Element {
     QR_EXP_LOG_TABLE.0[n % 255]
 }

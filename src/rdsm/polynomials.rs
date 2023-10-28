@@ -156,7 +156,7 @@ pub fn make_rdsm_generator_polynomial(ec_symbols: u32) -> Polynomial {
         // this value is the polynomial x + a^i ... does this actually line up
         // with the qr code standard? is a == 0000_0010 ?
         let multiplier: Polynomial = vec![1, table_pow(2, i)];
-        output = polynomial_multiply(&output, &multiplier);
+        output = es_polynomial_multiply(&output, &multiplier);
     }
     output
 }
@@ -227,6 +227,7 @@ def gf_poly_div(dividend, divisor):
 // }
 
 // helper function
+#[inline]
 pub fn length(poly: &Polynomial) -> usize {
     poly.len() - leading_zeroes(poly)
 }

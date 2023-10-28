@@ -322,10 +322,12 @@ fn char_status(x: char) -> Option<Mode> {
     })
 }
 
+#[inline]
 fn is_alphanum(x: char) -> bool {
     find_alphanum(x).is_some()
 }
 
+#[inline]
 fn is_numeric(x: char) -> bool {
     x.is_digit(10)
 }
