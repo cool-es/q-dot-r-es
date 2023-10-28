@@ -106,6 +106,13 @@ fn main_qr_generator() -> std::io::Result<()> {
         }
     }
 
+    if let Some(v) = version_choice {
+        assert!((1..=40).contains(&v), "version must be one of 1, ..., 40");
+    }
+    if let Some(m) = mask_choice {
+        assert!((0..=7).contains(&m), "mask must be one of 0, ..., 7");
+    }
+
     let name = name.unwrap_or("out".to_string());
     let output = make_qr(mode_data, version_choice, level_choice, mask_choice).as_xbm_border(&name);
     std::fs::write(format!("{}.xbm", name), output)?;

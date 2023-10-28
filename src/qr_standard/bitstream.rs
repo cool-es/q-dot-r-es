@@ -219,7 +219,7 @@ pub(super) fn bit_overhead(data: &Vec<Token>, version: u32) -> usize {
     compute_bit_overhead(bit_overhead_template(data), version)
 }
 
-pub(super) fn find_best_version(data: &Vec<Token>, level: u8) -> u32 {
+pub(super) fn find_best_version(data: &Vec<Token>, level: u8) -> Result<u32, String> {
     assert!(
         (0..=3).contains(&level),
         "invalid error correction level \"{}\" selected",
@@ -236,15 +236,15 @@ pub(super) fn find_best_version(data: &Vec<Token>, level: u8) -> u32 {
             // check to see that the bitstream either fits perfectly,
             // or has at least one byte to spare
             if x == 0 || x > 7 {
-                return version;
+                return Ok(version);
             }
         }
     }
 
-    panic!(
+    Err(format!(
         "no qr code of level {} fits this message",
         b"LMQH"[level as usize] as char
-    )
+    ))
 }
 
 pub fn compute_bit_hypothetical() {

@@ -121,7 +121,7 @@ impl QR for image::ImgRowAligned {
 // _new_qr_mask(a, b, x) == new(a, b).qr_mask_xor(x)
 // i wrote this on the first try just before bedtime. go me
 // modified to leave gaps in the pattern for valid qr version sizes
-fn qr_mask_xor<T: image::Bitmap>(input: &mut T, pattern: u8) {
+fn qr_mask_xor<T: image::Bitmap>(input: &mut T, mask: u8) {
     let maybe_version = {
         if input.dims().0 != input.dims().1 {
             None
@@ -137,7 +137,7 @@ fn qr_mask_xor<T: image::Bitmap>(input: &mut T, pattern: u8) {
             if let Some((x, y)) = input.debug_index_to_xy(vec_index, bit_index) {
                 if maybe_version.is_none() || coord_is_data(x, y, maybe_version.unwrap_or_default())
                 {
-                    mask_byte |= (match pattern {
+                    mask_byte |= (match mask {
                         0 => (x + y) % 2,
                         1 => y % 2,
                         2 => x % 3,
@@ -247,6 +247,9 @@ mod penalties {
     }
 
     pub(super) fn block<T: QR>(input: &T) -> u32 {
+        // this function is INCREDIBLY slow!!!
+        // this really needs to be fixed
+
         let width = input.dims().0;
         let max = width - 1;
 

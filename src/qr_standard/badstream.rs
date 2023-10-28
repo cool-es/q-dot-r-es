@@ -245,8 +245,9 @@ pub(crate) fn make_qr(
 ) -> ImgRowAligned {
     let tokens = make_token_stream(mode_data);
 
-    let level = level_choice.unwrap_or(0);
-    let best_ver = find_best_version(&tokens, level);
+    let level = level_choice.unwrap_or(2);
+    let best_ver = find_best_version(&tokens, level).expect("make_qr()");
+
     let version = if let Some(chosen_ver) = version_choice {
         assert!(
             !bad_version(chosen_ver),
@@ -285,7 +286,8 @@ fn apply_mask(bitmap: &mut ImgRowAligned, version: u32, level: u8, mask: u8) {
     set_fcode(
         bitmap,
         version,
-        data_to_fcode([0b01, 0b00, 0b11, 0b10][level as usize], mask).unwrap(),
+        data_to_fcode([0b01, 0b00, 0b11, 0b10][level as usize], mask)
+            .expect("could not generate format code"),
     );
     bitmap.qr_mask_xor(mask);
 }

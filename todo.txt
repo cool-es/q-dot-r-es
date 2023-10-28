@@ -5,6 +5,8 @@
 • check to see if arbitrary data is possible (emoji, etc)
 • clean up code (remove the allow(dead_code))
 • add stats printing (version, bit count, etc)
+• find out what makes the "block" penalty function so slow
+• add support for piping in text from other sources - use std::io::Stdin
 
 maybe:
 • penalty routine still mysterious - do more troubleshooting
@@ -17,3 +19,15 @@ going through the standards doc:
 
 PITEOG stuff:
 • deprecate the continuous-data "Img" type?
+
+~~~~~~~~~~~~
+
+example stats output i want:
+
+Encoding input "hello123hello" at error correction level H
+Message compression 13% (104 bits -> 94 bits)
+Version 3 chosen (width 29 px):
+| Message    | Padding    | Error correction    |
+| 12 bytes   | 4 bytes    | 10 bytes            |
+Mask 4 chosen (97% of avg. penalty)
+Saving as out.xbm
