@@ -10,7 +10,6 @@ pub(crate) use badstream::*;
 pub trait QR: Bitmap {
     fn qr_mask_xor(&mut self, pattern: u8);
     fn qr_penalty(&self) -> u32;
-    fn qr_penalty_split(&self) -> [u32; 4];
     fn qr_version(&self) -> Option<u32>;
     fn new_blank_qr(version: u32) -> Self;
     fn unmask(&mut self);
@@ -80,9 +79,6 @@ impl QR for image::Img {
     fn new_blank_qr(version: u32) -> Self {
         new_blank_qr_code(version)
     }
-    fn qr_penalty_split(&self) -> [u32; 4] {
-        penalty_split(self)
-    }
     fn unmask(&mut self) {
         unmask(self);
     }
@@ -108,9 +104,6 @@ impl QR for image::ImgRowAligned {
     }
     fn new_blank_qr(version: u32) -> Self {
         new_blank_qr_code(version)
-    }
-    fn qr_penalty_split(&self) -> [u32; 4] {
-        penalty_split(self)
     }
     fn unmask(&mut self) {
         unmask(self);
@@ -159,40 +152,34 @@ fn qr_mask_xor<T: image::Bitmap>(input: &mut T, mask: u8) {
 fn penalty<T: QR>(input: &T) -> u32 {
     use penalties::*;
 
-    adjacent(input) + block(input) + fake_marker(input) + proportion(input)
-}
+    let width = input.dims().0;
+    let black: u32 = input.debug_bits().into_iter().map(|x| x.count_ones()).sum();
 
-fn penalty_split<T: QR>(input: &T) -> [u32; 4] {
-    use penalties::*;
-    [
-        adjacent(input),
-        block(input),
-        fake_marker(input),
-        proportion(input),
-    ]
+    let bit = {
+        let mut bit_vector: Vec<bool> = Vec::new();
+        for x in 0..width {
+            for y in 0..width {
+                bit_vector.push(input.get_bit(x, y).expect("out of bounds"));
+            }
+        }
+        bit_vector
+    };
+
+    let get = |x, y| bit[x * width + y];
+
+    adjacent(width, get) + block(width, get) + fake_marker(width, get) + proportion(width, black)
 }
 
 mod penalties {
-    use super::*;
     const DEBUG: bool = false;
     const SUB_INEVITABLE_SCORE: bool = false;
 
     // Adjacent modules in row/column in same color
-    pub(super) fn adjacent<T: QR>(input: &T) -> u32 {
-        let width = input.dims().0;
+    pub(super) fn adjacent<F>(width: usize, get: F) -> u32
+    where
+        F: Fn(usize, usize) -> bool,
+    {
         let max = width - 1;
-
-        // vector of bools to avoid repetitive bit access
-        let bit = {
-            let mut bit_vector: Vec<bool> = Vec::new();
-            for x in 0..width {
-                for y in 0..width {
-                    bit_vector.push(input.get_bit(x, y).expect("out of bounds"));
-                }
-            }
-            bit_vector
-        };
-        let get = |x, y| bit[x * width + y];
 
         // penalty: 3 + i
         // i is the amount by which the number of adjacent modules of the same color exceeds 5
@@ -257,28 +244,15 @@ mod penalties {
         penalty as u32 - (96 * u32::from(SUB_INEVITABLE_SCORE))
     }
 
-    pub(super) fn block<T: QR>(input: &T) -> u32 {
-        // this function is INCREDIBLY slow!!!
-        // this really needs to be fixed
-
-        let width = input.dims().0;
+    pub(super) fn block<F>(width: usize, get: F) -> u32
+    where
+        F: Fn(usize, usize) -> bool,
+    {
         let max = width - 1;
 
-        // vector of bools to avoid repetitive bit access
-        let bit = {
-            let mut bit_vector: Vec<bool> = Vec::new();
-            for x in 0..width {
-                for y in 0..width {
-                    bit_vector.push(input.get_bit(x, y).expect("out of bounds"));
-                }
-            }
-            bit_vector
-        };
-
-        // to create a version 40 code, this
-        // function is called, approximately,
+        // to create a version 40 code, the
+        // function get() is called, approximately,
         // NINETY EIGHT MILLION TIMES !!!
-        let get = |x, y| bit[x * width + y];
 
         // penalty: 3 * (m - 1) * (n - 1)
         // where the block size = m * n
@@ -358,21 +332,11 @@ mod penalties {
 
     // 1:1:3:1:1 ratio (dark:light:dark:light:dark) pattern in row/column
     // named "fake marker" because it can be confused with the position markers
-    pub(super) fn fake_marker<T: QR>(input: &T) -> u32 {
-        let width = input.dims().0;
+    pub(super) fn fake_marker<F>(width: usize, get: F) -> u32
+    where
+        F: Fn(usize, usize) -> bool,
+    {
         let max = width - 1;
-
-        // vector of bools to avoid repetitive bit access
-        let bit = {
-            let mut bit_vector: Vec<bool> = Vec::new();
-            for x in 0..width {
-                for y in 0..width {
-                    bit_vector.push(input.get_bit(x, y).expect("out of bounds"));
-                }
-            }
-            bit_vector
-        };
-        let get = |x, y| bit[x * width + y];
 
         // penalty: 40
         let mut penalty = 0;
@@ -432,14 +396,13 @@ mod penalties {
 
     // #[allow(unused_variables)]
     // Proportion of dark modules in entire symbol
-    pub(super) fn proportion<T: QR>(input: &T) -> u32 {
+    pub(super) fn proportion(width: usize, black: u32) -> u32 {
         // penalty: 10 * k
         // k is the rating of the deviation of the proportion of dark modules in the symbol from 50% in steps of 5%
 
         // this works fine assuming there's no extra "inaccessible" bits outside of
         // the bitmap's graphical boundary
-        let area = input.dims().0.pow(2);
-        let black: u32 = input.debug_bits().into_iter().map(|x| x.count_ones()).sum();
+        let area = width.pow(2);
         let proportion: f32 = (black as f32) / (area as f32);
 
         10 * ((10.0 - 20.0 * proportion).abs().round() as u32)

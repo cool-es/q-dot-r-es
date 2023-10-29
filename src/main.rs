@@ -638,12 +638,15 @@ fn test_rdsm_generator() {
     }
 }
 
+// i deleted penalty_split, so this function is broken now
+#[allow(unreachable_code, unused_variables)]
 fn remasking_test() {
     let code = xbm_filepath_into_bitmap("hellocode_smol.xbm");
 
     debug_print_qr(&code);
-    let penalties = code.qr_penalty_split();
-    println!("penalty: {}", &penalties.iter().sum::<u32>());
+    // let penalties = code.qr_penalty_split();
+    let penalties: [u32; 4] = todo!();
+    println!("penalty: {}", &penalties.into_iter().sum::<u32>());
     println!(
         "    adjacent: {}\n    block: {}\n    fake marker: {}\n    proportion: {}",
         penalties[0], penalties[1], penalties[2], penalties[3]
