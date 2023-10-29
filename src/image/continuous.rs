@@ -79,19 +79,16 @@ impl Img {
 
 impl Bitmap for Img {
     fn new(width: usize, height: usize) -> Self {
-        let mut bits: Vec<u8> = Vec::new();
+        let bits: Vec<u8> =
+            vec![0; xy_to_index(width - 1, height - 1, width, height).unwrap().0 + 1];
 
         // resize vector to contain the maximum needed amount of
         // elements – that is, the index of the byte containing the last pixel
         // risk of fencepost error: resize() counts from 1, xy_to_index from 0
-        bits.resize(
-            xy_to_index(width - 1, height - 1, width, height).unwrap().0 + 1,
-            0,
-        );
 
         Img {
-            width: width,
-            height: height,
+            width,
+            height,
             bits,
         }
     }
@@ -121,9 +118,8 @@ impl Bitmap for Img {
     }
 
     fn get_bit(&self, x: usize, y: usize) -> Option<bool> {
-        let ref this = self;
-        if let Some((n, i)) = xy_to_index(x, y, this.width, this.height) {
-            Some(((this.bits[n] >> i) & 1) == 1)
+        if let Some((n, i)) = xy_to_index(x, y, self.width, self.height) {
+            Some(((self.bits[n] >> i) & 1) == 1)
         } else {
             None
         }
@@ -196,7 +192,7 @@ impl Bitmap for Img {
             }
         } else {
             // error, do something good here
-            return None;
+            None
         }
     }
 }
@@ -269,7 +265,7 @@ pub(super) fn xy_to_index(x: usize, y: usize, w: usize, h: usize) -> Option<(usi
     // pixel order is left - MSB, right - LSB
     // i don't know why the "7 - (bit mod 8)" calculation
     // works, but it does seem to work, so...
-    Some(((bit / 8) as usize, (7 - (bit % 8)) as u8))
+    Some((bit / 8, (7 - (bit % 8)) as u8))
 }
 
 pub(super) fn index_to_xy(

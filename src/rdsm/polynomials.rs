@@ -28,11 +28,11 @@ pub fn polynomial_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
 // SUPPOSEDLY multiplies two polynomials over a galois field
 // need to dig into this - this seems very fishy
 pub fn polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
-    let mut output: Polynomial = Vec::new();
+    let mut output: Polynomial = vec![0; poly1.len() + poly2.len() - 1];
+
     // since a polynomial's "length" is its degree + 1,
     // output is degree d1+d2 => length (d1+1)+(d2+1)-1
     // len() and resize() both count from 1, no fencepost error
-    output.resize(poly1.len() + poly2.len() - 1, 0);
 
     // ... i+j won't reach the top coefficient?
     // yes it will, it goes up to (l1+l2-1)-1
@@ -208,9 +208,8 @@ pub fn encode_message(message: &Polynomial, ec_symbols: u32) -> Polynomial {
     message_padded.extend(std::iter::repeat(0).take(ec_symbols as usize));
 
     let remainder = polynomial_remainder(&message_padded, &generator_polynomial);
-    let output = polynomial_add(&message_padded, &remainder);
 
-    output
+    polynomial_add(&message_padded, &remainder)
 }
 
 pub fn charprint(poly: &Polynomial) {
@@ -229,17 +228,17 @@ pub fn charprint(poly: &Polynomial) {
 }
 
 pub fn prettyprint(poly: &Polynomial) {
-    fn superscript(input: usize) -> String {
+    let superscript = |input: usize| {
         // ¹²³⁴⁵⁶⁷⁸⁹⁰
         let mut output = String::new();
         if input == 0 {
-            output.push_str("ˣ");
+            output.push('ˣ');
             return output;
         } else if input == 1 {
             return output;
         }
         for i in (0..=input.ilog10()).rev() {
-            let digit = (input as u32 / 10u32.pow(i as u32)) % 10;
+            let digit = (input as u32 / 10u32.pow(i)) % 10;
             output.push(match digit {
                 1 => '¹',
                 2 => '²',
@@ -248,7 +247,7 @@ pub fn prettyprint(poly: &Polynomial) {
             })
         }
         output
-    }
+    };
 
     let mut output = String::new();
     let last_byte_not_zero = *poly.last().unwrap() != 0;

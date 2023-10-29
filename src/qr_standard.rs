@@ -154,7 +154,7 @@ mod penalties {
 
     pub(super) fn total_penalty<T: QR>(input: &T) -> u32 {
         let width = input.dims().0;
-        let ones = input.debug_bits().into_iter().map(|x| x.count_ones()).sum();
+        let ones = input.debug_bits().iter().map(|x| x.count_ones()).sum();
 
         let size = usize::BITS as usize;
         let bit = {
@@ -185,10 +185,7 @@ mod penalties {
             bit[index / size] & (1usize << (index % size)) != 0
         };
 
-        adjacent(width, get)
-            + block(width, get)
-            + fake_marker(width, get)
-            + proportion(width, ones)
+        adjacent(width, get) + block(width, get) + fake_marker(width, get) + proportion(width, ones)
     }
 
     // Adjacent modules in row/column in same color
@@ -591,7 +588,7 @@ pub fn coord_status(x: usize, y: usize, version: u32) -> Option<u8> {
 fn new_blank_qr_code<T: image::Bitmap>(version: u32) -> T {
     let max = version_to_max_index(version);
     let mut output = T::new(max + 1, max + 1);
-    let mut set = |x, y| output.set_bit(x as usize, y as usize, true);
+    let mut set = |x, y| output.set_bit(x, y, true);
 
     //  draw alignment patters
     let alignment_coords = alignment_pattern_coords(version);

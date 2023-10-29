@@ -127,13 +127,11 @@ fn export_one_of_every_single_variant_to_folder() -> std::io::Result<()> {
     for version in 1..=40 {
         for level in 0..=3 {
             let mut binding = format!("{}-{}:\n\n", version, b"LMQH"[level as usize] as char);
-            binding.push_str( String::from(
-                "what a beautiful face\ni have found in this place\nthat is circling all round the sun\nwhat a beautiful dream\nthat could flash on the screen\nin a blink of an eye and be gone from me....\nsOFT AND SWEET!!!!\nLET ME HOLD IT CLOSE AND KEEP IT HERE WITH ME\n\nand one day we will die\nand our ashes will fly from the aeroplane over the sea\nbut for now we are young\nlet us lay in the sun\nand count every beautiful thing we can see\nLOVE TO BE!!!!!!\nIN THE ARMS OF ALL I'M KEEPING HERE WITH MEEEEEEEEEEEE\n\n[trombone solo]\n\nwhat a curious life\nwe have found here tonight\nthere is music that sounds from the street\nthere are lights in the clouds\nanna's ghost all around\nhear her voice as it's rolling and ringing through me\nsofT AND SWEET!!!!!!!\nHOW THE NOTES ALL BEND AND REACH ABOVE THE TREES\n\noh how i remember you\nhow i would push my fingers through\nyour mouth to make those muscles move\nthat made your voice so smooth and sweet\nbut now we keep where we don't know\nall secrets sleep in winter clothes\nwith one you loved so long ago\nnow he don't even know his name :( :(\n\nwhat a beautiful face\ni have found in this place\nthat is circling all round the sun\nand when we meet on a cloud\ni'll be laughing out loud\ni'll be laughing with everyone i see\ncan't believe how strange it is to be anything at all....\n\n\n"
+            binding.push_str( "what a beautiful face\ni have found in this place\nthat is circling all round the sun\nwhat a beautiful dream\nthat could flash on the screen\nin a blink of an eye and be gone from me....\nsOFT AND SWEET!!!!\nLET ME HOLD IT CLOSE AND KEEP IT HERE WITH ME\n\nand one day we will die\nand our ashes will fly from the aeroplane over the sea\nbut for now we are young\nlet us lay in the sun\nand count every beautiful thing we can see\nLOVE TO BE!!!!!!\nIN THE ARMS OF ALL I'M KEEPING HERE WITH MEEEEEEEEEEEE\n\n[trombone solo]\n\nwhat a curious life\nwe have found here tonight\nthere is music that sounds from the street\nthere are lights in the clouds\nanna's ghost all around\nhear her voice as it's rolling and ringing through me\nsofT AND SWEET!!!!!!!\nHOW THE NOTES ALL BEND AND REACH ABOVE THE TREES\n\noh how i remember you\nhow i would push my fingers through\nyour mouth to make those muscles move\nthat made your voice so smooth and sweet\nbut now we keep where we don't know\nall secrets sleep in winter clothes\nwith one you loved so long ago\nnow he don't even know his name :( :(\n\nwhat a beautiful face\ni have found in this place\nthat is circling all round the sun\nand when we meet on a cloud\ni'll be laughing out loud\ni'll be laughing with everyone i see\ncan't believe how strange it is to be anything at all....\n\n\n"
                     .chars()
                     .cycle()
                     .take(DATA_CODEWORDS[level as usize][version as usize - 1].checked_sub(4+ binding.len()).unwrap_or_default())
-                    .collect::<String>(),
-            ).as_str());
+                    .collect::<String>().as_str());
             let len = binding.len();
             let mode_data = vec![(ASCII, binding)];
             let name = format!(
@@ -234,10 +232,10 @@ fn gen_qr_using_modes(custom_input: Option<&[(Mode, &str)]>) {
             let bitmap = &mut ImgRowAligned::new_blank_qr(version);
 
             pad_to((cwords - ecwords) as usize, message);
-            let code = encode_message(&badstream_to_polynomial(message), ecwords as u32);
+            let code = encode_message(&badstream_to_polynomial(message), ecwords);
 
             let mut count = 0;
-            for (a, &i) in (&code).iter().enumerate() {
+            for (a, &i) in code.iter().enumerate() {
                 print!("{:02X} ", i);
                 count += 1;
                 if a + 1 == (cwords - ecwords) as usize {
@@ -324,7 +322,7 @@ fn first_qr_code() {
         pad_to(134 - 26, message);
         let code = encode_message(&badstream_to_polynomial(message), 26);
 
-        for (a, &i) in (&code).iter().enumerate() {
+        for (a, &i) in code.iter().enumerate() {
             print!("{:02X} ", i);
             if a % 8 == 7 {
                 println!();
@@ -349,7 +347,7 @@ fn first_qr_code() {
 }
 
 fn qr_correctness_check() {
-    let mut hello = testutil::hello1();
+    let mut hello = xbm_filepath_into_bitmap("hellocode_smol.xbm");
     hello.unmask();
     debug_print(&hello);
     let mut bits: Badstream = Vec::new();
@@ -359,7 +357,7 @@ fn qr_correctness_check() {
         (x, y) = (x2, y2);
         bits.push(hello.get_bit(x, y).unwrap());
     }
-    for (o, &i) in (&bits).iter().enumerate() {
+    for (o, &i) in bits.iter().enumerate() {
         print!("{}", u8::from(i));
         if o % 8 == 7 {
             println!();
@@ -389,7 +387,7 @@ fn qr_correctness_check() {
 }
 
 fn read_bitstream() {
-    let mut code = testutil::hello1();
+    let mut code = xbm_filepath_into_bitmap("hellocode_smol.xbm");
     code.qr_mask_xor(
         interpret_format(get_fcode(&code, 1, (0, 0)).unwrap())
             .unwrap()
@@ -407,8 +405,8 @@ fn read_bitstream() {
 }
 
 fn compare_mask_to_isdata() {
-    let mask = testutil::mask();
-    let mut blank = testutil::blank();
+    let mask = xbm_filepath_into_bitmap("hellomask_smol.xbm");
+    let mut blank = ImgRowAligned::new(21, 21);
     let size = version_to_size(1).unwrap() as usize;
     for x in 0..size {
         for y in 0..size {
@@ -736,7 +734,8 @@ fn test_format_parsing(path: &str) {
                 1 => 'L',
                 2 => 'M',
                 3 => 'Q',
-                4 | _ => 'H',
+                4 => 'H',
+                _ => panic!(),
             }
         });
         println!("masking pattern {:#05b}", mask);
@@ -960,27 +959,10 @@ fn test_reed_solomon(test: u8) {
     }
 
     if test & 0b10000 != 0 {
-        println!("{:?}", &(lookup_tables.0)[..256]);
+        println!("{:?}", &(lookup_tables.0)[..255]);
     }
 
     if test & 0b100000 != 0 {}
-}
-
-mod testutil {
-    use super::*;
-
-    pub fn mask() -> ImgRowAligned {
-        xbm_filepath_into_bitmap("hellomask_smol.xbm")
-    }
-    pub fn hello1() -> ImgRowAligned {
-        xbm_filepath_into_bitmap("hellocode_smol.xbm")
-    }
-    pub fn hello2() -> ImgRowAligned {
-        xbm_filepath_into_bitmap("hellocode2_smol.xbm")
-    }
-    pub fn blank() -> ImgRowAligned {
-        ImgRowAligned::new(21, 21)
-    }
 }
 
 mod tests {

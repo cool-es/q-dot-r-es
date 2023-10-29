@@ -28,7 +28,7 @@ pub fn _print_exp_log_tables_inline() {
 
     for i in 0..255 {
         exp[i] = x;
-        log[(x as usize - 1) % 255] = i as usize;
+        log[(x as usize - 1) % 255] = i;
         x = galois_multiply(x, 0b10, QR_CODEWORD_GEN);
     }
 
@@ -36,13 +36,13 @@ pub fn _print_exp_log_tables_inline() {
         "pub const QR_EXP_LOG_TABLE: ExpLogLUTs = ([\n// {} values of usize -> element\n",
         exp.len()
     );
-    for x in 0..exp.len() {
-        print!("{:#04X},", exp[x]);
+    for n in &exp {
+        print!("{:#04X},", n);
     }
 
     print!("],[\n// {} values of element -> usize\n", log.len());
-    for x in 0..log.len() {
-        print!("{:#04X},", log[x]);
+    for n in &log {
+        print!("{:#04X},", n);
     }
     println!("]);");
 }

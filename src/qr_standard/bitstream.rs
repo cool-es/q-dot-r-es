@@ -70,7 +70,7 @@ fn string_to_ascii(input: &str) -> Vec<Token> {
 }
 
 fn string_to_numeric(input: &str) -> Vec<Token> {
-    for i in (&input).chars() {
+    for i in input.chars() {
         if !i.is_ascii_digit() {
             panic!("character \"{}\" is not numeric", i)
         }
@@ -329,7 +329,7 @@ fn is_alphanum(x: char) -> bool {
 
 #[inline]
 fn is_numeric(x: char) -> bool {
-    x.is_digit(10)
+    x.is_ascii_digit()
 }
 
 fn optimize_mode(input: String) -> Vec<MarkedString> {
@@ -378,9 +378,9 @@ mod tests {
             let mut stream: Vec<Token> = Vec::new();
             for (mode, data) in input {
                 stream.extend(match mode {
-                    0 => string_to_numeric(&data),
-                    1 => string_to_alphanum(&data),
-                    2 => string_to_ascii(&data),
+                    0 => string_to_numeric(data),
+                    1 => string_to_alphanum(data),
+                    2 => string_to_ascii(data),
                     _ => panic!(),
                 });
             }

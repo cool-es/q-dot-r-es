@@ -51,10 +51,8 @@ pub fn alignment_pattern_coords(version: u32) -> Vec<(usize, usize)> {
 
     for &x in indices {
         for &y in indices {
-            if [x, y].contains(&6) {
-                if x == y || [x, y].contains(&indices.last().unwrap()) {
-                    continue;
-                }
+            if [x, y].contains(&6) && (x == y || [x, y].contains(indices.last().unwrap())) {
+                continue;
             }
             output.push((x, y));
         }

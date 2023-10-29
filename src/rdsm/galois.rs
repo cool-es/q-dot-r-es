@@ -142,7 +142,7 @@ pub fn carryless_divide(dividend: Element, divisor: Element) -> Element {
     // subtract (i.e. add, in GF(2^n)) the divisor shifted up so its top bit
     // lines up with the dividend's current top bit. it's "lights out" again!
     for i in (0..=(dnd_length - dsr_length)).rev() {
-        if dnd & (1 << i + dsr_length - 1) != 0 {
+        if dnd & (1 << (i + dsr_length - 1)) != 0 {
             dnd ^= divisor << i;
         }
     }
@@ -171,7 +171,7 @@ pub fn generate_exp_log_tables(tables: &mut ExpLogLUTs) {
     for i in 0..255 {
         exp[i] = x;
         // log(x) == log[x - 1]
-        log[(x as usize - 1) % 255] = i as usize;
+        log[(x as usize - 1) % 255] = i;
         // note that the logarithm operation is base 0b10
         x = galois_multiply(x, 0b10, QR_CODEWORD_GEN);
     }

@@ -68,10 +68,8 @@ impl ImgRowAligned {
 
         let mut dimensions = dims.lines().map(|x| {
             if x.starts_with("#define") {
-                x.trim()
-                    .split_whitespace()
-                    .rev()
-                    .next()
+                x.split_whitespace()
+                    .next_back()
                     .ok_or("something messed up??")?
                     .parse::<usize>()
                     .map_err(|_| "parse error")
@@ -95,7 +93,7 @@ impl ImgRowAligned {
             // .split(", ")
             .split(|x| !char::is_alphanumeric(x))
         {
-            if byte.len() != 0 {
+            if !byte.is_empty() {
                 bits.push(
                     {
                         // debugging code, prints offending characters
@@ -141,7 +139,7 @@ impl ImgRowAligned {
             output.push_str(format!(" 0x{:02x}", self.bits[n].reverse_bits()).as_str());
 
             if n < self.bits.len() - 1 {
-                output.push_str(",");
+                output.push(',');
             } else {
                 output.push_str("\n};\n");
             }
@@ -186,9 +184,9 @@ impl ImgRowAligned {
 
         // divide into 12 columns
         let mut nicedata = String::new();
-        for string_chunk in Vec::from_iter(data.split(",")).chunks(12) {
+        for string_chunk in Vec::from_iter(data.split(',')).chunks(12) {
             nicedata.push_str("    ");
-            for byte in string_chunk.into_iter() {
+            for byte in string_chunk.iter() {
                 nicedata.push_str(byte);
                 nicedata.push_str(", ")
             }
@@ -253,19 +251,16 @@ pub(super) fn index_to_xy(
 
 impl Bitmap for ImgRowAligned {
     fn new(width: usize, height: usize) -> Self {
-        let mut bits: Vec<u8> = Vec::new();
+        let bits: Vec<u8> =
+            vec![0; xy_to_index(width - 1, height - 1, width, height).unwrap().0 + 1];
 
         // resize vector to contain the maximum needed amount of
         // elements – that is, the index of the byte containing the last pixel
         // risk of fencepost error: resize() counts from 1, xy_to_index from 0
-        bits.resize(
-            xy_to_index(width - 1, height - 1, width, height).unwrap().0 + 1,
-            0,
-        );
 
         ImgRowAligned {
-            width: width,
-            height: height,
+            width,
+            height,
             bits,
         }
     }

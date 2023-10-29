@@ -9,13 +9,13 @@ pub fn badstream_to_polynomial(input: &Badstream) -> Polynomial {
     let mut output: Polynomial = Vec::new();
 
     let mut pushbyte: u8 = 0;
-    for i in 0..input.len() {
+    for (i, &bit) in input.iter().enumerate() {
         if i % 8 == 0 && i != 0 {
             output.push(pushbyte as u32);
             pushbyte = 0;
         }
         pushbyte <<= 1;
-        pushbyte |= u8::from(input[i]);
+        pushbyte |= u8::from(bit);
     }
     if pushbyte != 0 {
         output.push(pushbyte as u32);
@@ -195,7 +195,7 @@ pub fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstre
 
     let padded_stream = {
         let mut stream_copy = stream.clone();
-        pad_to(total_dcw as usize, &mut stream_copy);
+        pad_to(total_dcw, &mut stream_copy);
         stream_copy
     };
 
