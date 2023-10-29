@@ -155,17 +155,30 @@ fn penalty<T: QR>(input: &T) -> u32 {
     let width = input.dims().0;
     let black: u32 = input.debug_bits().into_iter().map(|x| x.count_ones()).sum();
 
+    let size = usize::BITS as usize;
     let bit = {
-        let mut bit_vector: Vec<bool> = Vec::new();
+        let mut bit_vector: Vec<usize> = Vec::new();
+        let mut ticker = 0usize;
+        let mut pushy = 0usize;
+
         for x in 0..width {
             for y in 0..width {
-                bit_vector.push(input.get_bit(x, y).expect("out of bounds"));
+                pushy |=
+                    usize::from(input.get_bit(x, y).expect("out of bounds")) << (ticker % size);
+                ticker += 1;
+                if ticker % size == 0 {
+                    bit_vector.push(pushy);
+                    pushy = 0;
+                }
             }
         }
+        bit_vector.push(pushy);
         bit_vector
     };
-
-    let get = |x, y| bit[x * width + y];
+    let get = |x, y| {
+        let index = x * width + y;
+        bit[index / size] & (1usize << (index % size)) != 0
+    };
 
     adjacent(width, get) + block(width, get) + fake_marker(width, get) + proportion(width, black)
 }
@@ -762,6 +775,58 @@ mod tests {
             let artificial = (a << 12) + i;
             let real = qr_generate_vcode(a);
             assert!(artificial == real);
+        }
+    }
+
+    #[test]
+    fn penalty_get_check() {
+        let string = "bitch".to_string();
+        let pic = make_qr(vec![(ASCII, string)], Some(40), None, None);
+
+        let width = pic.dims().0;
+        let input = &pic;
+
+        let bitx = {
+            let mut bit_vector: Vec<bool> = Vec::new();
+            for x in 0..width {
+                for y in 0..width {
+                    bit_vector.push(input.get_bit(x, y).expect("out of bounds"));
+                }
+            }
+            bit_vector
+        };
+        let getx = |x: usize, y: usize| bitx[x * width + y];
+
+        let size = usize::BITS as usize;
+        let bity = {
+            let mut bit_vector: Vec<usize> = Vec::new();
+            let mut ticker = 0usize;
+            let mut pushy = 0usize;
+
+            for x in 0..width {
+                for y in 0..width {
+                    pushy |=
+                        usize::from(input.get_bit(x, y).expect("out of bounds")) << (ticker % size);
+                    ticker += 1;
+                    if ticker % size == 0 {
+                        bit_vector.push(pushy);
+                        pushy = 0;
+                    }
+                }
+            }
+            bit_vector.push(pushy);
+
+            bit_vector
+        };
+        let gety = |x: usize, y: usize| {
+            let index = x * width + y;
+            bity[index / size] & (1usize << (index % size)) != 0
+        };
+
+        for x in 0..width {
+            for y in 0..width {
+                assert!(getx(x, y) == gety(x, y));
+            }
         }
     }
 }
