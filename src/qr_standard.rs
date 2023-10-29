@@ -33,6 +33,7 @@ pub fn version_to_size(version: u32) -> Option<u32> {
     }
 }
 
+#[inline]
 fn size_to_version(size: usize) -> Option<u32> {
     if size % 4 == 1 && (21..=177).contains(&size) {
         Some((size as u32 - 17) / 4)
@@ -41,11 +42,12 @@ fn size_to_version(size: usize) -> Option<u32> {
     }
 }
 
-fn version_to_max_index(version: u32) -> usize {
+fn version_to_max_index(version: u32) -> Option<usize> {
     if bad_version(version) {
-        panic!()
+        None
+    } else {
+        Some(20 + 4 * (version as usize - 1))
     }
-    20 + 4 * (version as usize - 1)
 }
 
 fn out_of_bounds(x: usize, y: usize, version: u32) -> bool {
@@ -54,7 +56,7 @@ fn out_of_bounds(x: usize, y: usize, version: u32) -> bool {
     } else {
         // x.max(y) + 1 > 21 + 4 * (version as usize - 1)
         // note that this is a comparison that returns bool
-        x.max(y) > 16 + 4 * version as usize
+        (16 + 4 * version as usize) < x.max(y)
     }
 }
 
@@ -125,23 +127,25 @@ fn qr_mask_xor<T: image::Bitmap>(input: &mut T, mask: u8) {
     };
 
     for vec_index in 0..input.debug_bits().len() {
-        let mut mask_byte = 0u8;
+        let mut mask_byte = 0;
         for bit_index in (0..8).rev() {
             mask_byte <<= 1;
             if let Some((x, y)) = input.debug_index_to_xy(vec_index, bit_index) {
                 if maybe_version.is_none() || coord_is_data(x, y, maybe_version.unwrap_or_default())
                 {
-                    mask_byte |= (match mask {
-                        0 => (x + y) % 2,
-                        1 => y % 2,
-                        2 => x % 3,
-                        3 => (x + y) % 3,
-                        4 => (x / 3 + y / 2) % 2,
-                        5 => (x * y) % 2 + (x * y) % 3,
-                        6 => ((x * y) % 3 + x * y) % 2,
-                        7 => ((x * y) % 3 + x + y) % 2,
-                        _ => panic!(),
-                    } == 0) as u8;
+                    mask_byte |= u8::from(
+                        0 == match mask {
+                            0 => (x + y) % 2,
+                            1 => y % 2,
+                            2 => x % 3,
+                            3 => (x + y) % 3,
+                            4 => (x / 3 + y / 2) % 2,
+                            5 => (x * y) % 2 + (x * y) % 3,
+                            6 => ((x * y) % 3 + x * y) % 2,
+                            7 => ((x * y) % 3 + x + y) % 2,
+                            _ => panic!(),
+                        },
+                    );
                 }
             }
         }
@@ -482,7 +486,7 @@ pub fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)>
         return None;
     }
 
-    let max = version_to_max_index(version);
+    let max = version_to_max_index(version)?;
     let (mut x, mut y) = (x, y);
 
     // upper bound to avoid infinite loops
@@ -562,7 +566,7 @@ pub fn coord_status(x: usize, y: usize, version: u32) -> Option<u8> {
         // top left position square
         1
     } else {
-        let max = version_to_max_index(version);
+        let max = version_to_max_index(version)?;
         if (x <= 7 && max - y <= 7) || (y <= 7 && max - x <= 7) {
             // other two position squares
             1
@@ -586,7 +590,7 @@ pub fn coord_status(x: usize, y: usize, version: u32) -> Option<u8> {
 }
 
 fn new_blank_qr_code<T: image::Bitmap>(version: u32) -> T {
-    let max = version_to_max_index(version);
+    let max = version_to_max_index(version).expect("invalid version");
     let mut output = T::new(max + 1, max + 1);
     let mut set = |x, y| output.set_bit(x, y, true);
 
@@ -668,7 +672,7 @@ fn version_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize
         return None;
     }
 
-    let max = version_to_max_index(version);
+    let max = version_to_max_index(version)?;
     let bit = bit as usize;
 
     let short = bit % 3 + max - 10;

@@ -7,6 +7,9 @@
 • add stats printing (version, bit count, etc)
 • find out what makes the "block" penalty function so slow
 • add support for piping in text from other sources - use std::io::Stdin
+• write "naive" functions hidden from the user that don't excessively check their inputs
+    e.g., how many times is bad_version() called, and how many times does it actually need to be?
+• add comments and documentation so it's readable to others
 
 maybe:
 • penalty routine still mysterious - do more troubleshooting
