@@ -3,35 +3,10 @@ use super::{galois::*, RDSM_GENERATOR_POLYNOMIALS};
 // a polynomial over a galois field, ordered from highest power of x to lowest
 pub type Polynomial = Vec<Element>;
 
-// lut for the reed-solomon generator polynomials (not fit for use at this time)
-// pub type _RSGenLUT = [Polynomial; 64];
-
-// from the tutorial: uses QR_CODEWORD_GEN as its generator polynomial
-// encode_message(TEST_MSG, 10) == TEST_MSG + TEST_RESULT == FULL_TEST_RESULT
-// length 16
-pub const TEST_MSG: &[Element] = &[
-    0x40, 0xd2, 0x75, 0x47, 0x76, 0x17, 0x32, 0x06, 0x27, 0x26, 0x96, 0xc6, 0xc6, 0x96, 0x70, 0xec,
-];
-// length 10
-pub const TEST_RESULT: &[Element] = &[0xbc, 0x2a, 0x90, 0x13, 0x6b, 0xaf, 0xef, 0xfd, 0x4b, 0xe0];
-// length 26
-pub const FULL_TEST_RESULT: &[Element] = &[
-    0x40, 0xd2, 0x75, 0x47, 0x76, 0x17, 0x32, 0x06, 0x27, 0x26, 0x96, 0xc6, 0xc6, 0x96, 0x70, 0xec,
-    0xbc, 0x2a, 0x90, 0x13, 0x6b, 0xaf, 0xef, 0xfd, 0x4b, 0xe0,
-];
-
 // "polynomials" section starts below
 // polynomials are written in descending order:
 // [a, b, c, d] = ax^3 + bx^2 + cx + d
 // (i personally don't think that's a good decision, but)
-
-// pub fn polynomial_scalar_multiply(poly: &Polynomial, scalar: Element) -> Polynomial {
-//     let mut output: Polynomial = Vec::new();
-//     for &i in poly {
-//         output.push(table_multiply(i, scalar));
-//     }
-//     output
-// }
 
 pub fn polynomial_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
     let mut output: Polynomial = Vec::new();
@@ -160,71 +135,6 @@ pub fn make_rdsm_generator_polynomial(ec_symbols: u32) -> Polynomial {
     }
     output
 }
-
-// adding this (not in the text) because recalculating the values over and over would be obscene
-// lacks implementations and any practical use
-// pub fn _generate_rsgen_table(gentable: &mut _RSGenLUT, tables: &ExpLogLUTs) {
-//     for i in 0..gentable.len() {
-//         gentable[i] = make_rdsm_generator_polynomial(i as u32, tables);
-//     }
-// }
-
-// help!!
-/*
-def gf_poly_div(dividend, divisor):
-    '''Fast polynomial division by using Extended Synthetic Division and optimized for GF(2^p) computations
-    (doesn't work with standard polynomials outside of this galois field, see the Wikipedia article for generic algorithm).'''
-    # CAUTION: this function expects polynomials to follow the opposite convention at decoding:
-    # the terms must go from the biggest to lowest degree (while most other functions here expect
-    # a list from lowest to biggest degree). eg: 1 + 2x + 5x^2 = [5, 2, 1], NOT [1, 2, 5]
-
-    msg_out = list(dividend) # Copy the dividend
-
-    for i in range(0, len(dividend) - (len(divisor)-1)):
-        coef = msg_out[i] # precaching
-        if coef != 0: # log(0) is undefined, so we need to avoid that case explicitly (and it's also a good optimization).
-            for j in range(1, len(divisor)): # in synthetic division, we always skip the first coefficient of the divisior,
-                                              # because it's only used to normalize the dividend coefficient
-                if divisor[j] != 0: # log(0) is undefined
-                    msg_out[i + j] ^= gf_mul(divisor[j], coef) # equivalent to the more mathematically correct
-                                                               # (but xoring directly is faster): msg_out[i + j] += -divisor[j] * coef
-
-    # The resulting msg_out contains both the quotient and the remainder, the remainder being the size of the divisor
-    # (the remainder has necessarily the same degree as the divisor -- not length but degree == length-1 -- since it's
-    # what we couldn't divide from the dividend), so we compute the index where this separation is, and return the quotient and remainder.
-    separator = -(len(divisor)-1)
-    return msg_out[:separator], msg_out[separator:] # return quotient, remainder.
-*/
-// pub fn _polynomial_divide(
-//     dividend: &Polynomial,
-//     divisor: &Polynomial,
-//     // tables: &ExpLogLUTs,
-// ) -> (Polynomial, Polynomial) {
-//     // man, idk
-
-//     let mut output = dividend.clone();
-//     // output.reverse();
-//     // let mut dnd = dividend.clone();
-//     // dnd.reverse();
-//     // let mut dsr = divisor.clone();
-//     // dsr.reverse();
-
-//     for i in 0..(dividend.len() - (divisor.len() - 1)) {
-//         let coef = output[i];
-//         if coef != 0 {
-//             for j in 1..divisor.len() {
-//                 if divisor[j] != 0 {
-//                     output[i + j] ^= table_multiply(divisor[j], coef);
-//                 }
-//             }
-//         }
-//     }
-
-//     // output.reverse();
-//     let (quotient, remainder) = output.split_at(divisor.len() - 1);
-//     // let (quotient, remainder) = output.split_at(divisor.len() - 1);
-//     (quotient.to_vec(), remainder.to_vec())
-// }
 
 // helper function
 #[inline]

@@ -152,25 +152,6 @@ fn export_one_of_every_single_variant_to_folder() -> std::io::Result<()> {
     Ok(())
 }
 
-fn generate_inverse_codeword_table() {
-    let mut vec = Vec::new();
-
-    for version in 0..40 {
-        for level in 0..=3 {
-            vec.push((DATA_CODEWORDS[version][level], version, level));
-        }
-    }
-
-    vec.sort_by_key(|x| x.0);
-
-    print!("pub const INVERSE_DATA_CODEWORDS: [(u32,(u32,u32));160] = [");
-    for i in &vec {
-        let (x, version, level) = i;
-        print!("({:04},({:02},{})),", x, version + 1, level);
-    }
-    println!("];");
-}
-
 fn generate_codeword_table() {
     print!("pub const DATA_CODEWORDS:[[u32;40];4]=[");
     for level in 0..=3 {
@@ -887,8 +868,13 @@ fn test_reed_solomon(test: u8) {
     }
 
     if test & 0b10 != 0 {
-        let input: Polynomial = Vec::from(TEST_MSG);
-        let control: Polynomial = Vec::from(FULL_TEST_RESULT);
+        let input: Polynomial = Vec::from([
+            64, 210, 117, 71, 118, 23, 50, 6, 39, 38, 150, 198, 198, 150, 112, 236,
+        ]);
+        let control: Polynomial = Vec::from([
+            64, 210, 117, 71, 118, 23, 50, 6, 39, 38, 150, 198, 198, 150, 112, 236, 188, 42, 144,
+            19, 107, 175, 239, 253, 75, 224,
+        ]);
         let output = encode_message(&input, 10);
         assert_eq!(output, control);
 

@@ -76,6 +76,7 @@ pub const ERROR_CORRECTION_CODEWORDS: [u32; 31] = [
 ];
 
 // reverse-lookup to find the index for precomputed.rs > RDSM_GENERATOR_POLYNOMIALS
+#[inline]
 pub fn find_errc(input: usize) -> Option<usize> {
     Some(
         (input

@@ -308,10 +308,10 @@ pub fn compute_bit_hypothetical() {
 // Numeric ⊂ AlphaNum ⊂ ASCII
 // to use for a "greedy" mode-switch algorithm
 fn char_status(x: char) -> Option<Mode> {
-    Some(if x.is_digit(10) {
+    Some(if is_numeric(x) {
         // ascii, alphanumeric and numeric
         Numeric
-    } else if find_alphanum(x).is_some() {
+    } else if is_alphanum(x) {
         // ascii and alphanumeric
         AlphaNum
     } else if x.is_ascii() {
