@@ -278,7 +278,7 @@ mod penalties {
         // to create a version 40 code, this
         // function is called, approximately,
         // NINETY EIGHT MILLION TIMES !!!
-        // let get = |x, y| bit[x * width + y];
+        let get = |x, y| bit[x * width + y];
 
         // penalty: 3 * (m - 1) * (n - 1)
         // where the block size = m * n
@@ -303,7 +303,7 @@ mod penalties {
             for y in 0..=(max - 1) {
                 'row: for starting_x in 0..=leeway {
                     if scored[starting_x * width + y]
-                        || bit[starting_x * width + y] != bit[starting_x * width + y + 1]
+                        || get(starting_x, y) != get(starting_x, y + 1)
                     {
                         // already scored, or can't be a valid rectangle
                         continue;
@@ -311,14 +311,14 @@ mod penalties {
                     /*
                     since we're looking for the widest rectangles first, there's no chance of the "discovery loop" breaking by hitting an already-scored pixel going sideways - that can only happen while going downwards. going sideways, the "discovery loop" will only ever be broken by hitting either a pixel of the other color or the side of the pattern
                     */
-                    let color = bit[starting_x * width + y];
+                    let color = get(starting_x, y);
                     for x_offset in 0..=rect_width {
                         let x = starting_x + x_offset;
 
                         // failure conditions, all of which
                         // make it a non-scoring pattern
-                        if (bit[x * width + y] != color)
-                            || (bit[x * width + y + 1] != color)
+                        if (get(x, y) != color)
+                            || (get(x, y + 1) != color)
                             || scored[x * width + y + 1]
                         {
                             if x > leeway {
@@ -335,7 +335,7 @@ mod penalties {
                     // extend rectangle downwards as far as possible
                     'extend: for y2 in (y + 2)..=max {
                         for x2 in starting_x..=(starting_x + rect_width) {
-                            if (bit[x2 * width + y2] != color) || scored[x2 * width + y2] {
+                            if (get(x2, y2) != color) || scored[x2 * width + y2] {
                                 break 'extend;
                             }
                         }
