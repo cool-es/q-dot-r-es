@@ -64,7 +64,7 @@ impl QR for image::Img {
         qr_mask_xor(self, pattern)
     }
     fn qr_penalty(&self) -> u32 {
-        penalty(self)
+        penalties::total_penalty(self)
     }
     fn qr_version(&self) -> Option<u32> {
         use image::*;
@@ -90,7 +90,7 @@ impl QR for image::ImgRowAligned {
         qr_mask_xor(self, pattern)
     }
     fn qr_penalty(&self) -> u32 {
-        penalty(self)
+        penalties::total_penalty(self)
     }
     fn qr_version(&self) -> Option<u32> {
         use image::*;
@@ -149,46 +149,50 @@ fn qr_mask_xor<T: image::Bitmap>(input: &mut T, mask: u8) {
     }
 }
 
-fn penalty<T: QR>(input: &T) -> u32 {
-    use penalties::*;
+mod penalties {
+    use super::QR;
 
-    let width = input.dims().0;
-    let black: u32 = input.debug_bits().into_iter().map(|x| x.count_ones()).sum();
+    pub(super) fn total_penalty<T: QR>(input: &T) -> u32 {
+        let width = input.dims().0;
+        let ones = input.debug_bits().into_iter().map(|x| x.count_ones()).sum();
 
-    let size = usize::BITS as usize;
-    let bit = {
-        let mut bit_vector: Vec<usize> = Vec::new();
-        let mut ticker = 0usize;
-        let mut pushy = 0usize;
+        let size = usize::BITS as usize;
+        let bit = {
+            let mut bit_vector: Vec<usize> = Vec::new();
+            let mut ticker = 0usize;
+            let mut pushy = 0usize;
 
-        for x in 0..width {
-            for y in 0..width {
-                pushy |=
-                    usize::from(input.get_bit(x, y).expect("out of bounds")) << (ticker % size);
-                ticker += 1;
-                if ticker % size == 0 {
-                    bit_vector.push(pushy);
-                    pushy = 0;
+            for x in 0..width {
+                for y in 0..width {
+                    pushy |=
+                        usize::from(input.get_bit(x, y).expect("out of bounds")) << (ticker % size);
+                    ticker += 1;
+                    if ticker % size == 0 {
+                        bit_vector.push(pushy);
+                        pushy = 0;
+                    }
                 }
             }
-        }
-        bit_vector.push(pushy);
-        bit_vector
-    };
-    let get = |x, y| {
-        let index = x * width + y;
-        bit[index / size] & (1usize << (index % size)) != 0
-    };
+            bit_vector.push(pushy);
+            bit_vector
+        };
 
-    adjacent(width, get) + block(width, get) + fake_marker(width, get) + proportion(width, black)
-}
+        // replicates .get_bit(), only very optimized
+        // this function is called approximately 100 million times
+        // when generating a version 40 code ...
+        let get = |x, y| {
+            let index = x * width + y;
+            bit[index / size] & (1usize << (index % size)) != 0
+        };
 
-mod penalties {
-    const DEBUG: bool = false;
-    const SUB_INEVITABLE_SCORE: bool = false;
+        adjacent(width, get)
+            + block(width, get)
+            + fake_marker(width, get)
+            + proportion(width, ones)
+    }
 
     // Adjacent modules in row/column in same color
-    pub(super) fn adjacent<F>(width: usize, get: F) -> u32
+    fn adjacent<F>(width: usize, get: F) -> u32
     where
         F: Fn(usize, usize) -> bool,
     {
@@ -206,21 +210,6 @@ mod penalties {
                     xrun += 1;
                 } else {
                     if xrun > 5 {
-                        if DEBUG {
-                            if [0, 6, 7, max - 7, max - 6, max].contains(&line)
-                            // && (index < 7 || index > 7)
-                            {
-                            } else {
-                                println!(
-                                    "ADJ: horizontal, length {}\n   row {}, {} --- {} (score {})",
-                                    xrun,
-                                    line,
-                                    (index + 1) - xrun,
-                                    index,
-                                    xrun - 2
-                                );
-                            }
-                        }
                         // 3 + run - 5
                         penalty += xrun - 2;
                     }
@@ -232,21 +221,6 @@ mod penalties {
                     yrun += 1;
                 } else {
                     if yrun > 5 {
-                        if DEBUG {
-                            if [0, 6, 7, max - 7, max - 6, max].contains(&line)
-                            // && (index == max || index >= 7)
-                            {
-                            } else {
-                                println!(
-                                    "ADJ: vertical, length {}\n   col {}, {} ||| {} (score {})",
-                                    yrun,
-                                    line,
-                                    (index + 1) - yrun,
-                                    index,
-                                    yrun - 2
-                                );
-                            }
-                        }
                         // 3 + run - 5
                         penalty += yrun - 2;
                     }
@@ -254,10 +228,10 @@ mod penalties {
                 }
             }
         }
-        penalty as u32 - (96 * u32::from(SUB_INEVITABLE_SCORE))
+        penalty as u32
     }
 
-    pub(super) fn block<F>(width: usize, get: F) -> u32
+    fn block<F>(width: usize, get: F) -> u32
     where
         F: Fn(usize, usize) -> bool,
     {
@@ -340,12 +314,12 @@ mod penalties {
                 }
             }
         }
-        penalty as u32 - (36 * u32::from(SUB_INEVITABLE_SCORE))
+        penalty as u32
     }
 
     // 1:1:3:1:1 ratio (dark:light:dark:light:dark) pattern in row/column
     // named "fake marker" because it can be confused with the position markers
-    pub(super) fn fake_marker<F>(width: usize, get: F) -> u32
+    fn fake_marker<F>(width: usize, get: F) -> u32
     where
         F: Fn(usize, usize) -> bool,
     {
@@ -364,20 +338,6 @@ mod penalties {
                         }
                     }
                     // matching pattern
-                    if DEBUG {
-                        if (index == 0 || index + 6 == max)
-                            && [2, 3, 4, max - 2, max - 3, max - 4].contains(&line)
-                        {
-                            // println!("FM: h.");
-                        } else {
-                            println!(
-                                "FM: horizontal\n   row {:3}, {:3} ||| {:3}",
-                                line,
-                                index,
-                                index + 6
-                            );
-                        }
-                    }
                     penalty += 40;
                 }
                 'vertical_test: {
@@ -386,37 +346,23 @@ mod penalties {
                             break 'vertical_test;
                         }
                     }
-                    if DEBUG {
-                        if (index == 0 || index + 6 == max)
-                            && [2, 3, 4, max - 2, max - 3, max - 4].contains(&line)
-                        {
-                            // println!("FM: v.");
-                        } else {
-                            println!(
-                                "FM: vertical\n   column {:3}, {:3} ||| {:3}",
-                                line,
-                                index,
-                                index + 6
-                            );
-                        }
-                    }
                     penalty += 40;
                 }
             }
         }
-        penalty - (720 * u32::from(SUB_INEVITABLE_SCORE))
+        penalty
     }
 
     // #[allow(unused_variables)]
     // Proportion of dark modules in entire symbol
-    pub(super) fn proportion(width: usize, black: u32) -> u32 {
+    fn proportion(width: usize, ones: u32) -> u32 {
         // penalty: 10 * k
         // k is the rating of the deviation of the proportion of dark modules in the symbol from 50% in steps of 5%
 
         // this works fine assuming there's no extra "inaccessible" bits outside of
         // the bitmap's graphical boundary
         let area = width.pow(2);
-        let proportion: f32 = (black as f32) / (area as f32);
+        let proportion: f32 = (ones as f32) / (area as f32);
 
         10 * ((10.0 - 20.0 * proportion).abs().round() as u32)
     }
@@ -780,13 +726,13 @@ mod tests {
 
     #[test]
     fn penalty_get_check() {
-        let string = "bitch".to_string();
+        let string = "testing, testing...".to_string();
         let pic = make_qr(vec![(ASCII, string)], Some(40), None, None);
 
         let width = pic.dims().0;
         let input = &pic;
 
-        let bitx = {
+        let bit_x = {
             let mut bit_vector: Vec<bool> = Vec::new();
             for x in 0..width {
                 for y in 0..width {
@@ -795,10 +741,10 @@ mod tests {
             }
             bit_vector
         };
-        let getx = |x: usize, y: usize| bitx[x * width + y];
+        let get_x = |x: usize, y: usize| bit_x[x * width + y];
 
         let size = usize::BITS as usize;
-        let bity = {
+        let bit_y = {
             let mut bit_vector: Vec<usize> = Vec::new();
             let mut ticker = 0usize;
             let mut pushy = 0usize;
@@ -818,14 +764,14 @@ mod tests {
 
             bit_vector
         };
-        let gety = |x: usize, y: usize| {
+        let get_y = |x: usize, y: usize| {
             let index = x * width + y;
-            bity[index / size] & (1usize << (index % size)) != 0
+            bit_y[index / size] & (1usize << (index % size)) != 0
         };
 
         for x in 0..width {
             for y in 0..width {
-                assert!(getx(x, y) == gety(x, y));
+                assert!(get_x(x, y) == get_y(x, y) && get_x(x, y) == input.get_bit(x, y).unwrap());
             }
         }
     }
