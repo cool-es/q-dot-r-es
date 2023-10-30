@@ -464,6 +464,8 @@ pub const DATA_CODEWORDS: [[usize; 40]; 4] = [
     ],
 ];
 
+// i think something's wrong with this chart...
+// 
 // class 1 (version 1..):
 // ascii-alphanumeric-ascii beats only ascii at 11 characters
 // ascii-numeric-ascii beats only ascii at 6 characters
@@ -479,7 +481,15 @@ pub const DATA_CODEWORDS: [[usize; 40]; 4] = [
 // ascii-numeric-ascii beats only ascii at 9 characters
 // alphanumeric-numeric-alphanumeric beats only alphanumeric at 17 characters
 // ascii-num-aln beats an immediate switch to aln at 9 characters
-pub const MODE_ECONOMY: [[u32; 4]; 3] = [[11, 6, 14, 7], [15, 8, 15, 8], [16, 9, 17, 9]];
+pub const MODE_ECONOMY: [[usize; 4]; 3] = [
+    // asc-aln-asc, asc-num-asc, aln-num-aln, asc-num-aln
+    // class 1
+    [11, 6, 14, 7],
+    // class 2
+    [15, 8, 15, 8],
+    // class 3
+    [16, 9, 17, 9],
+];
 
 mod tests {
     #[allow(unused_imports)]

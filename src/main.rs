@@ -63,12 +63,13 @@ fn main_qr_generator() -> std::io::Result<()> {
                         match args
                             .next()
                             .expect("no error correction level submitted")
+                            .to_ascii_lowercase()
                             .trim()
                         {
-                            "l" | "L" => 0,
-                            "m" | "M" => 1,
-                            "q" | "Q" => 2,
-                            "h" | "H" => 3,
+                            "l" => 0,
+                            "m" => 1,
+                            "q" => 2,
+                            "h" => 3,
                             _ => panic!("invalid error correction level"),
                         },
                     );

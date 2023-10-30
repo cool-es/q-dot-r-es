@@ -292,6 +292,8 @@ fn apply_mask(bitmap: &mut ImgRowAligned, version: u32, level: u8, mask: u8) {
     bitmap.qr_mask_xor(mask);
 }
 
+// FIXME: this function doesn't apply the format codes,
+// so its output is actually incorrect (not sure by how much)
 pub fn choose_best_mask(bitmap: &ImgRowAligned) -> u8 {
     let mut best: ImgRowAligned;
     let (mut best, mut penalty) = (u8::MAX, u32::MAX);
