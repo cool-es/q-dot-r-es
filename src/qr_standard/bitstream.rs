@@ -379,7 +379,7 @@ fn optimize_mode(input: String) -> Vec<(Mode, usize)> {
         // note that class[1] and class[3] are ~equal...
         // i picked 0, 2, 3 instead of 0, 1, 2
         // because 3 is more pessimistic
-        let [aln_to_asc, .., num_to_aln, num_to_asc] = class;
+        let [aln_to_asc, _, num_to_aln, num_to_asc] = class;
 
         // compare the current mode with the next one, to decide if
         // the current mode should actually be replaced with the next
@@ -388,7 +388,7 @@ fn optimize_mode(input: String) -> Vec<(Mode, usize)> {
             // we're taking the next mode from the original vector instead of
             // its clone, to avoid borrow issues. this isn't a problem, since
             // we're only looking forward, at entries we couldn't have gone over yet
-            let next_mode = if let Some(&(mode, ..)) = mode_run_lengths.get(i + 1) {
+            let next_mode = if let Some(&(mode, _)) = mode_run_lengths.get(i + 1) {
                 mode
             } else {
                 // there are no more modes after this,
@@ -416,7 +416,14 @@ fn optimize_mode(input: String) -> Vec<(Mode, usize)> {
             };
 
             if this_run < heuristic {
-                // too few characters to motivate a mode switch
+                // too few characters to motivate switching to the current mode
+
+                // what in the world do i do if i have a single number,
+                // followed by a single alphanumeric character, and then ascii??
+                // how would i handle that? am i better off using .windows()
+                // than just looking ahead to the next mode? should i
+                // actually be looking at run lengths to begin with???
+
                 mut_mode_runs[i] = (next_mode, this_run);
             }
         }
