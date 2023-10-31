@@ -13,7 +13,9 @@ use rdsm::*;
 // use testutil::*;
 
 fn main() -> std::io::Result<()> {
-    main_qr_generator()
+    // main_qr_generator()
+    mode_switch_brute_force_analysis();
+    Ok(())
 }
 
 fn main_qr_generator() -> std::io::Result<()> {

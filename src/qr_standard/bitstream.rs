@@ -488,12 +488,15 @@ fn bit_cost(count: usize, class: usize, mode: Mode) -> usize {
 // runs through every possible solution
 // to the scenario below
 pub(crate) fn mode_switch_brute_force_analysis() {
+    // how many chars to test for
+    // let limit = 50;
+
     /*
     testing this scenario:
 
-        num              _______
-        aln        _____/       \_____
-        asc  _____/                   \______
+    num              _______
+    aln        _____/       \_____
+    asc  _____/                   \______
 
     the possible solutions are:
     0. asc - aln - num - aln - asc     max switching
@@ -504,45 +507,64 @@ pub(crate) fn mode_switch_brute_force_analysis() {
     5. asc                   ...       all asc
     */
 
-    for class in 0..3 {
-        for first_aln in 0..20 {
-            for num in 0..20 {
-                for last_aln in 0..20 {
-                    let bit = |count, mode| bit_cost(count, class, mode);
+    for limit in [10, 20, 50] {
+        println!("limit {}:", limit);
+        for class in 0..3 {
+            let bit = |count, mode| bit_cost(count, class, mode);
+            let mut scores = [0usize; 6];
 
-                    let solutions = [
-                        // 0: max switching
-                        bit(10, ASCII)
-                            + bit(first_aln, AlphaNum)
-                            + bit(num, Numeric)
-                            + bit(last_aln, AlphaNum)
-                            + bit(10, ASCII),
-                        // 1: lower num to aln
-                        bit(10, ASCII) + bit(first_aln + num + last_aln, AlphaNum) + bit(10, ASCII),
-                        // 2: lower first aln to asc
-                        bit(10 + first_aln, ASCII)
-                            + bit(num, Numeric)
-                            + bit(last_aln, AlphaNum)
-                            + bit(10, ASCII),
-                        // 3: lower last aln to asc
-                        bit(10, ASCII)
-                            + bit(first_aln, AlphaNum)
-                            + bit(num, Numeric)
-                            + bit(last_aln + 10, ASCII),
-                        // 4: lower both aln to asc
-                        bit(10 + first_aln, ASCII) + bit(num, Numeric) + bit(last_aln + 10, ASCII),
-                        // 5: all asc
-                        bit(10 + first_aln + num + last_aln + 10, ASCII),
-                    ];
+            for first_aln in 0..limit {
+                for num in 0..limit {
+                    for last_aln in 0..limit {
+                        let solutions = [
+                            // 0: max switching
+                            bit(10, ASCII)
+                                + bit(first_aln, AlphaNum)
+                                + bit(num, Numeric)
+                                + bit(last_aln, AlphaNum)
+                                + bit(10, ASCII),
+                            // 1: lower num to aln
+                            bit(10, ASCII)
+                                + bit(first_aln + num + last_aln, AlphaNum)
+                                + bit(10, ASCII),
+                            // 2: lower first aln to asc
+                            bit(10 + first_aln, ASCII)
+                                + bit(num, Numeric)
+                                + bit(last_aln, AlphaNum)
+                                + bit(10, ASCII),
+                            // 3: lower last aln to asc
+                            bit(10, ASCII)
+                                + bit(first_aln, AlphaNum)
+                                + bit(num, Numeric)
+                                + bit(last_aln + 10, ASCII),
+                            // 4: lower both aln to asc
+                            bit(10 + first_aln, ASCII)
+                                + bit(num, Numeric)
+                                + bit(last_aln + 10, ASCII),
+                            // 5: all asc
+                            bit(10 + first_aln + num + last_aln + 10, ASCII),
+                        ];
 
-                    let i = 1;
-                    let best = match i {
-                        0 => "",
-                        _ => todo!(),
+                        let mut best_index = 0;
+                        let mut lowest_cost = usize::MAX;
+
+                        for (i, cost) in solutions.into_iter().enumerate() {
+                            if cost < lowest_cost {
+                                lowest_cost = cost;
+                                best_index = i;
+                            }
+                        }
+
+                        scores[best_index] += 1;
                     }
-                    .to_string();
                 }
             }
+
+            let scores: Vec<f32> = scores
+                .into_iter()
+                .map(|x| x as f32 / (limit.pow(3) as f32))
+                .collect();
+            println!("class {}: {:?}", class, scores);
         }
     }
 }
