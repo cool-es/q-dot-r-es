@@ -351,6 +351,38 @@ fn optimize_mode(input: String) -> Vec<(Mode, usize)> {
         }
     });
 
+    /*
+    flipping between modes:
+
+        num              _______     __
+        aln        _____/       \   /  \____
+        asc  _____/              \_/        \_____
+
+    if switching to num isn't worth it, can i regard the "underlying"
+    alphanumeric sequence ignoring numerals? i.e., will switching once
+    always be more "worth it" than switching twice, no matter what?
+    is that a transitive property?
+
+    idea: check when switching to num is worth it, "flatten" the "peaks"
+    that aren't (into alphanumeric), then analyze it again
+
+    in this scenario:
+
+        num          _______
+        aln        _/
+        asc  _____/
+
+    the num section is intuitively "worth it" (by what metric?), so
+    the aln character needs to be converted "down" to ascii
+
+    actually unsure: under what circumstances are asc-asc-num solutions
+    preferable to asc-aln-aln?? and at what point is asc-aln-num worth it?
+    is there a way to just brute-force solutions instead of solving this?
+
+
+    if a num section is neighbored by
+    */
+
     // save run lengths in a vector
     let mut mode_run_lengths: Vec<(usize, usize)> = Vec::new();
 
@@ -449,6 +481,69 @@ fn bit_cost(count: usize, class: usize, mode: Mode) -> usize {
         AlphaNum => 4 + [9, 11, 13][class] + 11 * (count / 2) + 6 * (count % 2),
         ASCII => 4 + [8, 16, 16][class] + 8 * count,
         Kanji => todo!("refer to kanji bit information"),
+    }
+}
+
+// not sure what to call this function...
+// runs through every possible solution
+// to the scenario below
+pub(crate) fn mode_switch_brute_force_analysis() {
+    /*
+    testing this scenario:
+
+        num              _______
+        aln        _____/       \_____
+        asc  _____/                   \______
+
+    the possible solutions are:
+    0. asc - aln - num - aln - asc     max switching
+    1. asc - aln      ...    - asc     lower num to aln
+    2. asc ...   - num - aln - asc     lower first aln to asc
+    3. asc - aln - num - asc ...       lower last aln to asc
+    4. asc ...   - num - asc ...       lower both aln to asc
+    5. asc                   ...       all asc
+    */
+
+    for class in 0..3 {
+        for first_aln in 0..20 {
+            for num in 0..20 {
+                for last_aln in 0..20 {
+                    let bit = |count, mode| bit_cost(count, class, mode);
+
+                    let solutions = [
+                        // 0: max switching
+                        bit(10, ASCII)
+                            + bit(first_aln, AlphaNum)
+                            + bit(num, Numeric)
+                            + bit(last_aln, AlphaNum)
+                            + bit(10, ASCII),
+                        // 1: lower num to aln
+                        bit(10, ASCII) + bit(first_aln + num + last_aln, AlphaNum) + bit(10, ASCII),
+                        // 2: lower first aln to asc
+                        bit(10 + first_aln, ASCII)
+                            + bit(num, Numeric)
+                            + bit(last_aln, AlphaNum)
+                            + bit(10, ASCII),
+                        // 3: lower last aln to asc
+                        bit(10, ASCII)
+                            + bit(first_aln, AlphaNum)
+                            + bit(num, Numeric)
+                            + bit(last_aln + 10, ASCII),
+                        // 4: lower both aln to asc
+                        bit(10 + first_aln, ASCII) + bit(num, Numeric) + bit(last_aln + 10, ASCII),
+                        // 5: all asc
+                        bit(10 + first_aln + num + last_aln + 10, ASCII),
+                    ];
+
+                    let i = 1;
+                    let best = match i {
+                        0 => "",
+                        _ => todo!(),
+                    }
+                    .to_string();
+                }
+            }
+        }
     }
 }
 
