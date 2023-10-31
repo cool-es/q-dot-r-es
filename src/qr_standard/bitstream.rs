@@ -340,18 +340,24 @@ fn optimize_mode(input: String) -> Vec<(Mode, usize)> {
     // version implies economy implies data size implies version.
     // maybe just calculate all three and decide afterwards which one is best?
 
-    // mark characters in input
-    let mut char_modes = input
-        .chars()
-        .map(|x| char_status(x).expect("optimize_mode: invalid character in input"));
+    // mark characters in input based on whether they're part of the
+    // alphanumeric set (left bit) and numeric set (right bit)
+    let mut char_modes = input.chars().map(|x| {
+        match char_status(x).expect("optimize_mode: invalid character in input") {
+            ASCII => 0b00,
+            AlphaNum => 0b10,
+            Numeric => 0b11,
+            _ => todo!(),
+        }
+    });
 
     // save run lengths in a vector
-    let mut mode_run_lengths: Vec<(Mode, usize)> = Vec::new();
+    let mut mode_run_lengths: Vec<(usize, usize)> = Vec::new();
 
     // mode of the first character
-    let (mut run_mode, mut run_count): (Mode, usize) = (
+    let (mut run_mode, mut run_count): (usize, usize) = (
         if let Some(mode) = char_modes.next() {
-            mode
+            todo!("sort out a solution for this")
         } else {
             // the input was an empty string
             // we return an empty vector
@@ -384,48 +390,48 @@ fn optimize_mode(input: String) -> Vec<(Mode, usize)> {
         // compare the current mode with the next one, to decide if
         // the current mode should actually be replaced with the next
         let mut mut_mode_runs = mode_run_lengths.clone();
-        for (i, &(this_mode, this_run)) in mode_run_lengths.iter().enumerate() {
+        for (i, &(right_mode, right_run)) in mode_run_lengths.iter().enumerate().rev() {
             // we're taking the next mode from the original vector instead of
             // its clone, to avoid borrow issues. this isn't a problem, since
             // we're only looking forward, at entries we couldn't have gone over yet
-            let next_mode = if let Some(&(mode, _)) = mode_run_lengths.get(i + 1) {
-                mode
+            let (left_mode, left_run) = if let Some(&item) = mode_run_lengths.get(i - 1) {
+                item
             } else {
                 // there are no more modes after this,
                 // so no more analysis to be done
                 break;
             };
 
-            // is this mode ⊂ the next mode? it's time to do data analysis.
-            let heuristic: usize = match (this_mode, next_mode) {
-                (AlphaNum, ASCII) => aln_to_asc,
-                (Numeric, ASCII) => num_to_asc,
-                (Numeric, AlphaNum) => num_to_aln,
-                _ => {
-                    // our current mode is a superset of the next,
-                    // and we can't convert it "downwards"
+            // // is this mode ⊂ the next mode? it's time to do data analysis.
+            // let heuristic: usize = match (right_mode, left_mode) {
+            //     (AlphaNum, ASCII) => aln_to_asc,
+            //     (Numeric, ASCII) => num_to_asc,
+            //     (Numeric, AlphaNum) => num_to_aln,
+            //     _ => {
+            //         // our current mode is a superset of the next,
+            //         // and we can't convert it "downwards"
 
-                    // double checking to make sure that the data isn't bad
-                    assert!(
-                        this_mode != next_mode,
-                        "optimize_mode: consecutive modes of the same type"
-                    );
+            //         // double checking to make sure that the data isn't bad
+            //         assert!(
+            //             right_mode != left_mode,
+            //             "optimize_mode: consecutive modes of the same type"
+            //         );
 
-                    continue;
-                }
-            };
+            //         continue;
+            //     }
+            // };
 
-            if this_run < heuristic {
-                // too few characters to motivate switching to the current mode
+            // if right_run < heuristic {
+            //     // too few characters to motivate switching to the current mode
 
-                // what in the world do i do if i have a single number,
-                // followed by a single alphanumeric character, and then ascii??
-                // how would i handle that? am i better off using .windows()
-                // than just looking ahead to the next mode? should i
-                // actually be looking at run lengths to begin with???
+            //     // what in the world do i do if i have a single number,
+            //     // followed by a single alphanumeric character, and then ascii??
+            //     // how would i handle that? am i better off using .windows()
+            //     // than just looking ahead to the next mode? should i
+            //     // actually be looking at run lengths to begin with???
 
-                mut_mode_runs[i] = (next_mode, this_run);
-            }
+            //     mut_mode_runs[i] = (left_mode, right_run);
+            // }
         }
 
         todo!("do something with mut_mode_runs here before it's dropped")
