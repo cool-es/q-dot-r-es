@@ -179,61 +179,60 @@ pub fn split_to_blocks_and_encode(poly: &Polynomial, info: VersionBlockInfo) -> 
 }
 
 pub fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstream {
-    let info = get_block_info(version, level);
-    let (bc, cw, dcw, opt) = info;
-    let ec_cw = cw - dcw;
-    let max_dcw = if let Some((_, _, dcw2)) = opt {
-        dcw2
-    } else {
-        dcw
-    };
-    let total_dcw = if let Some((bc2, _, dcw2)) = opt {
-        bc * dcw + bc2 * dcw2
-    } else {
-        bc * dcw
-    };
+    let block_info = get_block_info(version, level);
+    let (block_count, codewords, data_codewords, optional) = block_info;
+    let ec_codewords = codewords - data_codewords;
+    let (max_data_codewords, total_data_codewords) =
+        if let Some((block_count_2, _, data_codewords_2)) = optional {
+            (
+                data_codewords_2,
+                block_count * data_codewords + block_count_2 * data_codewords_2,
+            )
+        } else {
+            (data_codewords, block_count * data_codewords)
+        };
 
     let padded_stream = {
         let mut stream_copy = stream.clone();
-        pad_to(total_dcw, &mut stream_copy);
+        pad_to(total_data_codewords, &mut stream_copy);
         stream_copy
     };
 
-    let poly = badstream_to_polynomial(&padded_stream);
-    let polys = split_to_blocks_and_encode(&poly, info);
+    // vector of error-corrected polynomial blocks
+    let encoded_poly_vec =
+        split_to_blocks_and_encode(&badstream_to_polynomial(&padded_stream), block_info);
 
-    let mut output = Vec::new();
-    let mut dummy_out = Vec::new();
+    // error_output only serves to display byte data
+    // in case the size-check assert below fails
+    let mut output: Vec<bool> = Vec::new();
+    let mut error_output: Vec<u32> = Vec::new();
 
     // enter data codewords
-    for i in 0..max_dcw {
-        for block in &polys {
-            if i < block.len() - ec_cw {
+    for i in 0..max_data_codewords {
+        for block in &encoded_poly_vec {
+            if i < block.len() - ec_codewords {
                 push_byte(block[i] as u8, &mut output);
-                dummy_out.push(block[i]);
+                error_output.push(block[i]);
             }
         }
     }
 
     assert!(
-        output.len() == 8 * total_dcw,
+        output.len() == 8 * total_data_codewords,
         "full_block_encode(): version {} level {}: number of codewords should be {} but is {}\norig. data {:?}\noutput {:?}",version,level,
-        total_dcw,
+        total_data_codewords,
         output.len() / 8,
-        polys,
-        dummy_out,
+        encoded_poly_vec,
+        error_output,
     );
 
     // enter EC codewords
-    for i in 0..ec_cw {
-        for block in &polys {
-            let offset = block.len() - ec_cw;
+    for i in 0..ec_codewords {
+        for block in &encoded_poly_vec {
+            let offset = block.len() - ec_codewords;
             push_byte(block[offset + i] as u8, &mut output);
         }
     }
-
-    // assert!(output.len() == )
-
     output
 }
 
@@ -285,7 +284,7 @@ pub(crate) fn make_qr(
     let mask = if let Some(mask) = mask_choice {
         mask
     } else {
-        choose_best_mask(&bitmap)
+        choose_best_mask(&bitmap, version, level)
     };
     apply_mask(&mut bitmap, version, level, mask);
 
@@ -302,15 +301,13 @@ fn apply_mask(bitmap: &mut ImgRowAligned, version: u32, level: u8, mask: u8) {
     bitmap.qr_mask_xor(mask);
 }
 
-// FIXME: this function doesn't apply the format codes,
-// so its output is actually incorrect (not sure by how much)
-pub fn choose_best_mask(bitmap: &ImgRowAligned) -> u8 {
+pub fn choose_best_mask(bitmap: &ImgRowAligned, version: u32, level: u8) -> u8 {
     let mut best: ImgRowAligned;
     let (mut best, mut penalty) = (u8::MAX, u32::MAX);
     for mask in 0..=7 {
         let pen = {
             let mut clone = bitmap.clone();
-            clone.qr_mask_xor(mask);
+            apply_mask(&mut clone, version, level, mask);
             clone.qr_penalty()
         };
         if pen < penalty {

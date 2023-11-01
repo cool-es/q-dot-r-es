@@ -9,6 +9,7 @@
 • write "naive" functions hidden from the user that don't excessively check their inputs
     e.g., how many times is bad_version() called, and how many times does it actually need to be?
 • add comments and documentation so it's readable to others
+• improve efficiency of "choose best mask" function
 • restructure code to be divided into logical sections:
     data conversion
         badstream type + operations
