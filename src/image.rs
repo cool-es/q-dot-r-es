@@ -1,2 +1,2 @@
 mod rowaligned;
-pub use rowaligned::*;
+pub(crate) use rowaligned::*;

@@ -1,6 +1,6 @@
 // image format with gaps in its byte data: start of rows are byte aligned
 #[derive(Clone)]
-pub struct ImgRowAligned {
+pub(crate) struct ImgRowAligned {
     // width, height fields are private so that they can't be mutated
     width: usize,
     height: usize,
@@ -8,7 +8,7 @@ pub struct ImgRowAligned {
 }
 
 impl ImgRowAligned {
-    pub fn mask_set(&mut self, pattern: &ImgRowAligned, mask: &ImgRowAligned) {
+    pub(crate) fn mask_set(&mut self, pattern: &ImgRowAligned, mask: &ImgRowAligned) {
         if self.dims() != pattern.dims() || self.dims() != mask.dims() {
             // size mismatch
             panic!()
@@ -24,7 +24,7 @@ impl ImgRowAligned {
         }
     }
 
-    pub fn invert(&mut self) {
+    pub(crate) fn invert(&mut self) {
         // note that this doesn't leave inaccessible bits as 0, so you can't generally rely on that being true
         for i in 0..self.bits.len() {
             self.bits[i] ^= 0xff;
@@ -33,7 +33,7 @@ impl ImgRowAligned {
 
     // same as previous function but with (incomplete) error handling
     // the code here isn't great but it's passable
-    pub fn from_xbm(input: &str) -> Result<Self, &str> {
+    pub(crate) fn from_xbm(input: &str) -> Result<Self, &str> {
         // note that XBM uses reverse byte order (leftmost pixel is the 2^0 bit)
 
         //split at the start of the byte data
@@ -83,7 +83,7 @@ impl ImgRowAligned {
     }
 
     // the curly brackets here really mess with my syntax highlighting... but the code itself is correct
-    pub fn as_xbm(&self, name: &str) -> String {
+    pub(crate) fn as_xbm(&self, name: &str) -> String {
         let mut output = format!(
             "#define {}_width {}\n#define {}_height {}\n",
             name, self.width, name, self.height
@@ -105,7 +105,7 @@ impl ImgRowAligned {
     }
 
     // as_xbm but with an added 8px quiet-zone border on all sides
-    pub fn as_xbm_border(&self, name: &str) -> String {
+    pub(crate) fn as_xbm_border(&self, name: &str) -> String {
         assert!(
             name.is_ascii() && !name.contains(char::is_whitespace),
             "name must be ascii and cannot contain whitespace"

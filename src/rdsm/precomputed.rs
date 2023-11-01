@@ -1,11 +1,11 @@
 use super::*;
 
-pub fn _print_exp_log_tables() {
+pub(crate) fn _print_exp_log_tables() {
     let mut lookup_tables = BLANK_EXP_LOG_LUTS;
     generate_exp_log_tables(&mut lookup_tables);
 
     print!(
-        "pub const QR_EXP_LOG_TABLE: ExpLogLUTs = ([\n// {} values of usize -> element\n",
+        "pub(crate) const QR_EXP_LOG_TABLE: ExpLogLUTs = ([\n// {} values of usize -> element\n",
         lookup_tables.0.len()
     );
     for x in 0..lookup_tables.0.len() {
@@ -22,7 +22,7 @@ pub fn _print_exp_log_tables() {
     println!("]);");
 }
 
-pub fn _print_exp_log_tables_inline() {
+pub(crate) fn _print_exp_log_tables_inline() {
     let (mut exp, mut log): ExpLogLUTs = ([0; EXPVALUES], [0; LOGVALUES]);
     let mut x: Element = 1;
 
@@ -33,7 +33,7 @@ pub fn _print_exp_log_tables_inline() {
     }
 
     print!(
-        "pub const QR_EXP_LOG_TABLE: ExpLogLUTs = ([\n// {} values of usize -> element\n",
+        "pub(crate) const QR_EXP_LOG_TABLE: ExpLogLUTs = ([\n// {} values of usize -> element\n",
         exp.len()
     );
     for n in &exp {
@@ -47,7 +47,7 @@ pub fn _print_exp_log_tables_inline() {
     println!("]);");
 }
 
-pub const QR_EXP_LOG_TABLE: ExpLogLUTs = (
+pub(crate) const QR_EXP_LOG_TABLE: ExpLogLUTs = (
     [
         // 255 values of usize -> element
         0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1D, 0x3A, 0x74, 0xE8, 0xCD, 0x87, 0x13,
@@ -93,7 +93,7 @@ pub const QR_EXP_LOG_TABLE: ExpLogLUTs = (
 // all possible reed-solomon generator polynomials in use in QR codes
 // values from tables.rs > ERROR_CORRECTION_CODEWORDS
 // values coincide with the standards doc
-pub const RDSM_GENERATOR_POLYNOMIALS: [&[Element]; 31] = [
+pub(crate) const RDSM_GENERATOR_POLYNOMIALS: [&[Element]; 31] = [
     &[0x01, 0x7F, 0x7A, 0x9A, 0xA4, 0x0B, 0x44, 0x75],
     &[
         0x01, 0xD8, 0xC2, 0x9F, 0x6F, 0xC7, 0x5E, 0x5F, 0x71, 0x9D, 0xC1,

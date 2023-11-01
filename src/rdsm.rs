@@ -6,7 +6,7 @@ mod galois;
 mod polynomials;
 mod precomputed;
 
-pub use galois::*;
-pub use polynomials::*;
-pub use precomputed::*;
+pub(crate) use galois::*;
+pub(crate) use polynomials::*;
+pub(crate) use precomputed::*;
 // use precomputed::PC_EXP_LOG_TABLE;

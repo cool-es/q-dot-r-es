@@ -244,7 +244,7 @@ pub(super) fn find_best_version(data: &Vec<Token>, level: u8) -> Result<u32, Str
     ))
 }
 
-pub fn compute_bit_hypothetical() {
+pub(crate) fn compute_bit_hypothetical() {
     let modes = [ASCII, AlphaNum, Numeric];
     for (i, a) in [1, 10, 27].into_iter().enumerate() {
         println!("class {} (version {}..):", i + 1, a);

@@ -169,7 +169,7 @@ fn export_one_of_every_single_variant_to_folder() -> std::io::Result<()> {
 }
 
 fn generate_codeword_table() {
-    print!("pub const DATA_CODEWORDS:[[u32;40];4]=[");
+    print!("pub(crate) const DATA_CODEWORDS:[[u32;40];4]=[");
     for level in 0..=3 {
         print!("[");
         for version in 1..=40 {
@@ -1004,7 +1004,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_gf() {
+    fn test_gf() {
         /*
             >>> a = 0b10001001
             >>> b = 0b00101010

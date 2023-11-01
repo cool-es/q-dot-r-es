@@ -14,7 +14,7 @@ fn bad_version(version: u32) -> bool {
 
 // returns the standard sizes for qr code symbols, indexed by version number
 // 21*21, 25*25, ..., 177*177
-pub fn version_to_size(version: u32) -> Option<u32> {
+pub(crate) fn version_to_size(version: u32) -> Option<u32> {
     if bad_version(version) {
         None
     } else {
@@ -360,7 +360,11 @@ fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize,
 }
 
 // ref. pg. 60
-pub fn get_fcode(input: &ImgRowAligned, version: u32, offset: (usize, usize)) -> Option<u16> {
+pub(crate) fn get_fcode(
+    input: &ImgRowAligned,
+    version: u32,
+    offset: (usize, usize),
+) -> Option<u16> {
     // the coordinates of the top left module; in hellocode, it's (2,2)
     let (ox, oy) = offset;
     let mut output1 = 0;
@@ -387,7 +391,7 @@ pub fn get_fcode(input: &ImgRowAligned, version: u32, offset: (usize, usize)) ->
 }
 
 // returns error correction level and mask pattern (pg. 59)
-pub fn interpret_format(fcode: u16) -> Option<(u8, u8)> {
+pub(crate) fn interpret_format(fcode: u16) -> Option<(u8, u8)> {
     if !crate::rdsm::qr_fcode_is_good(fcode) {
         return None;
     }
@@ -406,7 +410,7 @@ pub fn interpret_format(fcode: u16) -> Option<(u8, u8)> {
     Some((correction, maskpat))
 }
 
-pub fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u16> {
+pub(crate) fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u16> {
     if correction_level > 3 || mask_pattern > 7 {
         return None;
     }
@@ -414,7 +418,7 @@ pub fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u16> {
     crate::rdsm::qr_generate_fcode((correction_level << 3) | mask_pattern)
 }
 
-pub fn set_fcode(input: &mut ImgRowAligned, version: u32, fcode: u16) {
+pub(crate) fn set_fcode(input: &mut ImgRowAligned, version: u32, fcode: u16) {
     let mask = 0b0101_0100_0001_0010u16;
 
     for bit in 0..=14 {
@@ -438,7 +442,7 @@ pub fn set_fcode(input: &mut ImgRowAligned, version: u32, fcode: u16) {
 //     todo!()
 // }
 
-pub fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)> {
+pub(crate) fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)> {
     // naive, slow, and robust implementation of "next data bit"
     // simply zigzag as if the pattern was blank,
     // returning the next valid coord
@@ -509,13 +513,13 @@ fn coord_is_alignment_pattern(x: usize, y: usize, version: u32) -> bool {
 }
 
 #[inline]
-pub fn coord_is_data(x: usize, y: usize, version: u32) -> bool {
+pub(crate) fn coord_is_data(x: usize, y: usize, version: u32) -> bool {
     coord_status(x, y, version).is_some_and(|c| c == 0)
 }
 
 // from 0 to 5:
 // data, position, timing, format, alignment, version, that one bit
-pub fn coord_status(x: usize, y: usize, version: u32) -> Option<u8> {
+pub(crate) fn coord_status(x: usize, y: usize, version: u32) -> Option<u8> {
     if out_of_bounds(x, y, version) {
         return None;
     }
@@ -609,7 +613,7 @@ fn unmask(input: &mut ImgRowAligned) {
     input.qr_mask_xor(mask);
 }
 
-pub fn errc(input: &ImgRowAligned) -> u8 {
+pub(crate) fn errc(input: &ImgRowAligned) -> u8 {
     let version = input.qr_version().unwrap();
     let fcode = get_fcode(input, version, (0, 0)).unwrap();
     interpret_format(fcode).unwrap().1
@@ -647,7 +651,7 @@ fn version_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize
 }
 
 // in the style of set_fcode
-pub fn set_vcode(input: &mut ImgRowAligned, version: u32, vcode: u32) {
+pub(crate) fn set_vcode(input: &mut ImgRowAligned, version: u32, vcode: u32) {
     for bit in 0..=17 {
         let ((x1, y1), (x2, y2)) = version_info_coords(version, bit).expect("bad version");
         let value = vcode & (1 << bit) != 0;

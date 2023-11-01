@@ -42,7 +42,7 @@ pub(super) const AP_COORD_INDICES: [&[usize]; 40] = [
     &[6, 30, 58, 86, 114, 142, 170],
 ];
 
-pub fn alignment_pattern_coords(version: u32) -> Vec<(usize, usize)> {
+pub(crate) fn alignment_pattern_coords(version: u32) -> Vec<(usize, usize)> {
     if !(1..=40).contains(&version) {
         panic!()
     }
@@ -61,21 +61,21 @@ pub fn alignment_pattern_coords(version: u32) -> Vec<(usize, usize)> {
 }
 
 // number of codewords in a given code version
-pub const CODEWORDS: [u32; 40] = [
+pub(crate) const CODEWORDS: [u32; 40] = [
     26, 44, 70, 100, 134, 172, 196, 242, 292, 346, 404, 466, 532, 581, 655, 733, 815, 901, 991,
     1085, 1156, 1258, 1364, 1474, 1588, 1706, 1828, 1921, 2051, 2185, 2323, 2465, 2611, 2761, 2876,
     3034, 3196, 3362, 3532, 3706,
 ];
 
 // the possible amounts of error correction codewords, ordered by size
-pub const ERROR_CORRECTION_CODEWORDS: [u32; 31] = [
+pub(crate) const ERROR_CORRECTION_CODEWORDS: [u32; 31] = [
     7, 10, 13, 15, 16, 17, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 40, 42, 44, 46, 48, 50, 52, 54,
     56, 58, 60, 62, 64, 66, 68,
 ];
 
 // reverse-lookup to find the index for precomputed.rs > RDSM_GENERATOR_POLYNOMIALS
 #[inline]
-pub fn find_errc(input: usize) -> Option<usize> {
+pub(crate) fn find_errc(input: usize) -> Option<usize> {
     Some(
         (input
             - match input {
@@ -90,7 +90,7 @@ pub fn find_errc(input: usize) -> Option<usize> {
     )
 }
 
-pub fn find_errc2(input: u32) -> Option<usize> {
+pub(crate) fn find_errc2(input: u32) -> Option<usize> {
     ERROR_CORRECTION_CODEWORDS.iter().position(|&a| a == input)
 }
 
@@ -122,7 +122,7 @@ pub(super) fn find_alphanum(input: char) -> Option<u16> {
     }))
 }
 
-pub fn find_alphanum2(input: char) -> Option<usize> {
+pub(crate) fn find_alphanum2(input: char) -> Option<usize> {
     ALPHANUMERIC_TABLE.iter().position(|&a| a == input)
 }
 
@@ -132,7 +132,7 @@ pub fn find_alphanum2(input: char) -> Option<usize> {
 // 21..=27     4 bits
 // 28..=34     3 bits
 // all other versions 0 bits
-pub fn remainder_bits(version: u32) -> u8 {
+pub(crate) fn remainder_bits(version: u32) -> u8 {
     match version {
         2..=6 => 7,
         14..=20 | 28..=34 => 3,
@@ -141,7 +141,7 @@ pub fn remainder_bits(version: u32) -> u8 {
     }
 }
 
-pub type VersionBlockInfo = (usize, usize, usize, Option<(usize, usize, usize)>);
+pub(crate) type VersionBlockInfo = (usize, usize, usize, Option<(usize, usize, usize)>);
 
 // error correction data (pg. 41...)
 // access with ERROR_CORRECTION_TABLE[version-1][correction level]
@@ -432,7 +432,7 @@ const EC_BLOCK_TABLE: [[VersionBlockInfo; 4]; 40] = [
     ],
 ];
 
-pub fn get_block_info(version: u32, level: u8) -> VersionBlockInfo {
+pub(crate) fn get_block_info(version: u32, level: u8) -> VersionBlockInfo {
     assert!(
         (1..=40).contains(&version) && level < 4,
         "incorrect version request"
@@ -441,7 +441,7 @@ pub fn get_block_info(version: u32, level: u8) -> VersionBlockInfo {
 }
 
 // available data codewords per level and version
-pub const DATA_CODEWORDS: [[usize; 40]; 4] = [
+pub(crate) const DATA_CODEWORDS: [[usize; 40]; 4] = [
     [
         19, 34, 55, 80, 108, 136, 156, 194, 232, 274, 324, 370, 428, 461, 523, 589, 647, 721, 795,
         861, 932, 1006, 1094, 1174, 1276, 1370, 1468, 1531, 1631, 1735, 1843, 1955, 2071, 2191,
@@ -481,7 +481,7 @@ pub const DATA_CODEWORDS: [[usize; 40]; 4] = [
 // ascii-numeric-ascii beats only ascii at 9 characters
 // alphanumeric-numeric-alphanumeric beats only alphanumeric at 17 characters
 // ascii-num-aln beats an immediate switch to aln at 9 characters
-pub const MODE_ECONOMY: [[usize; 4]; 3] = [
+pub(crate) const MODE_ECONOMY: [[usize; 4]; 3] = [
     // asc-aln-asc, asc-num-asc, aln-num-aln, asc-num-aln
     // class 1
     [11, 6, 14, 7],

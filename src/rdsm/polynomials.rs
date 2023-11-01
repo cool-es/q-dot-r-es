@@ -1,14 +1,14 @@
 use super::{galois::*, RDSM_GENERATOR_POLYNOMIALS};
 
 // a polynomial over a galois field, ordered from highest power of x to lowest
-pub type Polynomial = Vec<Element>;
+pub(crate) type Polynomial = Vec<Element>;
 
 // "polynomials" section starts below
 // polynomials are written in descending order:
 // [a, b, c, d] = ax^3 + bx^2 + cx + d
 // (i personally don't think that's a good decision, but)
 
-pub fn polynomial_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
+pub(crate) fn polynomial_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
     let mut output: Polynomial = Vec::new();
     // resize the vector to fit the higher-degree (longer) polynomial
     let (p1_len, p2_len) = (poly1.len(), poly2.len());
@@ -27,7 +27,7 @@ pub fn polynomial_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
 
 // SUPPOSEDLY multiplies two polynomials over a galois field
 // need to dig into this - this seems very fishy
-pub fn polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
+pub(crate) fn polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
     let mut output: Polynomial = vec![0; poly1.len() + poly2.len() - 1];
 
     // since a polynomial's "length" is its degree + 1,
@@ -48,7 +48,7 @@ pub fn polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial
 
 // here's something i came up with...
 // it was simpler in my head.
-pub fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
+pub(crate) fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
     let mut output: Polynomial = Vec::new();
     let (deg1, deg2) = (poly1.len() - 1, poly2.len() - 1);
     output.resize(deg1 + deg2 + 1, 0);
@@ -105,7 +105,7 @@ pub fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynom
 
 // evaluates a polynomial for a specific value of x
 // "based on horner's scheme for maximum efficiency"
-/* pub fn polynomial_evaluate(poly: &Polynomial, x: Element, tables: &ExpLogLUTs) -> Element {
+/* pub(crate) fn polynomial_evaluate(poly: &Polynomial, x: Element, tables: &ExpLogLUTs) -> Element {
     let mut output = poly[0];
     for i in 1..poly.len() {
         output = table_multiply(output, x) ^ poly[i];
@@ -123,7 +123,7 @@ pub fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynom
         return g
 */
 // ec_symbols is the number of error correcting symbols
-pub fn make_rdsm_generator_polynomial(ec_symbols: u32) -> Polynomial {
+pub(crate) fn make_rdsm_generator_polynomial(ec_symbols: u32) -> Polynomial {
     // from what i can tell, the end result here is
     // (x + 1)(x + a)(x + a^2)...(x + a^ec_symbols)
     let mut output: Polynomial = vec![1];
@@ -138,7 +138,7 @@ pub fn make_rdsm_generator_polynomial(ec_symbols: u32) -> Polynomial {
 
 // helper function
 #[inline]
-pub fn length(poly: &Polynomial) -> usize {
+pub(crate) fn length(poly: &Polynomial) -> usize {
     poly.len() - leading_zeroes(poly)
 }
 
@@ -152,7 +152,7 @@ fn leading_zeroes(poly: &Polynomial) -> usize {
     poly.len() - 1
 }
 
-pub fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) -> Polynomial {
+pub(crate) fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) -> Polynomial {
     if divisor[0] == 0 {
         panic!()
     }
@@ -194,7 +194,7 @@ def rs_encode_msg(msg_in, nsym):
     # Return the codeword
     return msg_out
 */
-pub fn encode_message(message: &Polynomial, ec_symbols: u32) -> Polynomial {
+pub(crate) fn encode_message(message: &Polynomial, ec_symbols: u32) -> Polynomial {
     // will only generate codes "manually" if they are not qr standard
     let generator_polynomial: Polynomial = {
         if let Some(index) = crate::qr_standard::find_errc(ec_symbols as usize) {
@@ -212,7 +212,7 @@ pub fn encode_message(message: &Polynomial, ec_symbols: u32) -> Polynomial {
     polynomial_add(&message_padded, &remainder)
 }
 
-pub fn charprint(poly: &Polynomial) {
+pub(crate) fn charprint(poly: &Polynomial) {
     let mut output = String::new();
     for &i in poly {
         let o = i as u8;
@@ -227,7 +227,7 @@ pub fn charprint(poly: &Polynomial) {
     println!("{:?}", output);
 }
 
-pub fn prettyprint(poly: &Polynomial) {
+pub(crate) fn prettyprint(poly: &Polynomial) {
     let superscript = |input: usize| {
         // ¹²³⁴⁵⁶⁷⁸⁹⁰
         let mut output = String::new();
