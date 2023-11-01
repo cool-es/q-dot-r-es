@@ -789,13 +789,13 @@ fn test_format_parsing(path: &str) {
     }
 }
 
-fn debug_print<T: Bitmap>(input: &T) {
+fn debug_print(input: &ImgRowAligned) {
     for y in 0..input.dims().1 {
         println!("{}", debug_print_row(input, y, true).unwrap())
     }
 }
 
-fn debug_print_qr<T: Bitmap>(input: &T) {
+fn debug_print_qr(input: &ImgRowAligned) {
     let throwaway_hack = || {
         for _i in 0..2 {
             for _y in 0..input.dims().1 + 4 {
@@ -812,7 +812,7 @@ fn debug_print_qr<T: Bitmap>(input: &T) {
     throwaway_hack();
 }
 
-fn debug_print_row<T: Bitmap>(input: &T, y: usize, emoji: bool) -> Option<String> {
+fn debug_print_row(input: &ImgRowAligned, y: usize, emoji: bool) -> Option<String> {
     let row = input.get_row(y)?;
     let mut output = String::new();
     for j in (0..input.dims().0).rev() {

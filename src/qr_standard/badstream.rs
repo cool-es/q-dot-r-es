@@ -109,7 +109,7 @@ pub fn polynomial_to_badstream(poly: &Polynomial) -> Badstream {
     stream
 }
 
-pub fn write_badstream_to_bitmap<T: QR>(stream: &Badstream, bitmap: &mut T) {
+pub fn write_badstream_to_bitmap(stream: &Badstream, bitmap: &mut ImgRowAligned) {
     let version = bitmap.qr_version().expect("invalid bitmap size");
     let max = bitmap.dims().0 - 1;
     let (mut x, mut y) = (max, max);

@@ -1,5 +1,3 @@
-use super::{Bitmap, BitmapDebug};
-
 // image format with gaps in its byte data: start of rows are byte aligned
 #[derive(Clone)]
 pub struct ImgRowAligned {
@@ -200,8 +198,8 @@ pub(super) fn index_to_xy(
     Some((x, y))
 }
 
-impl Bitmap for ImgRowAligned {
-    fn new(width: usize, height: usize) -> Self {
+impl ImgRowAligned {
+    pub(crate) fn new(width: usize, height: usize) -> Self {
         let bits: Vec<u8> =
             vec![0; xy_to_index(width - 1, height - 1, width, height).unwrap().0 + 1];
 
@@ -216,11 +214,11 @@ impl Bitmap for ImgRowAligned {
         }
     }
 
-    fn dims(&self) -> (usize, usize) {
+    pub(crate) fn dims(&self) -> (usize, usize) {
         (self.width, self.height)
     }
 
-    fn set_bit(&mut self, x: usize, y: usize, bit: bool) -> bool {
+    pub(crate) fn set_bit(&mut self, x: usize, y: usize, bit: bool) -> bool {
         if let Some((n, i)) = xy_to_index(x, y, self.width, self.height) {
             if bit {
                 // set a 1 (bitwise 'or' w/ 1)
@@ -239,7 +237,7 @@ impl Bitmap for ImgRowAligned {
         }
     }
 
-    fn get_bit(&self, x: usize, y: usize) -> Option<bool> {
+    pub(crate) fn get_bit(&self, x: usize, y: usize) -> Option<bool> {
         if let Some((n, i)) = xy_to_index(x, y, self.width, self.height) {
             Some(((self.bits[n] >> i) & 1) == 1)
         } else {
@@ -247,7 +245,7 @@ impl Bitmap for ImgRowAligned {
         }
     }
 
-    fn get_row(&self, y: usize) -> Option<u128> {
+    pub(crate) fn get_row(&self, y: usize) -> Option<u128> {
         if y >= self.height {
             return None;
         }
@@ -264,20 +262,24 @@ impl Bitmap for ImgRowAligned {
     }
 }
 
-impl BitmapDebug for ImgRowAligned {
-    fn debug_bits(&self) -> &Vec<u8> {
+impl ImgRowAligned {
+    pub(crate) fn debug_bits(&self) -> &Vec<u8> {
         &self.bits
     }
 
-    fn debug_bits_mut(&mut self) -> &mut Vec<u8> {
+    pub(crate) fn debug_bits_mut(&mut self) -> &mut Vec<u8> {
         &mut self.bits
     }
 
-    fn debug_index_to_xy(&self, vec_index: usize, bit_index: u8) -> Option<(usize, usize)> {
+    pub(crate) fn debug_index_to_xy(
+        &self,
+        vec_index: usize,
+        bit_index: u8,
+    ) -> Option<(usize, usize)> {
         index_to_xy(vec_index, bit_index, self.width, self.height)
     }
 
-    fn debug_xy_to_index(&self, x: usize, y: usize) -> Option<(usize, u8)> {
+    pub(crate) fn debug_xy_to_index(&self, x: usize, y: usize) -> Option<(usize, u8)> {
         xy_to_index(x, y, self.width, self.height)
     }
 }
