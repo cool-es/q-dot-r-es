@@ -33,31 +33,6 @@ impl ImgRowAligned {
         }
     }
 
-    pub fn make_continuous(self) -> super::continuous::Img {
-        let (width, height) = self.dims();
-        if self.width % 8 == 0 {
-            // nothing needs to be done
-            // note that the fields match up but the types don't!
-            return super::continuous::Img {
-                width,
-                height,
-                bits: self.bits,
-            };
-        }
-
-        //  really awful implementation here, but,
-        let mut output = super::continuous::Img::new(width, height);
-
-        for y in 0..self.height {
-            let row = self.get_row(y).unwrap();
-            for x in 0..self.width {
-                output.set_bit(x, y, (row >> (width - (x + 1))) & 1 == 1);
-            }
-        }
-
-        output
-    }
-
     // same as previous function but with (incomplete) error handling
     // the code here isn't great but it's passable
     pub fn from_xbm(input: &str) -> Result<Self, &str> {
@@ -186,12 +161,6 @@ impl ImgRowAligned {
             name,
             nicedata,
         )
-    }
-}
-
-impl From<super::continuous::Img> for ImgRowAligned {
-    fn from(value: super::continuous::Img) -> Self {
-        value.make_rowaligned()
     }
 }
 

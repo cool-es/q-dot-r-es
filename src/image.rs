@@ -1,7 +1,4 @@
-mod continuous;
 mod rowaligned;
-
-pub use continuous::*;
 pub use rowaligned::*;
 
 // workaround i got from That Website... feels unintentional

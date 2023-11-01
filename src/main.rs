@@ -441,7 +441,7 @@ fn compare_mask_to_isdata() {
 
 fn full_squiggle_test() {
     let mut coordpairs = [[0; 256]; 256];
-    let mut a = Img::new(21, 21);
+    let mut a = ImgRowAligned::new(21, 21);
     let (mut cx, mut cy) = (20, 20);
     a.invert();
     for _i in 0..(8 * 28) {

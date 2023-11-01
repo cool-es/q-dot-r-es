@@ -60,32 +60,6 @@ fn out_of_bounds(x: usize, y: usize, version: u32) -> bool {
     }
 }
 
-// Img methods pertaining to the qr standard specifically
-impl QR for image::Img {
-    fn qr_mask_xor(&mut self, pattern: u8) {
-        qr_mask_xor(self, pattern)
-    }
-    fn qr_penalty(&self) -> u32 {
-        penalties::total_penalty(self)
-    }
-    fn qr_version(&self) -> Option<u32> {
-        use image::*;
-
-        let (x, y) = self.dims();
-        if x != y {
-            None
-        } else {
-            size_to_version(x)
-        }
-    }
-    fn new_blank_qr(version: u32) -> Self {
-        new_blank_qr_code(version)
-    }
-    fn unmask(&mut self) {
-        unmask(self);
-    }
-}
-
 // ImgRowAligned methods, ditto
 impl QR for image::ImgRowAligned {
     fn qr_mask_xor(&mut self, pattern: u8) {
