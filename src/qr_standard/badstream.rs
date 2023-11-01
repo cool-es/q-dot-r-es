@@ -144,7 +144,7 @@ pub fn split_to_blocks_and_encode(poly: &Polynomial, info: VersionBlockInfo) -> 
     // check to make sure poly will split evenly
     assert!(
         poly.len() == dcw * bc + dcw2 * bc2,
-        "could not split to blocks - stream is {} codewords but alotted space is {}\nversion info: {:?}",
+        "could not split to blocks - stream is {} codewords but allotted space is {}\nversion info: {:?}",
         poly.len(),
         dcw * bc + dcw2 * bc2,
         info
