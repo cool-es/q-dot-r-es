@@ -728,7 +728,7 @@ mod tests {
     #[test]
     fn penalty_get_check() {
         let string = "testing, testing...".to_string();
-        let pic = make_qr(vec![(ASCII, string)], Some(40), None, None);
+        let pic = make_qr(QRInput::Manual(vec![(ASCII, string)]), Some(40), None, None);
 
         let width = pic.dims().0;
         let input = &pic;

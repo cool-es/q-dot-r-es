@@ -237,13 +237,23 @@ pub fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstre
     output
 }
 
+// container to hold input data based on if it's mode-switched or not
+#[derive(Clone, Debug)]
+pub(crate) enum QRInput {
+    Auto(String),
+    Manual(Vec<(Mode, String)>),
+}
+
 pub(crate) fn make_qr(
-    mode_data: Vec<(Mode, String)>,
+    input: QRInput,
     version_choice: Option<u32>,
     level_choice: Option<u8>,
     mask_choice: Option<u8>,
 ) -> ImgRowAligned {
-    let tokens = make_token_stream(mode_data);
+    let tokens = make_token_stream(match input {
+        QRInput::Auto(str) => auto_mode_switch(str),
+        QRInput::Manual(vec) => vec,
+    });
 
     let level = level_choice.unwrap_or(2);
     let best_ver = find_best_version(&tokens, level).expect("make_qr()");

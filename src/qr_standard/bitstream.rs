@@ -434,6 +434,12 @@ fn optimize_mode(input: String) -> Vec<(Mode, usize)> {
     todo!("not finished")
 }
 
+// plan: follow the qr standard's example implementation of mode switching
+pub(crate) fn auto_mode_switch(input: String) -> Vec<(Mode, String)> {
+    // being lazy for now!
+    vec![(ASCII, input)]
+}
+
 // verified accurate
 // returns the number of bits it takes to print `count` characters
 // in a given mode and size class of qr code

@@ -115,7 +115,13 @@ fn main_qr_generator() -> std::io::Result<()> {
     }
 
     let name = name.unwrap_or("out".to_string());
-    let output = make_qr(mode_data, version_choice, level_choice, mask_choice).as_xbm_border(&name);
+    let output = make_qr(
+        QRInput::Manual(mode_data),
+        version_choice,
+        level_choice,
+        mask_choice,
+    )
+    .as_xbm_border(&name);
     std::fs::write(format!("{}.xbm", name), output)?;
     Ok(())
 }
@@ -140,8 +146,13 @@ fn export_one_of_every_single_variant_to_folder() -> std::io::Result<()> {
                 version,
                 "abcd".chars().collect::<Vec<_>>()[level as usize]
             );
-            let output = make_qr(mode_data, Some(version), Some(level), Some(mask % 8))
-                .as_xbm_border(name.as_str());
+            let output = make_qr(
+                QRInput::Manual(mode_data),
+                Some(version),
+                Some(level),
+                Some(mask % 8),
+            )
+            .as_xbm_border(name.as_str());
             std::fs::write(format!("./animation/{}.xbm", name), output)?;
             print!("{} length {}; ", name, len);
             mask += 1;

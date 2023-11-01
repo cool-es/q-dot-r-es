@@ -465,7 +465,7 @@ pub const DATA_CODEWORDS: [[usize; 40]; 4] = [
 ];
 
 // i think something's wrong with this chart...
-// 
+//
 // class 1 (version 1..):
 // ascii-alphanumeric-ascii beats only ascii at 11 characters
 // ascii-numeric-ascii beats only ascii at 6 characters
