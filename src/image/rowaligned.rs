@@ -77,7 +77,6 @@ impl ImgRowAligned {
                 Err("dimension lines not starting with #define")
             }
         });
-        // .map(|x| Some(x.split_whitespace().rev().next()?.parse::<usize>().ok()?));
 
         let width = dimensions.next().ok_or("width failed to parse")??;
         let height = dimensions.next().ok_or("height failed to parse")??;
@@ -86,13 +85,7 @@ impl ImgRowAligned {
 
         // remove whitespace, remove final bracket (returns None if unsuccessful),
         // unwrap or use the aforementioned value, split on commas
-        for byte in bytes
-            .trim()
-            // .strip_suffix("};")
-            // .unwrap_or(bytes.trim())
-            // .split(", ")
-            .split(|x| !char::is_alphanumeric(x))
-        {
+        for byte in bytes.trim().split(|x| !char::is_alphanumeric(x)) {
             if !byte.is_empty() {
                 bits.push(
                     {
@@ -108,15 +101,6 @@ impl ImgRowAligned {
                 );
             }
         }
-
-        /* bytes
-        .trim()
-        .split(|x| !char::is_alphanumeric(x))
-        .map(|byte| {
-            if byte.len() != 0 {
-                (bits.push(byte.trim().parse::<u8>().map_err(|_| "wuh")?.reverse_bits()));
-            }
-        }); */
 
         Ok(ImgRowAligned {
             width,
@@ -144,7 +128,6 @@ impl ImgRowAligned {
                 output.push_str("\n};\n");
             }
         }
-        // output.push_str(format!("// run with:\n// cargo r -q > {}.xbm\n",name).as_str());
         output
     }
 
@@ -224,7 +207,6 @@ pub(super) fn xy_to_index(x: usize, y: usize, w: usize, h: usize) -> Option<(usi
     }
 
     let row_bytes = w.div_ceil(8);
-
     let n = y * row_bytes + x / 8;
 
     // highest bit index is to the left

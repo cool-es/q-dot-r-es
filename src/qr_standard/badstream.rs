@@ -276,8 +276,8 @@ pub(crate) fn make_qr(
         best_ver
     };
 
-    let stream: &mut Badstream = &mut tokens_to_badstream(tokens, version);
-    let shuffled_stream = full_block_encode(stream, version, level);
+    let shuffled_stream = full_block_encode(&tokens_to_badstream(tokens, version), version, level);
+
     let mut bitmap = ImgRowAligned::new_blank_qr(version);
 
     write_badstream_to_bitmap(&shuffled_stream, &mut bitmap);

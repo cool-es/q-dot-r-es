@@ -1,6 +1,3 @@
-// work in progress, suppressing warnings
-#![allow(unused_variables)]
-
 use super::*;
 use Mode::*;
 use Token::*;
@@ -331,6 +328,7 @@ fn is_numeric(x: char) -> bool {
     x.is_ascii_digit()
 }
 
+#[allow(unused_variables, unreachable_code, unused_mut)]
 fn optimize_mode(input: String) -> Vec<(Mode, usize)> {
     // all right, so, how do i want to do this?
     // the plan is to mark all characters with their mode,
