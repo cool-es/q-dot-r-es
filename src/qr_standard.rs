@@ -7,17 +7,6 @@ pub(crate) use bitstream::*;
 mod badstream;
 pub(crate) use badstream::*;
 
-pub trait QR: Bitmap {
-    fn qr_mask_xor(&mut self, pattern: u8);
-    fn qr_penalty(&self) -> u32;
-    fn qr_version(&self) -> Option<u32>;
-    fn new_blank_qr(version: u32) -> Self;
-    fn unmask(&mut self);
-    fn is_valid_size(&self) -> bool {
-        self.qr_version().is_some()
-    }
-}
-
 #[inline]
 fn bad_version(version: u32) -> bool {
     !(1..=40).contains(&version)
