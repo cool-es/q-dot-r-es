@@ -6,7 +6,6 @@
 • check to see if arbitrary data is possible (emoji, etc)
 • clean up code (remove the allow(dead_code))
 • add stats printing (version, bit count, etc)
-• add support for piping in text from other sources - use std::io::Stdin
 • write "naive" functions hidden from the user that don't excessively check their inputs
     e.g., how many times is bad_version() called, and how many times does it actually need to be?
 • add comments and documentation so it's readable to others

@@ -114,14 +114,18 @@ fn main_qr_generator() -> std::io::Result<()> {
         assert!((0..=7).contains(&m), "mask must be one of 0, ..., 7");
     }
 
+    let input = if mode_data.is_empty() {
+        // if no manual mode data has been read from the arguments,
+        // we get unprocessed data from stdin instead
+        let mut input_string = String::new();
+        std::io::stdin().read_line(&mut input_string)?;
+        QRInput::Auto(input_string)
+    } else {
+        QRInput::Manual(mode_data)
+    };
+
     let name = name.unwrap_or("out".to_string());
-    let output = make_qr(
-        QRInput::Manual(mode_data),
-        version_choice,
-        level_choice,
-        mask_choice,
-    )
-    .as_xbm_border(&name);
+    let output = make_qr(input, version_choice, level_choice, mask_choice).as_xbm_border(&name);
     std::fs::write(format!("{}.xbm", name), output)?;
     Ok(())
 }
