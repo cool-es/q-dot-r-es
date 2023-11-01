@@ -340,18 +340,56 @@ fn optimize_mode(input: String) -> Vec<(Mode, usize)> {
     // version implies economy implies data size implies version.
     // maybe just calculate all three and decide afterwards which one is best?
 
-    // mark characters in input
-    let mut char_modes = input
-        .chars()
-        .map(|x| char_status(x).expect("optimize_mode: invalid character in input"));
+    // mark characters in input based on whether they're part of the
+    // alphanumeric set (left bit) and numeric set (right bit)
+    let mut char_modes = input.chars().map(|x| {
+        match char_status(x).expect("optimize_mode: invalid character in input") {
+            ASCII => 0b00,
+            AlphaNum => 0b10,
+            Numeric => 0b11,
+            _ => todo!(),
+        }
+    });
+
+    /*
+    flipping between modes:
+
+        num              _______     __
+        aln        _____/       \   /  \____
+        asc  _____/              \_/        \_____
+
+    if switching to num isn't worth it, can i regard the "underlying"
+    alphanumeric sequence ignoring numerals? i.e., will switching once
+    always be more "worth it" than switching twice, no matter what?
+    is that a transitive property?
+
+    idea: check when switching to num is worth it, "flatten" the "peaks"
+    that aren't (into alphanumeric), then analyze it again
+
+    in this scenario:
+
+        num          _______
+        aln        _/
+        asc  _____/
+
+    the num section is intuitively "worth it" (by what metric?), so
+    the aln character needs to be converted "down" to ascii
+
+    actually unsure: under what circumstances are asc-asc-num solutions
+    preferable to asc-aln-aln?? and at what point is asc-aln-num worth it?
+    is there a way to just brute-force solutions instead of solving this?
+
+
+    if a num section is neighbored by
+    */
 
     // save run lengths in a vector
-    let mut mode_run_lengths: Vec<(Mode, usize)> = Vec::new();
+    let mut mode_run_lengths: Vec<(usize, usize)> = Vec::new();
 
     // mode of the first character
-    let (mut run_mode, mut run_count): (Mode, usize) = (
+    let (mut run_mode, mut run_count): (usize, usize) = (
         if let Some(mode) = char_modes.next() {
-            mode
+            todo!("sort out a solution for this")
         } else {
             // the input was an empty string
             // we return an empty vector
@@ -384,48 +422,48 @@ fn optimize_mode(input: String) -> Vec<(Mode, usize)> {
         // compare the current mode with the next one, to decide if
         // the current mode should actually be replaced with the next
         let mut mut_mode_runs = mode_run_lengths.clone();
-        for (i, &(this_mode, this_run)) in mode_run_lengths.iter().enumerate() {
+        for (i, &(right_mode, right_run)) in mode_run_lengths.iter().enumerate().rev() {
             // we're taking the next mode from the original vector instead of
             // its clone, to avoid borrow issues. this isn't a problem, since
             // we're only looking forward, at entries we couldn't have gone over yet
-            let next_mode = if let Some(&(mode, _)) = mode_run_lengths.get(i + 1) {
-                mode
+            let (left_mode, left_run) = if let Some(&item) = mode_run_lengths.get(i - 1) {
+                item
             } else {
                 // there are no more modes after this,
                 // so no more analysis to be done
                 break;
             };
 
-            // is this mode ⊂ the next mode? it's time to do data analysis.
-            let heuristic: usize = match (this_mode, next_mode) {
-                (AlphaNum, ASCII) => aln_to_asc,
-                (Numeric, ASCII) => num_to_asc,
-                (Numeric, AlphaNum) => num_to_aln,
-                _ => {
-                    // our current mode is a superset of the next,
-                    // and we can't convert it "downwards"
+            // // is this mode ⊂ the next mode? it's time to do data analysis.
+            // let heuristic: usize = match (right_mode, left_mode) {
+            //     (AlphaNum, ASCII) => aln_to_asc,
+            //     (Numeric, ASCII) => num_to_asc,
+            //     (Numeric, AlphaNum) => num_to_aln,
+            //     _ => {
+            //         // our current mode is a superset of the next,
+            //         // and we can't convert it "downwards"
 
-                    // double checking to make sure that the data isn't bad
-                    assert!(
-                        this_mode != next_mode,
-                        "optimize_mode: consecutive modes of the same type"
-                    );
+            //         // double checking to make sure that the data isn't bad
+            //         assert!(
+            //             right_mode != left_mode,
+            //             "optimize_mode: consecutive modes of the same type"
+            //         );
 
-                    continue;
-                }
-            };
+            //         continue;
+            //     }
+            // };
 
-            if this_run < heuristic {
-                // too few characters to motivate switching to the current mode
+            // if right_run < heuristic {
+            //     // too few characters to motivate switching to the current mode
 
-                // what in the world do i do if i have a single number,
-                // followed by a single alphanumeric character, and then ascii??
-                // how would i handle that? am i better off using .windows()
-                // than just looking ahead to the next mode? should i
-                // actually be looking at run lengths to begin with???
+            //     // what in the world do i do if i have a single number,
+            //     // followed by a single alphanumeric character, and then ascii??
+            //     // how would i handle that? am i better off using .windows()
+            //     // than just looking ahead to the next mode? should i
+            //     // actually be looking at run lengths to begin with???
 
-                mut_mode_runs[i] = (next_mode, this_run);
-            }
+            //     mut_mode_runs[i] = (left_mode, right_run);
+            // }
         }
 
         todo!("do something with mut_mode_runs here before it's dropped")
@@ -449,6 +487,91 @@ fn bit_cost(count: usize, class: usize, mode: Mode) -> usize {
         AlphaNum => 4 + [9, 11, 13][class] + 11 * (count / 2) + 6 * (count % 2),
         ASCII => 4 + [8, 16, 16][class] + 8 * count,
         Kanji => todo!("refer to kanji bit information"),
+    }
+}
+
+// not sure what to call this function...
+// runs through every possible solution
+// to the scenario below
+pub(crate) fn mode_switch_brute_force_analysis() {
+    // how many chars to test for
+    // let limit = 50;
+
+    /*
+    testing this scenario:
+
+    num              _______
+    aln        _____/       \_____
+    asc  _____/                   \______
+
+    the possible solutions are:
+    0. asc - aln - num - aln - asc     max switching
+    1. asc - aln      ...    - asc     lower num to aln
+    2. asc ...   - num - aln - asc     lower first aln to asc
+    3. asc - aln - num - asc ...       lower last aln to asc
+    4. asc ...   - num - asc ...       lower both aln to asc
+    5. asc                   ...       all asc
+    */
+
+    for limit in [10, 20, 50] {
+        println!("limit {}:", limit);
+        for class in 0..3 {
+            let bit = |count, mode| bit_cost(count, class, mode);
+            let mut scores = [0usize; 6];
+
+            for first_aln in 0..limit {
+                for num in 0..limit {
+                    for last_aln in 0..limit {
+                        let solutions = [
+                            // 0: max switching
+                            bit(10, ASCII)
+                                + bit(first_aln, AlphaNum)
+                                + bit(num, Numeric)
+                                + bit(last_aln, AlphaNum)
+                                + bit(10, ASCII),
+                            // 1: lower num to aln
+                            bit(10, ASCII)
+                                + bit(first_aln + num + last_aln, AlphaNum)
+                                + bit(10, ASCII),
+                            // 2: lower first aln to asc
+                            bit(10 + first_aln, ASCII)
+                                + bit(num, Numeric)
+                                + bit(last_aln, AlphaNum)
+                                + bit(10, ASCII),
+                            // 3: lower last aln to asc
+                            bit(10, ASCII)
+                                + bit(first_aln, AlphaNum)
+                                + bit(num, Numeric)
+                                + bit(last_aln + 10, ASCII),
+                            // 4: lower both aln to asc
+                            bit(10 + first_aln, ASCII)
+                                + bit(num, Numeric)
+                                + bit(last_aln + 10, ASCII),
+                            // 5: all asc
+                            bit(10 + first_aln + num + last_aln + 10, ASCII),
+                        ];
+
+                        let mut best_index = 0;
+                        let mut lowest_cost = usize::MAX;
+
+                        for (i, cost) in solutions.into_iter().enumerate() {
+                            if cost < lowest_cost {
+                                lowest_cost = cost;
+                                best_index = i;
+                            }
+                        }
+
+                        scores[best_index] += 1;
+                    }
+                }
+            }
+
+            let scores: Vec<f32> = scores
+                .into_iter()
+                .map(|x| x as f32 / (limit.pow(3) as f32))
+                .collect();
+            println!("class {}: {:?}", class, scores);
+        }
     }
 }
 
