@@ -32,9 +32,6 @@ going through the standards doc:
     mostly done!! great job me!! kanji and ECI remain
 • bitstream optimization  (pg. 92)
 
-PITEOG stuff:
-• deprecate the continuous-data "Img" type?
-
 ~~~~~~~~~~~~
 
 example stats output i want:

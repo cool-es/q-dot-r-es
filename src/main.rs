@@ -7,15 +7,15 @@ mod rdsm;
 
 use qr_standard::Mode::*;
 
-use image::*;
+use image::ImgRowAligned;
 use qr_standard::*;
 use rdsm::*;
 // use testutil::*;
 
 fn main() -> std::io::Result<()> {
-    // main_qr_generator()
-    mode_switch_brute_force_analysis();
-    Ok(())
+    main_qr_generator()
+    // mode_switch_brute_force_analysis();
+    // Ok(())
 }
 
 fn main_qr_generator() -> std::io::Result<()> {

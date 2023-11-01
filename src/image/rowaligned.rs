@@ -2,9 +2,9 @@
 #[derive(Clone)]
 pub struct ImgRowAligned {
     // width, height fields are private so that they can't be mutated
-    pub(super) width: usize,
-    pub(super) height: usize,
-    pub(super) bits: Vec<u8>,
+    width: usize,
+    height: usize,
+    bits: Vec<u8>,
 }
 
 impl ImgRowAligned {
@@ -160,45 +160,7 @@ impl ImgRowAligned {
             nicedata,
         )
     }
-}
 
-// this code below assumes data is saved in a way where the rows all start with
-// a new byte, which leaves empty space in the last byte of every row
-// if the width isn't a multiple of 8
-pub(super) fn xy_to_index(x: usize, y: usize, w: usize, h: usize) -> Option<(usize, u8)> {
-    // converts xy coordinates to the pixel's vector/bit indices:
-    // Some(n, i) => bit i in vec[n]
-    // returns None when coords are out of bounds
-    if x > w || y > h {
-        return None;
-    }
-
-    let row_bytes = w.div_ceil(8);
-    let n = y * row_bytes + x / 8;
-
-    // highest bit index is to the left
-    let i = (7 - (x % 8)) as u8;
-
-    Some((n, i))
-}
-
-pub(super) fn index_to_xy(
-    vec_index: usize,
-    bit_index: u8,
-    w: usize,
-    h: usize,
-) -> Option<(usize, usize)> {
-    let row_bytes = w.div_ceil(8);
-
-    let x = (vec_index % row_bytes) * 8 + (7 - bit_index) as usize;
-    let y = vec_index / row_bytes;
-    if x >= w || y >= h {
-        return None;
-    }
-    Some((x, y))
-}
-
-impl ImgRowAligned {
     pub(crate) fn new(width: usize, height: usize) -> Self {
         let bits: Vec<u8> =
             vec![0; xy_to_index(width - 1, height - 1, width, height).unwrap().0 + 1];
@@ -260,9 +222,7 @@ impl ImgRowAligned {
 
         Some(output)
     }
-}
 
-impl ImgRowAligned {
     pub(crate) fn debug_bits(&self) -> &Vec<u8> {
         &self.bits
     }
@@ -282,4 +242,40 @@ impl ImgRowAligned {
     pub(crate) fn debug_xy_to_index(&self, x: usize, y: usize) -> Option<(usize, u8)> {
         xy_to_index(x, y, self.width, self.height)
     }
+}
+
+// this code below assumes data is saved in a way where the rows all start with
+// a new byte, which leaves empty space in the last byte of every row
+// if the width isn't a multiple of 8
+pub(super) fn xy_to_index(x: usize, y: usize, w: usize, h: usize) -> Option<(usize, u8)> {
+    // converts xy coordinates to the pixel's vector/bit indices:
+    // Some(n, i) => bit i in vec[n]
+    // returns None when coords are out of bounds
+    if x > w || y > h {
+        return None;
+    }
+
+    let row_bytes = w.div_ceil(8);
+    let n = y * row_bytes + x / 8;
+
+    // highest bit index is to the left
+    let i = (7 - (x % 8)) as u8;
+
+    Some((n, i))
+}
+
+pub(super) fn index_to_xy(
+    vec_index: usize,
+    bit_index: u8,
+    w: usize,
+    h: usize,
+) -> Option<(usize, usize)> {
+    let row_bytes = w.div_ceil(8);
+
+    let x = (vec_index % row_bytes) * 8 + (7 - bit_index) as usize;
+    let y = vec_index / row_bytes;
+    if x >= w || y >= h {
+        return None;
+    }
+    Some((x, y))
 }
