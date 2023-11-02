@@ -11,14 +11,14 @@ pub(crate) fn badstream_to_polynomial(input: &Badstream) -> Polynomial {
     let mut pushbyte: u8 = 0;
     for (i, &bit) in input.iter().enumerate() {
         if i % 8 == 0 && i != 0 {
-            output.push(pushbyte as u32);
+            output.push(pushbyte as Element);
             pushbyte = 0;
         }
         pushbyte <<= 1;
         pushbyte |= u8::from(bit);
     }
     if pushbyte != 0 {
-        output.push(pushbyte as u32);
+        output.push(pushbyte as Element);
     }
     output
 }
@@ -101,7 +101,6 @@ pub(crate) fn push_bits(bits: &str, stream: &mut Badstream) {
 pub(crate) fn polynomial_to_badstream(poly: &Polynomial) -> Badstream {
     let mut stream = Vec::new();
     for &a in poly {
-        assert!(a < 0x100, "polynomial contains non-byte data");
         for k in (0..=7).rev() {
             stream.push((a & (1 << k)) != 0);
         }
@@ -155,7 +154,7 @@ pub(crate) fn split_to_blocks_and_encode(
 
     let mut unencoded: Vec<Polynomial> = Vec::new();
 
-    let (first, second): (&[u32], &[u32]) = if optional.is_some() {
+    let (first, second): (&[Element], &[Element]) = if optional.is_some() {
         poly.split_at(bc * dcw)
     } else {
         (poly.as_slice(), &[])
@@ -208,7 +207,7 @@ pub(crate) fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> 
     // error_output only serves to display byte data
     // in case the size-check assert below fails
     let mut output: Vec<bool> = Vec::new();
-    let mut error_output: Vec<u32> = Vec::new();
+    let mut error_output: Vec<Element> = Vec::new();
 
     // enter data codewords
     for i in 0..max_data_codewords {

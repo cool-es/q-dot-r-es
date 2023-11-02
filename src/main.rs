@@ -613,8 +613,8 @@ fn doubleprint(input: &Polynomial) {
 fn test_polynomial_div() {
     let cafebabe: Polynomial = Vec::from([0xca, 0xfe, 0xba, 0xbe]);
     // let deadbeef: Polynomial = Vec::from([0xde, 0xad, 0xbe, 0xef]);
-    let big_1: Polynomial = (1..10).map(|x| (x * 541) % 256).collect();
-    let big_2: Polynomial = (1..15).map(|x| (x * 311) % 256).collect();
+    let big_1: Polynomial = (1..10).map(|x: Element| x.wrapping_mul(54)).collect();
+    let big_2: Polynomial = (1..15).map(|x: Element| x.wrapping_mul(31)).collect();
     let sum = polynomial_add(&big_1, &big_2);
     let rem_1 = polynomial_remainder(&big_1, &cafebabe);
     let rem_2 = polynomial_remainder(&big_2, &cafebabe);
@@ -835,8 +835,7 @@ fn test_xbm_output() {
         Bitmap::as_xbm(
             &{
                 let x =
-                    Bitmap::from_xbm(std::fs::read_to_string("es.xbm").unwrap().as_str())
-                        .unwrap();
+                    Bitmap::from_xbm(std::fs::read_to_string("es.xbm").unwrap().as_str()).unwrap();
                 // x.invert();
                 x
             },
@@ -921,7 +920,7 @@ fn test_reed_solomon(test: u8) {
                 // let mut status: u8 = 0;
 
                 if i as Element
-                    != galois_multiply(
+                    != element_multiply(
                         table_divide(i as Element, j as Element),
                         j as Element,
                         QR_CODEWORD_GEN,
@@ -1021,7 +1020,7 @@ mod tests {
         // works!
         assert!(galois_multiply(a, b, 0) == 0b0001010001111010);
         assert!(galois_multiply(a, b, QR_CODEWORD_GEN) == 0b0000000011000011);
-        assert!(table_multiply(a, b) == 0b0000000011000011);
+        assert!(table_multiply(a as Element, b as Element) == 0b0000000011000011 as Element);
 
         println!("basic tests passed! now here's the real trial:");
 
@@ -1038,12 +1037,12 @@ mod tests {
 
         for x in 0..255 {
             for y in 0..x {
-                let a = galois_multiply(x, y, QR_CODEWORD_GEN)
-                    == galois_multiply(y, x, QR_CODEWORD_GEN);
-                let b = galois_multiply(x, y, QR_CODEWORD_GEN) == table_multiply(x, y);
+                let a = element_multiply(x, y, QR_CODEWORD_GEN)
+                    == element_multiply(y, x, QR_CODEWORD_GEN);
+                let b = element_multiply(x, y, QR_CODEWORD_GEN) == table_multiply(x, y);
                 let c = {
-                    if x * y != 0 {
-                        (log(x) + log(y)) % 255 == log(galois_multiply(x, y, QR_CODEWORD_GEN))
+                    if x != 0 && y != 0 {
+                        (log(x) + log(y)) % 255 == log(element_multiply(x, y, QR_CODEWORD_GEN))
                     } else {
                         true
                     }
