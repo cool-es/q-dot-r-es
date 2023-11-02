@@ -1,11 +1,11 @@
 // the centers of alignment patterns in both x and y dimensions
 pub(super) const AP_COORD_INDICES: [&[usize]; 40] = [
     &[],
-    &[6, 18],
-    &[6, 22],
-    &[6, 26],
-    &[6, 30],
-    &[6, 34],
+    &[18],
+    &[22],
+    &[26],
+    &[30],
+    &[34],
     &[6, 22, 38],
     &[6, 24, 42],
     &[6, 26, 46],
@@ -43,15 +43,16 @@ pub(super) const AP_COORD_INDICES: [&[usize]; 40] = [
 ];
 
 pub(crate) fn alignment_pattern_coords(version: u32) -> Vec<(usize, usize)> {
-    if !(1..=40).contains(&version) {
-        panic!()
-    }
+    // this function is only called by new_blank_qr_code,
+    // which has checked the version number already - no
+    // need to do it again
     let indices = AP_COORD_INDICES[version as usize - 1];
     let mut output = Vec::new();
 
+    let last = indices.last().unwrap();
     for &x in indices {
         for &y in indices {
-            if [x, y].contains(&6) && (x == y || [x, y].contains(indices.last().unwrap())) {
+            if [x, y].contains(&6) && (x == y || [x, y].contains(last)) {
                 continue;
             }
             output.push((x, y));

@@ -56,9 +56,7 @@ pub(super) enum Token {
 }
 
 fn string_to_ascii(input: &str) -> Vec<Token> {
-    if !input.is_ascii() {
-        panic!("not ascii")
-    }
+    assert!(input.is_ascii(), "invalid ascii input!");
     let mut output: Vec<Token> = vec![ModeAndCount(ASCII, input.len() as u16)];
     for i in input.chars() {
         output.push(Character(ASCII, 8, u16::from(i as u8)));
@@ -67,16 +65,11 @@ fn string_to_ascii(input: &str) -> Vec<Token> {
 }
 
 fn string_to_numeric(input: &str) -> Vec<Token> {
-    for i in input.chars() {
-        if !i.is_ascii_digit() {
-            panic!("character \"{}\" is not numeric", i)
-        }
-    }
     let mut output: Vec<Token> = vec![ModeAndCount(Numeric, input.len() as u16)];
 
     for i in input
         .chars()
-        .map(|x| x.to_digit(10).unwrap() as u16)
+        .map(|x| x.to_digit(10).expect("invalid numeric input!") as u16)
         .collect::<Vec<u16>>()
         .chunks(3)
     {
@@ -95,9 +88,7 @@ fn string_to_alphanum(input: &str) -> Vec<Token> {
     let mut output: Vec<Token> = vec![ModeAndCount(AlphaNum, input.len() as u16)];
     for i in input
         .chars()
-        .map(|x| {
-            find_alphanum(x).unwrap_or_else(|| panic!("character \"{}\" is not alphanumeric", x))
-        })
+        .map(|x| find_alphanum(x).expect("invalid alphanumeric input!"))
         .collect::<Vec<u16>>()
         .chunks(2)
     {
