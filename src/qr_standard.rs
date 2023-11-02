@@ -360,11 +360,7 @@ fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize,
 }
 
 // ref. pg. 60
-pub(crate) fn get_fcode(
-    input: &Bitmap,
-    version: u32,
-    offset: (usize, usize),
-) -> Option<u16> {
+pub(crate) fn get_fcode(input: &Bitmap, version: u32, offset: (usize, usize)) -> Option<u16> {
     // the coordinates of the top left module; in hellocode, it's (2,2)
     let (ox, oy) = offset;
     let mut output1 = 0;

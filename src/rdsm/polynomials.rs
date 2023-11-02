@@ -139,11 +139,11 @@ pub(crate) fn make_rdsm_generator_polynomial(ec_symbols: u32) -> Polynomial {
 // helper function
 #[inline]
 pub(crate) fn length(poly: &Polynomial) -> usize {
-    poly.len() - leading_zeroes(poly)
+    poly.len() - leading_zeros(poly)
 }
 
 // helper function for polynomial_remainder
-fn leading_zeroes(poly: &Polynomial) -> usize {
+fn leading_zeros(poly: &Polynomial) -> usize {
     for (i, &coefficient) in poly.iter().enumerate() {
         if coefficient != 0 {
             return i;
@@ -153,13 +153,12 @@ fn leading_zeroes(poly: &Polynomial) -> usize {
 }
 
 pub(crate) fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) -> Polynomial {
-    if divisor[0] == 0 {
-        panic!()
-    }
-    if dividend.len() < divisor.len() {
+    assert!(divisor[0] != 0, "divisor has a leading 0");
+    let diff = if let Some(d) = dividend.len().checked_sub(divisor.len()) {
+        d
+    } else {
         return dividend.clone();
-    }
-    let diff = dividend.len() - divisor.len();
+    };
     let mut output = dividend.clone();
     // rightwards index shift in output (equivalent to multiplying divisor by x^(diff-shift))
     // if you wanted the quotient too, it would be {q[shift] = multiplier}, then reverse q
@@ -174,11 +173,11 @@ pub(crate) fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) 
         }
     }
 
-    if leading_zeroes(&output) < diff {
-        panic!()
-    }
+    let lead = leading_zeros(&output);
+    assert!(lead >= diff);
+
     // output starts with a bunch of 0s
-    output[leading_zeroes(&output)..].to_vec()
+    output[lead..].to_vec()
 }
 
 // it works!!! i'm doing encodation!!!!!
@@ -196,13 +195,12 @@ def rs_encode_msg(msg_in, nsym):
 */
 pub(crate) fn encode_message(message: &Polynomial, ec_symbols: u32) -> Polynomial {
     // will only generate codes "manually" if they are not qr standard
-    let generator_polynomial: Polynomial = {
+    let generator_polynomial: Polynomial =
         if let Some(index) = crate::qr_standard::find_errc(ec_symbols as usize) {
             RDSM_GENERATOR_POLYNOMIALS[index].to_vec()
         } else {
             make_rdsm_generator_polynomial(ec_symbols)
-        }
-    };
+        };
 
     let mut message_padded = message.clone();
     message_padded.extend(std::iter::repeat(0).take(ec_symbols as usize));
@@ -252,7 +250,7 @@ pub(crate) fn prettyprint(poly: &Polynomial) {
     let mut output = String::new();
     let last_byte_not_zero = *poly.last().unwrap() != 0;
     if poly[0] == 0 {
-        // polynomial has leading zeroes - it shouldn't
+        // polynomial has leading zeros - it shouldn't
         output.push('🤔');
     }
     for i in 0..poly.len() {

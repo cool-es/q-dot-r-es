@@ -29,7 +29,7 @@ pub(crate) fn _print_exp_log_tables_inline() {
     for i in 0..255 {
         exp[i] = x;
         log[(x as usize - 1) % 255] = i;
-        x = galois_multiply(x, 0b10, QR_CODEWORD_GEN);
+        x = element_multiply(x, 0b10, QR_CODEWORD_GEN);
     }
 
     print!(
