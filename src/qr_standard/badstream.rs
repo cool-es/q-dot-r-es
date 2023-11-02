@@ -284,12 +284,11 @@ pub(crate) fn make_qr(
     let mut bitmap = Bitmap::new_blank_qr(version);
 
     write_badstream_to_bitmap(&shuffled_stream, &mut bitmap);
-    let mask = if let Some(mask) = mask_choice {
-        mask
+    if let Some(mask) = mask_choice {
+        apply_mask(&mut bitmap, version, level, mask);
     } else {
-        choose_best_mask(&bitmap, version, level)
-    };
-    apply_mask(&mut bitmap, version, level, mask);
+        apply_best_mask(&mut bitmap, version, level);
+    }
 
     bitmap
 }
@@ -304,21 +303,20 @@ fn apply_mask(bitmap: &mut Bitmap, version: u32, level: u8, mask: u8) {
     bitmap.qr_mask_xor(mask);
 }
 
-pub(crate) fn choose_best_mask(bitmap: &Bitmap, version: u32, level: u8) -> u8 {
-    let mut best: Bitmap;
-    let (mut best, mut penalty) = (u8::MAX, u32::MAX);
+pub(crate) fn apply_best_mask(bitmap: &mut Bitmap, version: u32, level: u8) {
+    let mut best = Bitmap::new(1, 1);
+    let mut penalty = u32::MAX;
     for mask in 0..=7 {
-        let pen = {
-            let mut clone = bitmap.clone();
-            apply_mask(&mut clone, version, level, mask);
-            clone.qr_penalty()
-        };
+        let mut clone = bitmap.clone();
+        apply_mask(&mut clone, version, level, mask);
+        let pen = clone.qr_penalty();
+
         if pen < penalty {
-            best = mask;
+            best = clone;
             penalty = pen;
         }
     }
-    best
+    *bitmap = best;
 }
 
 mod tests {
