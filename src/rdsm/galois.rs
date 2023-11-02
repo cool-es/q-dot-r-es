@@ -53,6 +53,7 @@ pub(crate) fn qr_fcode_remainder(fcode: u32) -> u32 {
     output
 }
 
+#[inline]
 pub(crate) fn qr_fcode_is_good(fcode: u16) -> bool {
     qr_fcode_remainder(fcode as u32) == 0
 }
