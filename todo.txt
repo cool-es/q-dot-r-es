@@ -6,11 +6,6 @@
 • check to see if arbitrary data is possible (emoji, etc)
 • clean up code (remove the allow(dead_code))
 • add stats printing (version, bit count, etc)
-• write unchecked functions (hidden from the user) that don't excessively check their inputs
-    offenders:
-        callers of bad_version()
-        callers of out_of_bounds()
-        xy_to_index()
 • add comments and documentation so it's readable to others
 • restructure code to be divided into logical sections:
     data conversion

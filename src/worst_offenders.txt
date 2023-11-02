@@ -1,7 +1,0 @@
-1045994 - bad_version()
- 293112 - index_to_xy()
- 281631 - xy_to_index()
- 106624 - log()
-  29648 - next_data_bit()
-   1666 - table_divide()
-     68 - polynomial_remainder()
