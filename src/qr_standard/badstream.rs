@@ -109,7 +109,7 @@ pub(crate) fn polynomial_to_badstream(poly: &Polynomial) -> Badstream {
     stream
 }
 
-pub(crate) fn write_badstream_to_bitmap(stream: &Badstream, bitmap: &mut ImgRowAligned) {
+pub(crate) fn write_badstream_to_bitmap(stream: &Badstream, bitmap: &mut Bitmap) {
     let version = bitmap.qr_version().expect("invalid bitmap size");
     let max = bitmap.dims().0 - 1;
     let (mut x, mut y) = (max, max);
@@ -251,7 +251,7 @@ pub(crate) fn make_qr(
     version_choice: Option<u32>,
     level_choice: Option<u8>,
     mask_choice: Option<u8>,
-) -> ImgRowAligned {
+) -> Bitmap {
     let tokens = make_token_stream(match input {
         QRInput::Auto(str) => auto_mode_switch(str),
         QRInput::Manual(vec) => vec,
@@ -281,7 +281,7 @@ pub(crate) fn make_qr(
 
     let shuffled_stream = full_block_encode(&tokens_to_badstream(tokens, version), version, level);
 
-    let mut bitmap = ImgRowAligned::new_blank_qr(version);
+    let mut bitmap = Bitmap::new_blank_qr(version);
 
     write_badstream_to_bitmap(&shuffled_stream, &mut bitmap);
     let mask = if let Some(mask) = mask_choice {
@@ -294,7 +294,7 @@ pub(crate) fn make_qr(
     bitmap
 }
 
-fn apply_mask(bitmap: &mut ImgRowAligned, version: u32, level: u8, mask: u8) {
+fn apply_mask(bitmap: &mut Bitmap, version: u32, level: u8, mask: u8) {
     set_fcode(
         bitmap,
         version,
@@ -304,8 +304,8 @@ fn apply_mask(bitmap: &mut ImgRowAligned, version: u32, level: u8, mask: u8) {
     bitmap.qr_mask_xor(mask);
 }
 
-pub(crate) fn choose_best_mask(bitmap: &ImgRowAligned, version: u32, level: u8) -> u8 {
-    let mut best: ImgRowAligned;
+pub(crate) fn choose_best_mask(bitmap: &Bitmap, version: u32, level: u8) -> u8 {
+    let mut best: Bitmap;
     let (mut best, mut penalty) = (u8::MAX, u32::MAX);
     for mask in 0..=7 {
         let pen = {

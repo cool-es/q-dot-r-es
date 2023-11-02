@@ -7,7 +7,7 @@ mod rdsm;
 
 use qr_standard::Mode::*;
 
-use image::ImgRowAligned;
+use image::Bitmap;
 use qr_standard::*;
 use rdsm::*;
 // use testutil::*;
@@ -247,7 +247,7 @@ fn gen_qr_using_modes(custom_input: Option<&[(Mode, &str)]>) {
         /* if false */
         {
             // let mask = todo!();
-            let bitmap = &mut ImgRowAligned::new_blank_qr(version);
+            let bitmap = &mut Bitmap::new_blank_qr(version);
 
             pad_to((cwords - ecwords) as usize, message);
             let code = encode_message(&badstream_to_polynomial(message), ecwords);
@@ -331,7 +331,7 @@ fn first_qr_code() {
     for mask in 0..=7 {
         let message: &mut Badstream = &mut Vec::new();
         let text = "hi :)";
-        let bitmap = &mut ImgRowAligned::new_blank_qr(5);
+        let bitmap = &mut Bitmap::new_blank_qr(5);
 
         push_bits("0100", message);
         push_bits(format!("{:08b}", text.len()).as_str(), message);
@@ -424,7 +424,7 @@ fn read_bitstream() {
 
 fn compare_mask_to_isdata() {
     let mask = xbm_filepath_into_bitmap("hellomask_smol.xbm");
-    let mut blank = ImgRowAligned::new(21, 21);
+    let mut blank = Bitmap::new(21, 21);
     let size = version_to_size(1).unwrap() as usize;
     for x in 0..size {
         for y in 0..size {
@@ -441,7 +441,7 @@ fn compare_mask_to_isdata() {
 
 fn full_squiggle_test() {
     let mut coordpairs = [[0; 256]; 256];
-    let mut a = ImgRowAligned::new(21, 21);
+    let mut a = Bitmap::new(21, 21);
     let (mut cx, mut cy) = (20, 20);
     a.invert();
     for _i in 0..(8 * 28) {
@@ -685,13 +685,13 @@ fn remasking_test() {
         }
      */
 }
-fn unmask(input: &mut ImgRowAligned) {
+fn unmask(input: &mut Bitmap) {
     let fcode = get_fcode(input, 1, (0, 0)).unwrap();
     let mask = interpret_format(fcode).unwrap().1;
     input.qr_mask_xor(mask);
 }
 // this function works perfectly!! it's great
-fn qr_remask_v1_symbol(input: &ImgRowAligned, mask_pattern: u8) -> Option<ImgRowAligned> {
+fn qr_remask_v1_symbol(input: &Bitmap, mask_pattern: u8) -> Option<Bitmap> {
     let old_fcode = get_fcode(input, 1, (0, 0))?;
     let (correction_level, old_mask_pattern) = interpret_format(old_fcode)?;
     if mask_pattern == old_mask_pattern {
@@ -712,7 +712,7 @@ fn qr_remask_v1_symbol(input: &ImgRowAligned, mask_pattern: u8) -> Option<ImgRow
 }
 
 fn print_qr_mask_patterns() {
-    let x = ImgRowAligned::new(25, 25);
+    let x = Bitmap::new(25, 25);
     // let x = image_type::continuous::Img::new(25,25);
     for i in 0..8 {
         let mut masky = x.clone();
@@ -739,7 +739,7 @@ fn print_qr_mask_patterns() {
 
 fn test_format_parsing(path: &str) {
     let xbm_string = std::fs::read_to_string(path).unwrap();
-    let xbm_bitmap = ImgRowAligned::from_xbm(&xbm_string).unwrap();
+    let xbm_bitmap = Bitmap::from_xbm(&xbm_string).unwrap();
     let fcode = get_fcode(&xbm_bitmap, 1, (0, 0)).unwrap();
     println!("{:#b}", fcode);
     println!("remainder {:#b}", qr_fcode_remainder(fcode as u32));
@@ -768,7 +768,7 @@ fn test_format_parsing(path: &str) {
             };
             let xor_mask_pattern = {
                 let (width, height) = code_for_masking.dims();
-                let mut x = ImgRowAligned::new(width, height);
+                let mut x = Bitmap::new(width, height);
                 x.qr_mask_xor(mask);
                 x
             };
@@ -789,13 +789,13 @@ fn test_format_parsing(path: &str) {
     }
 }
 
-fn debug_print(input: &ImgRowAligned) {
+fn debug_print(input: &Bitmap) {
     for y in 0..input.dims().1 {
         println!("{}", debug_print_row(input, y, true).unwrap())
     }
 }
 
-fn debug_print_qr(input: &ImgRowAligned) {
+fn debug_print_qr(input: &Bitmap) {
     let throwaway_hack = || {
         for _i in 0..2 {
             for _y in 0..input.dims().1 + 4 {
@@ -812,7 +812,7 @@ fn debug_print_qr(input: &ImgRowAligned) {
     throwaway_hack();
 }
 
-fn debug_print_row(input: &ImgRowAligned, y: usize, emoji: bool) -> Option<String> {
+fn debug_print_row(input: &Bitmap, y: usize, emoji: bool) -> Option<String> {
     let row = input.get_row(y)?;
     let mut output = String::new();
     for j in (0..input.dims().0).rev() {
@@ -832,10 +832,10 @@ fn debug_print_row(input: &ImgRowAligned, y: usize, emoji: bool) -> Option<Strin
 fn test_xbm_output() {
     println!(
         "{}",
-        ImgRowAligned::as_xbm(
+        Bitmap::as_xbm(
             &{
                 let x =
-                    ImgRowAligned::from_xbm(std::fs::read_to_string("es.xbm").unwrap().as_str())
+                    Bitmap::from_xbm(std::fs::read_to_string("es.xbm").unwrap().as_str())
                         .unwrap();
                 // x.invert();
                 x
@@ -847,8 +847,8 @@ fn test_xbm_output() {
 
 fn test_xbm(path: &str) {
     let input = std::fs::read_to_string(path).unwrap();
-    let x = ImgRowAligned::from_xbm(&input).unwrap();
-    let mut vector: Vec<ImgRowAligned> = Vec::new();
+    let x = Bitmap::from_xbm(&input).unwrap();
+    let mut vector: Vec<Bitmap> = Vec::new();
     vector.push(x.clone());
     for i in 0..=7 {
         let mut masked = x.clone();
@@ -863,9 +863,9 @@ fn test_xbm(path: &str) {
     }
 }
 
-fn xbm_filepath_into_bitmap(path: &str) -> ImgRowAligned {
+fn xbm_filepath_into_bitmap(path: &str) -> Bitmap {
     let input = std::fs::read_to_string(path).unwrap();
-    ImgRowAligned::from_xbm(&input).unwrap()
+    Bitmap::from_xbm(&input).unwrap()
 }
 // tests qr format check, assuming debug printing is enabled
 fn test_checkfmt() {
@@ -991,7 +991,7 @@ mod tests {
     fn test_penalty() {
         // essentially test to make sure the penalty function is monotonic
         // for adding black pixels to a completely white square
-        let mask = &mut ImgRowAligned::new(125, 125);
+        let mask = &mut Bitmap::new(125, 125);
 
         let mut old = mask.qr_penalty();
         let mut new: u32;

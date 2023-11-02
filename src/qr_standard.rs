@@ -50,7 +50,7 @@ fn out_of_bounds(x: usize, y: usize, version: u32) -> bool {
 }
 
 // ImgRowAligned methods, ditto
-impl image::ImgRowAligned {
+impl image::Bitmap {
     pub(crate) fn qr_mask_xor(&mut self, pattern: u8) {
         qr_mask_xor(self, pattern)
     }
@@ -78,7 +78,7 @@ impl image::ImgRowAligned {
 // _new_qr_mask(a, b, x) == new(a, b).qr_mask_xor(x)
 // i wrote this on the first try just before bedtime. go me
 // modified to leave gaps in the pattern for valid qr version sizes
-fn qr_mask_xor(input: &mut ImgRowAligned, mask: u8) {
+fn qr_mask_xor(input: &mut Bitmap, mask: u8) {
     let maybe_version = {
         if input.dims().0 != input.dims().1 {
             None
@@ -115,9 +115,9 @@ fn qr_mask_xor(input: &mut ImgRowAligned, mask: u8) {
 }
 
 mod penalties {
-    use crate::image::ImgRowAligned;
+    use crate::image::Bitmap;
 
-    pub(super) fn total_penalty(input: &ImgRowAligned) -> u32 {
+    pub(super) fn total_penalty(input: &Bitmap) -> u32 {
         let width = input.dims().0;
         let ones = input.debug_bits().iter().map(|x| x.count_ones()).sum();
 
@@ -361,7 +361,7 @@ fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize,
 
 // ref. pg. 60
 pub(crate) fn get_fcode(
-    input: &ImgRowAligned,
+    input: &Bitmap,
     version: u32,
     offset: (usize, usize),
 ) -> Option<u16> {
@@ -418,7 +418,7 @@ pub(crate) fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u1
     crate::rdsm::qr_generate_fcode((correction_level << 3) | mask_pattern)
 }
 
-pub(crate) fn set_fcode(input: &mut ImgRowAligned, version: u32, fcode: u16) {
+pub(crate) fn set_fcode(input: &mut Bitmap, version: u32, fcode: u16) {
     let mask = 0b0101_0100_0001_0010u16;
 
     for bit in 0..=14 {
@@ -554,9 +554,9 @@ pub(crate) fn coord_status(x: usize, y: usize, version: u32) -> Option<u8> {
     })
 }
 
-fn new_blank_qr_code(version: u32) -> ImgRowAligned {
+fn new_blank_qr_code(version: u32) -> Bitmap {
     let max = version_to_max_index(version).expect("invalid version");
-    let mut output = ImgRowAligned::new(max + 1, max + 1);
+    let mut output = Bitmap::new(max + 1, max + 1);
     let mut set = |x, y| output.set_bit(x, y, true);
 
     //  draw alignment patters
@@ -606,14 +606,14 @@ fn new_blank_qr_code(version: u32) -> ImgRowAligned {
     output
 }
 
-fn unmask(input: &mut ImgRowAligned) {
+fn unmask(input: &mut Bitmap) {
     let version = input.qr_version().unwrap();
     let fcode = get_fcode(input, version, (0, 0)).unwrap();
     let mask = interpret_format(fcode).unwrap().1;
     input.qr_mask_xor(mask);
 }
 
-pub(crate) fn errc(input: &ImgRowAligned) -> u8 {
+pub(crate) fn errc(input: &Bitmap) -> u8 {
     let version = input.qr_version().unwrap();
     let fcode = get_fcode(input, version, (0, 0)).unwrap();
     interpret_format(fcode).unwrap().1
@@ -651,7 +651,7 @@ fn version_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize
 }
 
 // in the style of set_fcode
-pub(crate) fn set_vcode(input: &mut ImgRowAligned, version: u32, vcode: u32) {
+pub(crate) fn set_vcode(input: &mut Bitmap, version: u32, vcode: u32) {
     for bit in 0..=17 {
         let ((x1, y1), (x2, y2)) = version_info_coords(version, bit).expect("bad version");
         let value = vcode & (1 << bit) != 0;

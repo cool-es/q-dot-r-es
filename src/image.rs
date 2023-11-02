@@ -1,14 +1,14 @@
 // image format with gaps in its byte data: start of rows are byte aligned
 #[derive(Clone)]
-pub(crate) struct ImgRowAligned {
+pub(crate) struct Bitmap {
     // width, height fields are private so that they can't be mutated
     width: usize,
     height: usize,
     bits: Vec<u8>,
 }
 
-impl ImgRowAligned {
-    pub(crate) fn mask_set(&mut self, pattern: &ImgRowAligned, mask: &ImgRowAligned) {
+impl Bitmap {
+    pub(crate) fn mask_set(&mut self, pattern: &Bitmap, mask: &Bitmap) {
         if self.dims() != pattern.dims() || self.dims() != mask.dims() {
             // size mismatch
             panic!()
@@ -75,7 +75,7 @@ impl ImgRowAligned {
             }
         }
 
-        Ok(ImgRowAligned {
+        Ok(Bitmap {
             width,
             height,
             bits,
@@ -169,7 +169,7 @@ impl ImgRowAligned {
         // elements – that is, the index of the byte containing the last pixel
         // risk of fencepost error: resize() counts from 1, xy_to_index from 0
 
-        ImgRowAligned {
+        Bitmap {
             width,
             height,
             bits,
