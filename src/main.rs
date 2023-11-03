@@ -121,6 +121,8 @@ fn main_qr_generator() -> std::io::Result<()> {
         // we get unprocessed data from stdin instead
         let mut input_string = String::new();
         std::io::stdin().read_line(&mut input_string)?;
+        // stdin input ends on a newline, remove it
+        input_string.pop();
         QRInput::Auto(input_string)
     } else {
         QRInput::Manual(mode_data)

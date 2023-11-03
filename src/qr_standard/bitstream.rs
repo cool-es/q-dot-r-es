@@ -376,9 +376,6 @@ pub(crate) fn optimize_mode(input: String) -> Vec<(Mode, String)> {
     if a num section is neighbored by
     */
 
-    // stdin input ends on a newline
-    char_modes.next_back();
-
     // save run lengths in a vector
     let mut mode_run_lengths = Vec::new();
 
@@ -501,51 +498,85 @@ pub(crate) fn optimize_mode(input: String) -> Vec<(Mode, String)> {
 
 #[allow(unused_variables, unreachable_code, unused_mut)]
 pub(crate) fn wip_alt_optimize_mode(input: String) -> Vec<(Mode, String)> {
-    // // alphanumeric, numeric:
-    // // start index of block, length of block
-    // // alphanumeric > numeric so any numeric block will also be
-    // // part of an alphanumeric block
-    // let mut run_lengths: (Vec<(usize, usize)>, Vec<(usize, usize)>) = (vec![], vec![]);
-
-    let stat_vec: Vec<(bool, bool)> = {
-        // is it alphanumeric? / is it numeric?
-        let mut char_modes = input.chars().map(|x| {
-            match char_status(x).expect("optimize_mode: invalid character in input") {
+    // is it alphanumeric? / is it numeric?
+    let stat_vec: Vec<(bool, bool)> = input
+        .chars()
+        .map(
+            |x| match char_status(x).expect("invalid character in input") {
                 ASCII => (false, false),
                 AlphaNum => (true, false),
                 Numeric => (true, true),
                 _ => panic!(),
-            }
-        });
-        // stdin input ends on a newline
-        char_modes.next_back();
-        char_modes.collect::<Vec<_>>()
-    };
+            },
+        )
+        .collect::<Vec<_>>();
 
     // returns the length of run of a type of character
     // if aln is true, alphanumeric (> numeric)
     // if false, numeric
-    let stat_run = |index: usize, aln: bool| {
-        let mut out = 0;
-        for i in index..stat_vec.len() {
-            let (is_aln, is_num) = stat_vec[i];
-            if (aln && is_aln) || (!aln && is_num) {
-                // we're on the kind of type of character we're looking for
-                out += 1;
-            } else {
-                // the run of characters has ended
-                break;
+    let run = |index: usize, aln: bool| {
+        let mut output = 0;
+        'count: {
+            for i in index..stat_vec.len() {
+                let (is_aln, is_num) = stat_vec[i];
+                if (aln && is_aln) || (!aln && is_num) {
+                    // we're on the kind of type of character we're looking for
+                    output += 1;
+                } else {
+                    // the run of characters has ended
+                    break 'count;
+                }
+            }
+            // if the end of the string is reached,
+            // output is too low; we correct it
+            output += 1;
+        }
+        output
+    };
+
+    // // alphanumeric, numeric:
+    // // start index of block, length of block
+    // // alphanumeric > numeric so any numeric block will also be
+    // // part of an alphanumeric block
+    let mut run_lengths: (Vec<(usize, usize)>, Vec<(usize, usize)>) = (vec![], vec![]);
+
+    let status = stat_vec.iter().enumerate();
+    for (index, &(aln, num)) in status {
+        'nums: {
+            if num {
+                if let Some((start, len)) = run_lengths.0.last() {
+                    if start + len > index {
+                        // we're inside of an already-registered run
+                        break 'nums;
+                    }
+                }
+                let num_run = run(index, false);
+                run_lengths.0.push((index, num_run));
             }
         }
-        out
-    };
+        'alns: {
+            if aln {
+                if let Some((start, len)) = run_lengths.1.last() {
+                    if start + len > index {
+                        break 'alns;
+                    }
+                }
+                let aln_run = run(index, true);
+                run_lengths.1.push((index, aln_run));
+            }
+        }
+    }
+
+    // panic!(
+    //     "{:?}\n{:?}\n{:?}",
+    //     input.chars().collect::<Vec<_>>(),
+    //     run_lengths.0,
+    //     run_lengths.1
+    // );
 
     // mode optimization procedure
     for class in MODE_ECONOMY.into_iter() {
         let [aln_to_asc, _, num_to_aln, num_to_asc] = class;
-
-        let mut status = &mut stat_vec.iter().enumerate();
-        while let Some((index, &(aln, num))) = status.next() {}
     }
 
     todo!("not finished")
