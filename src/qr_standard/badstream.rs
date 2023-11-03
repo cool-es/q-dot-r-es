@@ -252,7 +252,7 @@ pub(crate) fn make_qr(
     mask_choice: Option<u8>,
 ) -> Bitmap {
     let tokens = make_token_stream(match input {
-        QRInput::Auto(str) => auto_mode_switch(str),
+        QRInput::Auto(str) => optimize_mode(str),
         QRInput::Manual(vec) => vec,
     });
 

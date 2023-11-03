@@ -320,7 +320,16 @@ fn is_numeric(x: char) -> bool {
 }
 
 #[allow(unused_variables, unreachable_code, unused_mut)]
-fn optimize_mode(input: String) -> Vec<(Mode, usize)> {
+pub(crate) fn optimize_mode(input: String) -> Vec<(Mode, String)> {
+    {
+        // skip over the work in progress so
+        // the qr generator routine still works
+        let skip = true;
+        if skip {
+            return vec![(ASCII, input)];
+        }
+    }
+
     // all right, so, how do i want to do this?
     // the plan is to mark all characters with their mode,
     // and then "look for patterns" in the data.
@@ -331,14 +340,9 @@ fn optimize_mode(input: String) -> Vec<(Mode, usize)> {
 
     // mark characters in input based on whether they're part of the
     // alphanumeric set (left bit) and numeric set (right bit)
-    let mut char_modes = input.chars().map(|x| {
-        match char_status(x).expect("optimize_mode: invalid character in input") {
-            ASCII => 0b00,
-            AlphaNum => 0b10,
-            Numeric => 0b11,
-            _ => todo!(),
-        }
-    });
+    let mut char_modes = input
+        .chars()
+        .map(|x| char_status(x).expect("optimize_mode: invalid character in input"));
 
     /*
     flipping between modes:
@@ -372,21 +376,22 @@ fn optimize_mode(input: String) -> Vec<(Mode, usize)> {
     if a num section is neighbored by
     */
 
+    // stdin input ends on a newline
+    char_modes.next_back();
+
     // save run lengths in a vector
-    let mut mode_run_lengths: Vec<(usize, usize)> = Vec::new();
+    let mut mode_run_lengths = Vec::new();
 
     // mode of the first character
-    let (mut run_mode, mut run_count): (usize, usize) = (
-        if let Some(mode) = char_modes.next() {
-            todo!("sort out a solution for this")
-        } else {
-            // the input was an empty string
-            // we return an empty vector
-            eprintln!("warning: input is empty!");
-            return vec![];
-        },
-        1,
-    );
+    let mut run_mode = if let Some(mode) = char_modes.next() {
+        mode
+    } else {
+        // the input was an empty string
+        // we return an empty vector
+        eprintln!("warning: input is empty!");
+        return vec![];
+    };
+    let mut run_count = 1;
 
     // fill in the remaining run lengths
     for mode in char_modes {
@@ -397,6 +402,7 @@ fn optimize_mode(input: String) -> Vec<(Mode, usize)> {
             (run_mode, run_count) = (mode, 1);
         }
     }
+    mode_run_lengths.push((run_mode, run_count));
 
     // mode optimization procedure
     for class in MODE_ECONOMY.into_iter() {
@@ -408,6 +414,38 @@ fn optimize_mode(input: String) -> Vec<(Mode, usize)> {
         // because 3 is more pessimistic
         let [aln_to_asc, _, num_to_aln, num_to_asc] = class;
 
+        let mut mrl = mode_run_lengths.clone();
+
+        // check two things:
+        // do we change the following mode based on the current?
+        // do we change the current mode based on the following?
+        for i in 0..(mrl.len() - 1) {
+            match mrl[i] {
+                // no need to regard the length of the ascii block
+                // because those chars only exist in one mode
+                (ASCII, _) => match mrl[i + 1] {
+                    (AlphaNum, len2) => {
+                        if len2 < aln_to_asc {
+                            // if the alphanumeric section is too short,
+                            // look even further forward to see if there's
+                            // a numeric section that can be optimized
+                            if let Some((Numeric, len3)) = mrl.get(i + 2) {
+                                todo!()
+                            } else {
+                                mrl[i + 1] = (ASCII, len2);
+                            }
+                        }
+                    }
+                    (Numeric, len2) => todo!(),
+                    _ => panic!(),
+                },
+                (AlphaNum, len) => {}
+                (Numeric, len) => {}
+                _ => panic!(),
+            }
+        }
+
+        /*
         // compare the current mode with the next one, to decide if
         // the current mode should actually be replaced with the next
         let mut mut_mode_runs = mode_run_lengths.clone();
@@ -454,17 +492,80 @@ fn optimize_mode(input: String) -> Vec<(Mode, usize)> {
             //     mut_mode_runs[i] = (left_mode, right_run);
             // }
         }
-
         todo!("do something with mut_mode_runs here before it's dropped")
+        */
+    }
+
+    todo!("not finished")
+}
+
+#[allow(unused_variables, unreachable_code, unused_mut)]
+pub(crate) fn wip_alt_optimize_mode(input: String) -> Vec<(Mode, String)> {
+    // // alphanumeric, numeric:
+    // // start index of block, length of block
+    // // alphanumeric > numeric so any numeric block will also be
+    // // part of an alphanumeric block
+    // let mut run_lengths: (Vec<(usize, usize)>, Vec<(usize, usize)>) = (vec![], vec![]);
+
+    let stat_vec: Vec<(bool, bool)> = {
+        // is it alphanumeric? / is it numeric?
+        let mut char_modes = input.chars().map(|x| {
+            match char_status(x).expect("optimize_mode: invalid character in input") {
+                ASCII => (false, false),
+                AlphaNum => (true, false),
+                Numeric => (true, true),
+                _ => panic!(),
+            }
+        });
+        // stdin input ends on a newline
+        char_modes.next_back();
+        char_modes.collect::<Vec<_>>()
+    };
+
+    // returns the length of run of a type of character
+    // if aln is true, alphanumeric (> numeric)
+    // if false, numeric
+    let stat_run = |index: usize, aln: bool| {
+        let mut out = 0;
+        for i in index..stat_vec.len() {
+            let (is_aln, is_num) = stat_vec[i];
+            if (aln && is_aln) || (!aln && is_num) {
+                // we're on the kind of type of character we're looking for
+                out += 1;
+            } else {
+                // the run of characters has ended
+                break;
+            }
+        }
+        out
+    };
+
+    // mode optimization procedure
+    for class in MODE_ECONOMY.into_iter() {
+        let [aln_to_asc, _, num_to_aln, num_to_asc] = class;
+
+        let mut status = &mut stat_vec.iter().enumerate();
+        while let Some((index, &(aln, num))) = status.next() {}
     }
 
     todo!("not finished")
 }
 
 // plan: follow the qr standard's example implementation of mode switching
+#[allow(unused_mut, unused_variables, unreachable_code)]
 pub(crate) fn auto_mode_switch(input: String) -> Vec<(Mode, String)> {
-    // being lazy for now!
-    vec![(ASCII, input)]
+    // when i refer to switching "upwards" and "downwards", it means
+    // increased/decreased specificity. as in, smaller subset is higher
+
+    let mut chars = input.chars().map(|x| char_status(x));
+    let mut current_mode: Mode;
+    let mut push_string: String;
+
+    match chars.next().expect("input is empty!") {
+        _ => todo!(),
+    }
+
+    todo!()
 }
 
 // verified accurate
