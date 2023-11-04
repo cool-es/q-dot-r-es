@@ -603,13 +603,7 @@ fn make_mode_graph(input: Vec<Mode>) -> Vec<(usize, ModeSwitchWeights)> {
 
     let mut counts = <[f32; 3]>::default();
     for (new_index, new_mode) in mode_iter {
-        if new_mode == current_mode {
-            vec_add_assign(&mut counts, [3.3, 5.5, 8.0]);
-        } else {
-            // push and reset count
-            let counts = counts.map(|x| Some(x));
-            output.push((1,(false, counts)));
-        }
+        output.push((new_index, mode_to_mode_weights(current_mode, new_mode, 0)));
     }
 
     output
@@ -640,38 +634,57 @@ fn mode_to_mode_weights(start: Mode, end: Mode, class: usize) -> ModeSwitchWeigh
 }
 
 #[allow(unused_variables, unreachable_code, unused_mut)]
-pub(crate) fn wip_alt_wip_alt_optimize_mode(input: String) -> Vec<(Mode, String)> {
-    // is it alphanumeric? / is it numeric?
-    let stat_vec: Vec<(bool, bool)> = input
-        .chars()
-        .map(
-            |x| match char_status(x).expect("invalid character in input") {
-                ASCII => (false, false),
-                AlphaNum => (true, false),
-                Numeric => (true, true),
-                _ => panic!(),
-            },
-        )
-        .collect::<Vec<_>>();
-
+pub(crate) fn a_star(input: String) -> Vec<(Mode, String)> {
     todo!()
-}
+    //     function reconstruct_path(cameFrom, current)
+    //     total_path := {current}
+    //     while current in cameFrom.Keys:
+    //         current := cameFrom[current]
+    //         total_path.prepend(current)
+    //     return total_path
 
-// plan: follow the qr standard's example implementation of mode switching
-#[allow(unused_mut, unused_variables, unreachable_code)]
-pub(crate) fn auto_mode_switch(input: String) -> Vec<(Mode, String)> {
-    // when i refer to switching "upwards" and "downwards", it means
-    // increased/decreased specificity. as in, smaller subset is higher
+    // // A* finds a path from start to goal.
+    // // h is the heuristic function. h(n) estimates the cost to reach goal from node n.
+    // function A_Star(start, goal, h)
+    //     // The set of discovered nodes that may need to be (re-)expanded.
+    //     // Initially, only the start node is known.
+    //     // This is usually implemented as a min-heap or priority queue rather than a hash-set.
+    //     openSet := {start}
 
-    let mut chars = input.chars().map(|x| char_status(x));
-    let mut current_mode: Mode;
-    let mut push_string: String;
+    //     // For node n, cameFrom[n] is the node immediately preceding it on the cheapest path from the start
+    //     // to n currently known.
+    //     cameFrom := an empty map
 
-    match chars.next().expect("input is empty!") {
-        _ => todo!(),
-    }
+    //     // For node n, gScore[n] is the cost of the cheapest path from start to n currently known.
+    //     gScore := map with default value of Infinity
+    //     gScore[start] := 0
 
-    todo!()
+    //     // For node n, fScore[n] := gScore[n] + h(n). fScore[n] represents our current best guess as to
+    //     // how cheap a path could be from start to finish if it goes through n.
+    //     fScore := map with default value of Infinity
+    //     fScore[start] := h(start)
+
+    //     while openSet is not empty
+    //         // This operation can occur in O(Log(N)) time if openSet is a min-heap or a priority queue
+    //         current := the node in openSet having the lowest fScore[] value
+    //         if current = goal
+    //             return reconstruct_path(cameFrom, current)
+
+    //         openSet.Remove(current)
+    //         for each neighbor of current
+    //             // d(current,neighbor) is the weight of the edge from current to neighbor
+    //             // tentative_gScore is the distance from start to the neighbor through current
+    //             tentative_gScore := gScore[current] + d(current, neighbor)
+    //             if tentative_gScore < gScore[neighbor]
+    //                 // This path to neighbor is better than any previous one. Record it!
+    //                 cameFrom[neighbor] := current
+    //                 gScore[neighbor] := tentative_gScore
+    //                 fScore[neighbor] := tentative_gScore + h(neighbor)
+    //                 if neighbor not in openSet
+    //                     openSet.add(neighbor)
+
+    //     // Open set is empty but goal was never reached
+    //     return failure
 }
 
 // verified accurate
