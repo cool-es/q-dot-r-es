@@ -582,6 +582,61 @@ pub(crate) fn wip_alt_optimize_mode(input: String) -> Vec<(Mode, String)> {
     todo!("not finished")
 }
 
+// weights for graph traversal
+// (index of next element, weights to reach it)
+// index is necessary because the output list is abbreviated
+type ModeSwitchWeights = [Option<f32>; 9];
+
+#[allow(unused_variables, unreachable_code, unused_mut)]
+fn make_mode_graph(input: Vec<Mode>) -> Vec<(usize, ModeSwitchWeights)> {
+    let mut output: Vec<(usize, ModeSwitchWeights)> = vec![];
+
+    let mut mode_iter = input.into_iter().enumerate();
+    let (index, mut current_mode) = mode_iter.next().expect("mode vector is empty!");
+
+    output.push((index, <[Option<f32>; 9]>::default()));
+
+    for i in mode_iter {}
+
+    output
+}
+
+fn mode_to_mode_weights(start: Mode, end: Mode, class: usize) -> ModeSwitchWeights {
+    if start == end {
+        [
+            Some(8.0),
+            (start <= AlphaNum).then_some(5.5),
+            (start == Numeric).then_some(3.3),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ]
+    } else {
+        [None, None, None, None, None, None, None, None, None]
+    }
+}
+
+#[allow(unused_variables, unreachable_code, unused_mut)]
+pub(crate) fn wip_alt_wip_alt_optimize_mode(input: String) -> Vec<(Mode, String)> {
+    // is it alphanumeric? / is it numeric?
+    let stat_vec: Vec<(bool, bool)> = input
+        .chars()
+        .map(
+            |x| match char_status(x).expect("invalid character in input") {
+                ASCII => (false, false),
+                AlphaNum => (true, false),
+                Numeric => (true, true),
+                _ => panic!(),
+            },
+        )
+        .collect::<Vec<_>>();
+
+    todo!()
+}
+
 // plan: follow the qr standard's example implementation of mode switching
 #[allow(unused_mut, unused_variables, unreachable_code)]
 pub(crate) fn auto_mode_switch(input: String) -> Vec<(Mode, String)> {
