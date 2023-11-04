@@ -585,7 +585,14 @@ pub(crate) fn wip_alt_optimize_mode(input: String) -> Vec<(Mode, String)> {
 // weights for graph traversal
 // (index of next element, weights to reach it)
 // index is necessary because the output list is abbreviated
-type ModeSwitchWeights = [Option<f32>; 9];
+// required to use floats because this approximation
+// is the only way to form a (weighted) graph -
+// otherwise distances would vary depending on
+// where you started from
+
+// bool: are they the same?
+// entries: -> num, -> aln, -> asc
+type ModeSwitchWeights = (bool, [Option<f32>; 3]);
 
 #[allow(unused_variables, unreachable_code, unused_mut)]
 fn make_mode_graph(input: Vec<Mode>) -> Vec<(usize, ModeSwitchWeights)> {
@@ -594,29 +601,42 @@ fn make_mode_graph(input: Vec<Mode>) -> Vec<(usize, ModeSwitchWeights)> {
     let mut mode_iter = input.into_iter().enumerate();
     let (index, mut current_mode) = mode_iter.next().expect("mode vector is empty!");
 
-    output.push((index, <[Option<f32>; 9]>::default()));
-
-    for i in mode_iter {}
+    let mut counts = <[f32; 3]>::default();
+    for (new_index, new_mode) in mode_iter {
+        if new_mode == current_mode {
+            vec_add_assign(&mut counts, [3.3, 5.5, 8.0]);
+        } else {
+            // push and reset count
+            let counts = counts.map(|x| Some(x));
+            output.push((1,(false, counts)));
+        }
+    }
 
     output
 }
 
-fn mode_to_mode_weights(start: Mode, end: Mode, class: usize) -> ModeSwitchWeights {
-    if start == end {
-        [
-            Some(8.0),
-            (start <= AlphaNum).then_some(5.5),
-            (start == Numeric).then_some(3.3),
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        ]
-    } else {
-        [None, None, None, None, None, None, None, None, None]
+fn vec_add_assign<T, U, const N: usize>(lhs: &mut [T; N], rhs: [U; N])
+where
+    T: for<'a> std::ops::AddAssign<&'a U>,
+{
+    for i in 0..N {
+        lhs[i] += &rhs[i];
     }
+}
+
+fn mode_to_mode_weights(start: Mode, end: Mode, class: usize) -> ModeSwitchWeights {
+    let from = u32::from(start == end);
+    (
+        start == end,
+        [
+            // to num
+            (end == Numeric).then_some(((4 + [10, 12, 14][class]) * from) as f32 + 3.3),
+            // to aln
+            (end <= AlphaNum).then_some(((4 + [9, 11, 13][class]) * from) as f32 + 5.5),
+            // to ascii
+            Some(((4 + [8, 16, 16][class] + 8) * from) as f32),
+        ],
+    )
 }
 
 #[allow(unused_variables, unreachable_code, unused_mut)]
