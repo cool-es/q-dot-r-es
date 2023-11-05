@@ -11,7 +11,7 @@ something that's really complicated is deciding what level of complexity/abstrac
 and i was stuck choosing between 2 and 3, where either option would make it really complicated to skip over the missing step. so i chose to do both
 */
 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub(crate) enum Mode {
     // not implementing ECI at this time
 
@@ -636,20 +636,21 @@ fn mode_to_mode_weights(start: Mode, end: Mode, class: usize) -> ModeSwitchWeigh
 mod a_star {
     #![allow(unused_variables, unreachable_code, unused_mut)]
 
+    use super::Mode::{self, *};
     use std::collections::{HashMap, HashSet};
 
     // char index, char type (i.e. subset)
-    type AStarNodeID = (usize, u8);
-    type AStarPath = Vec<AStarNodeID>;
+    // NOTE: num chars have 3 nodes, aln chars have 2, asc 1
+    type NodeId = (usize, Mode);
+
+    type Path = Vec<NodeId>;
+    type Map<T> = HashMap<NodeId, T>;
     type Cost = f32;
 
     //     function reconstruct_path(cameFrom, current)
-    fn reconstruct_path(
-        came_from: HashMap<AStarNodeID, AStarNodeID>,
-        current: AStarNodeID,
-    ) -> AStarPath {
+    fn reconstruct_path(came_from: Map<NodeId>, current: NodeId) -> Path {
         //     total_path := {current}
-        let mut total_path: AStarPath = vec![current];
+        let mut total_path: Path = vec![current];
 
         //     while current in cameFrom.Keys:
         let mut current = current;
@@ -665,38 +666,79 @@ mod a_star {
         total_path
     }
 
-    fn get_or_insert_inf(score_map: &mut HashMap<AStarNodeID, Cost>, node: AStarNodeID) -> Cost {
+    fn get(score_map: &mut Map<Cost>, node: NodeId) -> Cost {
+        // as per the IEEE 754 standard, adding a finite number to infinity
+        // makes infinity. meaning, this is well-behaved
         score_map.entry(node).or_insert(Cost::INFINITY).clone()
+    }
+
+    fn entry_mut<'a, T>(node_map: &'a mut Map<T>, node: &NodeId) -> &'a mut T {
+        node_map.get_mut(node).expect("hashmap is empty!")
+    }
+
+    // the heuristic function
+    // estimated cost of reaching the finish from here
+    fn h(node: NodeId) -> Cost {
+        // plan: the calculation is "go along the current mode
+        // as far as possible, then switch to ascii for the remainder"
+        todo!()
+    }
+
+    // distance between neighbors
+    // todo: figure out how to integrate size classes
+    fn d(from: NodeId, to: NodeId) -> Cost {
+        if from.0 + 1 == to.0 {
+            (if from.1 != to.1 {
+                // add length of char count indicator
+                crate::qr_standard::cc_indicator_bit_size(
+                    {
+                        // help!! what class do i pick?
+                        2
+                    },
+                    to.1,
+                )
+            } else {
+                0
+            }) as Cost
+                + match to.1 {
+                    ASCII => 8.0,
+                    AlphaNum => 5.5,
+                    Numeric => 3.3,
+                    Kanji => todo!(),
+                }
+        } else {
+            Cost::INFINITY
+        }
     }
 
     // // A* finds a path from start to goal.
     // // h is the heuristic function. h(n) estimates the cost to reach goal from node n.
     // function A_Star(start, goal, h)
-    fn a_star<F>(start: AStarNodeID, goal: AStarNodeID, h: F) -> Option<AStarPath>
+    fn a_star<F>(start: NodeId, goal: NodeId, h: F) -> Option<Path>
     where
-        F: Fn(AStarNodeID) -> Cost,
+        F: Fn(NodeId) -> Cost,
     {
         //     // The set of discovered nodes that may need to be (re-)expanded.
         //     // Initially, only the start node is known.
         //     // This is usually implemented as a min-heap or priority queue rather than a hash-set.
         //     openSet := {start}
-        let mut open_set: HashSet<AStarNodeID> = HashSet::from([start]);
+        let mut open_set: HashSet<NodeId> = HashSet::from([start]);
 
         //     // For node n, cameFrom[n] is the node immediately preceding it on the cheapest path from the start
         //     // to n currently known.
         //     cameFrom := an empty map
-        let mut came_from: HashMap<AStarNodeID, AStarNodeID> = HashMap::new();
+        let mut came_from: Map<NodeId> = HashMap::new();
 
         //     // For node n, gScore[n] is the cost of the cheapest path from start to n currently known.
         //     gScore := map with default value of Infinity
         //     gScore[start] := 0
-        let mut g_score: HashMap<AStarNodeID, Cost> = HashMap::new();
+        let mut g_score: Map<Cost> = HashMap::new();
 
         //     // For node n, fScore[n] := gScore[n] + h(n). fScore[n] represents our current best guess as to
         //     // how cheap a path could be from start to finish if it goes through n.
         //     fScore := map with default value of Infinity
         //     fScore[start] := h(start)
-        let mut f_score: HashMap<AStarNodeID, Cost> = HashMap::from([(start, h(start))]);
+        let mut f_score: Map<Cost> = HashMap::from([(start, h(start))]);
 
         //     while openSet is not empty
         while !open_set.is_empty() {
@@ -704,16 +746,13 @@ mod a_star {
             //         current := the node in openSet having the lowest fScore[] value
             let mut current = {
                 let mut nodes = open_set.iter();
-                let (mut best_node, mut best_score) = if let Some(&node) = nodes.next() {
-                    (node, get_or_insert_inf(&mut f_score, node))
-                } else {
-                    todo!()
-                };
-                for &candidate_id in nodes {
-                    let try_score = get_or_insert_inf(&mut f_score, candidate_id);
+                let mut best_node = *nodes.next().expect("set is empty!");
+                let mut best_score = get(&mut f_score, best_node);
+                for &candidate_node in nodes {
+                    let try_score = get(&mut f_score, candidate_node);
                     if try_score < best_score {
+                        best_node = candidate_node;
                         best_score = try_score;
-                        best_node = candidate_id;
                     }
                 }
                 best_node
@@ -732,18 +771,17 @@ mod a_star {
                 //             // d(current,neighbor) is the weight of the edge from current to neighbor
                 //             // tentative_gScore is the distance from start to the neighbor through current
                 //             tentative_gScore := gScore[current] + d(current, neighbor)
-                let tentative_g_score =
-                    get_or_insert_inf(&mut g_score, current) + todo!("implement d") as Cost;
+                let tentative_g_score = get(&mut g_score, current) + todo!("implement d") as Cost;
 
                 //             if tentative_gScore < gScore[neighbor]
-                if tentative_g_score < get_or_insert_inf(&mut g_score, neighbor) {
+                if tentative_g_score < get(&mut g_score, neighbor) {
                     //                 // This path to neighbor is better than any previous one. Record it!
                     //                 cameFrom[neighbor] := current
-                    *(came_from.entry(neighbor).or_default()) = current;
+                    *entry_mut(&mut came_from, &neighbor) = current;
                     //                 gScore[neighbor] := tentative_gScore
-                    *(g_score.entry(neighbor).or_default()) = tentative_g_score;
+                    *entry_mut(&mut g_score, &neighbor) = tentative_g_score;
                     //                 fScore[neighbor] := tentative_gScore + h(neighbor)
-                    *(f_score.entry(neighbor).or_default()) = tentative_g_score + h(neighbor);
+                    *entry_mut(&mut f_score, &neighbor) = tentative_g_score + h(neighbor);
 
                     //                 if neighbor not in openSet
                     //                     openSet.add(neighbor)
