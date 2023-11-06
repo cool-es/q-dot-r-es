@@ -800,6 +800,89 @@ mod a_star {
     }
 }
 
+mod good_star {
+    #![allow(unused_variables, unreachable_code, unused_mut)]
+
+    use super::Mode::{self, *};
+
+    // a simpler search algorithm than a*
+    // compute the "g score" of every node,
+    // backtrack and pick the lowest value
+
+    // if two characters are of the same type,
+    // there is no reason to switch modes,
+    // so we can just
+
+    // any message of length n has at most
+    // 6n-6 edges (alternating between aln-asc)
+
+    // the cheapest known way to reach a character
+    // we approximate the cost of a single aln/num
+    // char as 11/2 and 10/3 respectively, but if we
+    // multiply it by 6 it makes an integer
+    type GScore = u32;
+
+    // the 1, 2 or 3 nodes associated with
+    // a character
+    type CharNodes = (Mode, [GScore; 3]);
+
+    // the nodes corresponding to the full message
+    type Graph = Vec<CharNodes>;
+
+    fn get(character: CharNodes, index: usize) -> Option<GScore> {
+        if index > max(character) {
+            None
+        } else {
+            Some(character.1[index])
+        }
+    }
+
+    fn get_variant(character: CharNodes, category: Mode) -> Option<GScore> {
+        get(character, index(category))
+    }
+
+    fn set_min(character: &mut CharNodes, index: usize, value: GScore) {
+        if index > max(*character) || character.1[index] <= value {
+            return;
+        } else {
+            character.1[index] = value;
+        }
+    }
+
+    fn optimal_mode(character: CharNodes) -> Mode {
+        match character.0 {
+            ASCII => ASCII,
+            AlphaNum => AlphaNum,
+            Numeric => Numeric,
+            Kanji => todo!(),
+        }
+    }
+
+    fn least_index<T, const N: usize>(input: [T; N]) -> usize
+    where
+        T: Ord + Clone,
+    {
+        let mut best_index = None;
+
+        for i in 0..N {}
+        best_index.unwrap()
+    }
+
+    // max index for a character's node list
+    fn max(character: CharNodes) -> usize {
+        index(character.0)
+    }
+
+    fn index(mode: Mode) -> usize {
+        match mode {
+            ASCII => 0,
+            AlphaNum => 1,
+            Numeric => 2,
+            Kanji => todo!(),
+        }
+    }
+}
+
 // verified accurate
 // returns the number of bits it takes to print `count` characters
 // in a given mode and size class of qr code
