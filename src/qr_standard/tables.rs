@@ -496,10 +496,10 @@ pub(crate) const MODE_ECONOMY: [[usize; 4]; 3] = [
 // and by mode (num-aln-asc-knj)
 const CC_INDICATOR_BITS: [[usize; 4]; 3] = [[10, 9, 8, 8], [12, 11, 16, 10], [14, 13, 16, 12]];
 
-pub(crate) const fn cc_indicator_bit_size(class: usize, mode: super::Mode) -> usize {
+pub(crate) fn cc_indicator_bit_size(class: u8, mode: super::Mode) -> usize {
     use super::Mode::*;
     if class < 3 {
-        CC_INDICATOR_BITS[class][match mode {
+        CC_INDICATOR_BITS[class as usize][match mode {
             Numeric => 0,
             AlphaNum => 1,
             ASCII => 2,

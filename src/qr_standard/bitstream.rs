@@ -31,6 +31,10 @@ pub(crate) enum Mode {
     Kanji,
 }
 
+impl Mode {
+    pub(crate) const LIST: [Self; 3] = [ASCII, AlphaNum, Numeric];
+}
+
 // level 2
 #[derive(Clone)]
 struct MarkedString {
@@ -236,7 +240,7 @@ pub(super) fn find_best_version(data: &Vec<Token>, level: u8) -> Result<u32, Str
 }
 
 pub(crate) fn compute_bit_hypothetical() {
-    let modes = [ASCII, AlphaNum, Numeric];
+    let modes = Mode::LIST;
     for (i, a) in [1, 10, 27].into_iter().enumerate() {
         println!("class {} (version {}..):", i + 1, a);
         for m1 in 0..3 {
@@ -801,7 +805,7 @@ mod a_star {
 }
 
 mod good_star {
-    #![allow(unused_variables, unreachable_code, unused_mut)]
+    #![allow(unused_variables, unused_assignments, unreachable_code, unused_mut)]
 
     use super::Mode::{self, *};
 
@@ -820,16 +824,20 @@ mod good_star {
     // we approximate the cost of a single aln/num
     // char as 11/2 and 10/3 respectively, but if we
     // multiply it by 6 it makes an integer
-    type GScore = u32;
+    // 10/3 -> 20
+    // 11/2 -> 33
+    // 8 -> 48
+    type Cost = u32;
 
     // the 1, 2 or 3 nodes associated with
     // a character
-    type CharNodes = (Mode, [GScore; 3]);
+    type CharNodes = (Mode, [Cost; 3]);
 
     // the nodes corresponding to the full message
     type Graph = Vec<CharNodes>;
 
-    fn get(character: CharNodes, index: usize) -> Option<GScore> {
+    fn get(character: CharNodes, category: Mode) -> Option<Cost> {
+        let index = category.index();
         if index > max(character) {
             None
         } else {
@@ -837,11 +845,8 @@ mod good_star {
         }
     }
 
-    fn get_variant(character: CharNodes, category: Mode) -> Option<GScore> {
-        get(character, index(category))
-    }
-
-    fn set_min(character: &mut CharNodes, index: usize, value: GScore) {
+    fn set_min(character: &mut CharNodes, category: Mode, value: Cost) {
+        let index = category.index();
         if index > max(*character) || character.1[index] <= value {
             return;
         } else {
@@ -849,36 +854,177 @@ mod good_star {
         }
     }
 
-    fn optimal_mode(character: CharNodes) -> Mode {
-        match character.0 {
-            ASCII => ASCII,
-            AlphaNum => AlphaNum,
-            Numeric => Numeric,
+    // averaged distance between neighbors
+    fn edge_weight(to_mode: Mode, same_subset: bool, class: u8) -> Cost {
+        (if !same_subset {
+            // we multiply by 6 to get rid of decimals
+            // the 4 is the size of the mode indicator
+            6 * (4 + crate::qr_standard::cc_indicator_bit_size(class, to_mode)) as Cost
+        } else {
+            0
+        }) + match to_mode {
+            // 6 * 8
+            ASCII => 48,
+            // 6 * 11/2
+            AlphaNum => 33,
+            // 6 * 10/3
+            Numeric => 20,
             Kanji => todo!(),
         }
     }
 
-    fn least_index<T, const N: usize>(input: [T; N]) -> usize
-    where
-        T: Ord + Clone,
-    {
-        let mut best_index = None;
+    // propagate best score + edge weight
+    fn score_successor(from: &CharNodes, to: &mut CharNodes, class: u8) {
+        let modes = Mode::LIST;
+        // check each node we're going from
+        for &from_mode in modes.iter() {
+            // if that node exists,
+            if let Some(from_score) = get(*from, from_mode) {
+                // check each node we're moving towards
+                for &to_mode in modes.iter() {
+                    // and if THAT node exists,
+                    if to_mode.index() <= to.0.index() {
+                        // are we moving between two nodes of the same type?
+                        let same_subset = from_mode == to_mode;
 
-        for i in 0..N {}
-        best_index.unwrap()
+                        // calculate the value of the node we're moving towards
+                        let to_score = from_score + edge_weight(to_mode, same_subset, class);
+
+                        // if the score is lower than what's already there,
+                        // i.e. we're on a more optimal path, replace it
+                        if to_score < to.1[to_mode.index()] {
+                            to.1[to_mode.index()] = to_score;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    // creates a graph of nodes along with their "g scores"
+    fn create_graph(mode_vec: &Vec<Mode>, class: u8) -> Graph {
+        let mut output: Graph = Vec::new();
+        let mut mode_iter = mode_vec.iter();
+        let mut current_scores = [Cost::MAX; 3];
+
+        // first character is a special case - the "same subset" parameter
+        // is false for all modes
+        let init_mode = *mode_iter.next().expect("mode vector is empty");
+        for (init_score, to_mode) in current_scores
+            .iter_mut()
+            .zip(Mode::LIST)
+            .take(init_mode.index() + 1)
+        {
+            *init_score = edge_weight(to_mode, false, class);
+        }
+
+        let mut current_nodes: CharNodes = (init_mode, current_scores);
+        output.push(current_nodes);
+
+        let mut previous_nodes: CharNodes;
+        for &mode in mode_iter {
+            previous_nodes = current_nodes;
+            current_nodes = (mode, [Cost::MAX; 3]);
+
+            score_successor(&previous_nodes, &mut current_nodes, class);
+            output.push(current_nodes);
+        }
+
+        output
+    }
+
+    fn optimal_path(graph: &Graph) -> Vec<Mode> {
+        let mut output = Vec::new();
+
+        for &character in graph.iter().rev() {
+            let mut best_mode = ASCII;
+            let mut best_score = get(character, ASCII).unwrap();
+            for mode in [AlphaNum, Numeric] {
+                if let Some(score) = get(character, mode) {
+                    if score < best_score {
+                        best_mode = mode;
+                        best_score = score;
+                    }
+                } else {
+                    break;
+                }
+            }
+            output.push(best_mode);
+        }
+
+        output.reverse();
+        output
     }
 
     // max index for a character's node list
     fn max(character: CharNodes) -> usize {
-        index(character.0)
+        let mode = character.0;
+        mode.index()
     }
 
-    fn index(mode: Mode) -> usize {
-        match mode {
-            ASCII => 0,
-            AlphaNum => 1,
-            Numeric => 2,
-            Kanji => todo!(),
+    impl Mode {
+        fn index(&self) -> usize {
+            let mode = *self;
+            match mode {
+                ASCII => 0,
+                AlphaNum => 1,
+                Numeric => 2,
+                Kanji => todo!(),
+            }
+        }
+    }
+
+    mod tests {
+
+        use super::*;
+
+        #[test]
+        fn create_graph_nocapture() {
+            let scramble = |x: usize| {
+                // ((x + 1) * x)
+                // (x%5)*(x*7) % 3
+                if x % 15 == 0 || x % 10 == 0 {
+                    0
+                } else {
+                    2
+                }
+            };
+
+            let mode_vec = (0..40).map(|x| Mode::LIST[scramble(x)]).collect::<Vec<_>>();
+
+            println!("modes:\n{:?}", mode_vec);
+            for class in 0..3 {
+                println!("class {}", class);
+                for mode in Mode::LIST {
+                    println!(
+                        "-> {:?}: {}",
+                        mode,
+                        crate::qr_standard::cc_indicator_bit_size(class, mode)
+                    );
+                }
+                let a = create_graph(&mode_vec, class);
+                helpy_print_graph(&a);
+                println!("\n");
+            }
+        }
+
+        fn helpy_print_graph(graph: &Graph) {
+            for &(mode, data) in graph {
+                println!("{:10?}", mode);
+                print!("[");
+                for k in data {
+                    if k < Cost::MAX {
+                        print!("{:4},", ((k as f32) / 6.0).round() as i32);
+                    } else {
+                        print!("     ");
+                    }
+                }
+                println!("]");
+            }
         }
     }
 }
