@@ -814,8 +814,7 @@ mod good_star {
     // backtrack and pick the lowest value
 
     // if two characters are of the same type,
-    // there is no reason to switch modes,
-    // so we can just
+    // there is no reason to switch modes
 
     // any message of length n has at most
     // 6n-6 edges (alternating between aln-asc)
@@ -827,32 +826,56 @@ mod good_star {
     // 10/3 -> 20
     // 11/2 -> 33
     // 8 -> 48
+
     type Cost = u32;
+    #[derive(PartialEq, Eq, Clone, Copy, Debug)]
+    struct TaggedNode(Cost, Option<Mode>);
+
+    impl Default for TaggedNode {
+        fn default() -> Self {
+            TaggedNode(u32::MAX, None)
+        }
+    }
+
+    impl PartialOrd for TaggedNode {
+        fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+            self.0.partial_cmp(&other.0)
+        }
+    }
+
+    impl Ord for TaggedNode {
+        fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+            self.0.cmp(&other.0)
+        }
+    }
 
     // the 1, 2 or 3 nodes associated with
     // a character
-    type CharNodes = (Mode, [Cost; 3]);
+    #[derive(Clone, Copy)]
+    struct CharNodes(Mode, [TaggedNode; 3]);
+
+    impl CharNodes {
+        fn get(self, category: Mode) -> Option<TaggedNode> {
+            let index = category.index();
+            if index > max(self) {
+                None
+            } else {
+                Some(self.1[index])
+            }
+        }
+
+        fn set_min(&mut self, category: Mode, value: TaggedNode) {
+            let index = category.index();
+            if index > max(*self) || self.1[index] <= value {
+                return;
+            } else {
+                self.1[index] = value;
+            }
+        }
+    }
 
     // the nodes corresponding to the full message
     type Graph = Vec<CharNodes>;
-
-    fn get(character: CharNodes, category: Mode) -> Option<Cost> {
-        let index = category.index();
-        if index > max(character) {
-            None
-        } else {
-            Some(character.1[index])
-        }
-    }
-
-    fn set_min(character: &mut CharNodes, category: Mode, value: Cost) {
-        let index = category.index();
-        if index > max(*character) || character.1[index] <= value {
-            return;
-        } else {
-            character.1[index] = value;
-        }
-    }
 
     // averaged distance between neighbors
     fn edge_weight(to_mode: Mode, same_subset: bool, class: u8) -> Cost {
@@ -879,7 +902,10 @@ mod good_star {
         // check each node we're going from
         for &from_mode in modes.iter() {
             // if that node exists,
-            if let Some(from_score) = get(*from, from_mode) {
+            if let Some(TaggedNode(from_score, _)) = {
+                let character = *from;
+                character.get(from_mode)
+            } {
                 // check each node we're moving towards
                 for &to_mode in modes.iter() {
                     // and if THAT node exists,
@@ -892,8 +918,8 @@ mod good_star {
 
                         // if the score is lower than what's already there,
                         // i.e. we're on a more optimal path, replace it
-                        if to_score < to.1[to_mode.index()] {
-                            to.1[to_mode.index()] = to_score;
+                        if to_score < to.1[to_mode.index()].0 {
+                            to.1[to_mode.index()] = TaggedNode(to_score, Some(from_mode));
                         }
                     } else {
                         break;
@@ -907,9 +933,8 @@ mod good_star {
 
     // creates a graph of nodes along with their "g scores"
     fn create_graph(mode_vec: &Vec<Mode>, class: u8) -> Graph {
-        let mut output: Graph = Vec::new();
         let mut mode_iter = mode_vec.iter();
-        let mut current_scores = [Cost::MAX; 3];
+        let mut current_scores = [TaggedNode::default(); 3];
 
         // first character is a special case - the "same subset" parameter
         // is false for all modes
@@ -919,16 +944,16 @@ mod good_star {
             .zip(Mode::LIST)
             .take(init_mode.index() + 1)
         {
-            *init_score = edge_weight(to_mode, false, class);
+            *init_score = TaggedNode(edge_weight(to_mode, false, class), None);
         }
 
-        let mut current_nodes: CharNodes = (init_mode, current_scores);
-        output.push(current_nodes);
+        let mut current_nodes = CharNodes(init_mode, current_scores);
+        let mut output: Graph = vec![current_nodes];
 
         let mut previous_nodes: CharNodes;
         for &mode in mode_iter {
             previous_nodes = current_nodes;
-            current_nodes = (mode, [Cost::MAX; 3]);
+            current_nodes = CharNodes(mode, [TaggedNode::default(); 3]);
 
             score_successor(&previous_nodes, &mut current_nodes, class);
             output.push(current_nodes);
@@ -938,13 +963,20 @@ mod good_star {
     }
 
     fn optimal_path(graph: &Graph) -> Vec<Mode> {
-        let mut output = Vec::new();
+        let mut graph_backwards = graph.iter();
 
-        for &character in graph.iter().rev() {
+        for (i, &x) in graph_backwards.clone().enumerate() {
+            println!("old graph index {} - {:?}", i, x.0);
+        }
+
+        let mut output = std::collections::VecDeque::new();
+
+        let mut current_best_mode = {
+            let character = *graph_backwards.next_back().expect("uhh");
             let mut best_mode = ASCII;
-            let mut best_score = get(character, ASCII).unwrap();
+            let mut best_score = character.get(ASCII).unwrap().0;
             for mode in [AlphaNum, Numeric] {
-                if let Some(score) = get(character, mode) {
+                if let Some(TaggedNode(score, _)) = character.get(mode) {
                     if score < best_score {
                         best_mode = mode;
                         best_score = score;
@@ -953,11 +985,68 @@ mod good_star {
                     break;
                 }
             }
-            output.push(best_mode);
+            best_mode
+        };
+
+        output.push_front(current_best_mode);
+        // let mut output = std::collections::VecDeque::from([current_best_mode]);
+
+        // println!("\n");
+        // for (i, &x) in graph_backwards.clone().enumerate() {
+        //     println!("new graph index {} - {:?}", i, x.0);
+        // }
+
+        println!("🤔 {:?}", output);
+
+        // for (i, &character) in graph_backwards.enumerate().rev() {
+        //     if let Some(tagged_node) = get(character, current_best_mode) {
+        //         if let Some(mode) = tagged_node.1 {
+        //             current_best_mode = mode;
+        //             output.push_front(current_best_mode);
+        //         } else {
+        //             // output.push_front(best_mode);
+        //             break;
+        //         }
+        //     } else {
+        //         eprintln!("node does not exist {}", i);
+        //     }
+        //     if i > graph.len() - 10 {
+        //         println!("💥 {} {:?}", i, output);
+        //     }
+        // }
+        while let Some(&character) = graph_backwards.next_back() {
+            if let Some(tagged_node) = character.get(current_best_mode) {
+                if let Some(mode) = tagged_node.1 {
+                    current_best_mode = mode;
+                    output.push_front(current_best_mode);
+                } else {
+                    // output.push_front(current_best_mode);
+                    break;
+                }
+            }
         }
 
-        output.reverse();
-        output
+        let mout = Vec::from(output.clone());
+
+        for (i, &content) in mout.iter().enumerate() {
+            println!(
+                "{:3} → {:?} ⊇ {:?} ({:?})",
+                i,
+                content,
+                graph[i].0,
+                content >= graph[i].0
+            );
+            // assert!(content > graph[i].0, "discrepancy at index {}", i);
+        }
+
+        // assert!(
+        //     output.len() == graph.len(),
+        //     "path len is {} but graph len is {}",
+        //     output.len(),
+        //     graph.len()
+        // );
+
+        mout
     }
 
     // max index for a character's node list
@@ -985,16 +1074,36 @@ mod good_star {
         #[test]
         fn create_graph_nocapture() {
             let scramble = |x: usize| {
-                // ((x + 1) * x)
-                // (x%5)*(x*7) % 3
-                if x % 15 == 0 || x % 10 == 0 {
-                    0
-                } else {
-                    2
-                }
+                (
+                    // ((x + 1) * x)
+                    if {
+                        [1, 24].contains(&x)
+                        // x.count_ones().count_zeros() % 2 == 0
+                    } {
+                        0
+                        // x * 2 + 1
+                    } else if {
+                        //
+
+                        [17].contains(&x)
+
+                        //
+                    } {
+                        // (x / 8).pow(3)
+                        1
+                    } else {
+                        2
+                    }
+                    // if x == 8 { 2 } else { 0 }
+                    // if x.count_ones() % 2 == 0 {
+                    //     (x % 5) + (x % 7)
+                    // } else {
+                    //     (x * x + 1) << (x / 2)
+                    // }
+                ) % 3
             };
 
-            let mode_vec = (0..40).map(|x| Mode::LIST[scramble(x)]).collect::<Vec<_>>();
+            let mode_vec = (0..25).map(|x| Mode::LIST[scramble(x)]).collect::<Vec<_>>();
 
             println!("modes:\n{:?}", mode_vec);
             for class in 0..3 {
@@ -1007,23 +1116,39 @@ mod good_star {
                     );
                 }
                 let a = create_graph(&mode_vec, class);
+                // let mut a = vec![];
+                // for i in 0..23 {
+                //     a.push((
+                //         Mode::LIST[(i / 3) % 2 + 1],
+                //         [TaggedNode(i as u32, Some(Mode::LIST[(i / 3) % 2])); 3],
+                //     ))
+                // }
                 helpy_print_graph(&a);
                 println!("\n");
+                println!("{:?}", optimal_path(&a));
             }
         }
 
         fn helpy_print_graph(graph: &Graph) {
-            for &(mode, data) in graph {
-                println!("{:10?}", mode);
-                print!("[");
-                for k in data {
-                    if k < Cost::MAX {
-                        print!("{:4},", ((k as f32) / 6.0).round() as i32);
-                    } else {
-                        print!("     ");
+            for &CharNodes(mode, data) in graph {
+                println!("{:10?} ---", mode);
+                for (i, &k) in data.iter().enumerate() {
+                    if k < TaggedNode::default() {
+                        let to_mode = Mode::LIST[i];
+                        let mode_name = if let Some(mode) = k.1 {
+                            format!("{:?}", mode)
+                        } else {
+                            "none :(".to_string()
+                        };
+                        println!(
+                            "{:?} -> {:4} (from {})",
+                            to_mode,
+                            ((k.0 as f32) / 6.0).round() as i32,
+                            mode_name,
+                        );
                     }
                 }
-                println!("]");
+                println!("---");
             }
         }
     }
