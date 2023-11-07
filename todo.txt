@@ -1,3 +1,5 @@
+• take care of the whole "optimal path" ordeal
+
 • mode overhead calculation for when to switch modes
     finish optimize_mode()
 • remainder bits
