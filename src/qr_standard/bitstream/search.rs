@@ -363,11 +363,6 @@ pub(crate) mod good_star {
         }
 
         let mut graph_iter = graph.iter();
-
-        for (i, &x) in graph_iter.clone().enumerate() {
-            println!("old graph index {} - {:?}", i, x.0);
-        }
-
         let mut output = std::collections::VecDeque::new();
 
         let last_char = graph_iter.next_back().unwrap();
@@ -376,63 +371,16 @@ pub(crate) mod good_star {
         current_mode = last_char.get(current_mode).unwrap().pointer().unwrap();
         output.push_front(current_mode);
 
-        // let mut output = std::collections::VecDeque::from([current_best_mode]);
-
-        // println!("\n");
-        // for (i, &x) in graph_backwards.clone().enumerate() {
-        //     println!("new graph index {} - {:?}", i, x.0);
-        // }
-
-        // println!("🤔 {:?}", output);
-
-        // for (i, &character) in graph_backwards.enumerate().rev() {
-        //     if let Some(tagged_node) = get(character, current_best_mode) {
-        //         if let Some(mode) = tagged_node.1 {
-        //             current_best_mode = mode;
-        //             output.push_front(current_best_mode);
-        //         } else {
-        //             // output.push_front(best_mode);
-        //             break;
-        //         }
-        //     } else {
-        //         eprintln!("node does not exist {}", i);
-        //     }
-        //     if i > graph.len() - 10 {
-        //         println!("💥 {} {:?}", i, output);
-        //     }
-        // }
-
         while let Some(&character) = graph_iter.next_back() {
             if let Some(mode) = character.get(current_mode).unwrap().pointer() {
                 current_mode = mode;
                 output.push_front(current_mode);
             } else {
-                // output.push_front(current_best_mode);
                 break;
             }
         }
 
-        let mout = Vec::from(output.clone());
-
-        for (i, &content) in mout.iter().enumerate() {
-            println!(
-                "{:3} → {:?} ⊇ {:?} ({:?})",
-                i,
-                content,
-                graph[i].0,
-                content >= graph[i].0
-            );
-            // assert!(content > graph[i].0, "discrepancy at index {}", i);
-        }
-
-        // assert!(
-        //     output.len() == graph.len(),
-        //     "path len is {} but graph len is {}",
-        //     output.len(),
-        //     graph.len()
-        // );
-
-        mout
+        Vec::from(output)
     }
 
     impl Mode {
@@ -457,15 +405,16 @@ pub(crate) mod good_star {
                 (
                     // ((x + 1) * x)
                     if {
-                        [1, 24].contains(&x)
+                        // [1, 24].contains(&x)
                         // x.count_ones().count_zeros() % 2 == 0
+                        x == (((x as f32).sqrt()) as usize).pow(2)
                     } {
                         0
                         // x * 2 + 1
                     } else if {
                         //
-
-                        [17, 23].contains(&x)
+                        (x / 10) % 2 == 0
+                        // [17, 23].contains(&x)
 
                         //
                     } {
@@ -483,11 +432,15 @@ pub(crate) mod good_star {
                 ) % 3
             };
 
-            let mode_vec = (0..10).map(|x| Mode::LIST[scramble(x)]).collect::<Vec<_>>();
+            let mode_vec = (0..50).map(|x| Mode::LIST[scramble(x)]).collect::<Vec<_>>();
 
-            println!("modes:\n{:?}", mode_vec);
+            // println!("modes:\n{:?}", mode_vec);
             for class in 0..3 {
-                println!("class {}", class);
+                println!(
+                    "class {}\n{:?}",
+                    class,
+                    crate::qr_standard::MODE_ECONOMY[class as usize]
+                );
                 for mode in Mode::LIST {
                     println!(
                         "-> {:?}: {}",
@@ -510,16 +463,25 @@ pub(crate) mod good_star {
                         a
                     }
                 };
-
+                println!();
+                let path = optimal_path(&a);
+                // println!("modes:\n{:?}", mode_vec);
+                // println!("path:\n{:?}", path);
+                println!();
+                for (i, (&m, &p)) in mode_vec.iter().zip(path.iter()).enumerate() {
+                    let m = format!("{:?}", m);
+                    let p = format!("{:?}", p);
+                    println!("{:2}: {:8} → {:8}", i, m, p);
+                }
+                println!();
                 helpy_print_graph(&a);
                 println!("\n");
-                println!("{:?}", optimal_path(&a));
             }
         }
 
         fn helpy_print_graph(graph: &Graph) {
-            for &CharNodes(mode, data) in graph {
-                println!("{:10?} ---", mode);
+            for (k, &CharNodes(mode, data)) in graph.iter().enumerate() {
+                println!("{}: {:10?} ---", k, mode);
                 for (i, &k) in data.iter().enumerate() {
                     if k < TaggedNode::default() {
                         let to_mode = Mode::LIST[i];
