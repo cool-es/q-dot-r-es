@@ -199,6 +199,9 @@ pub(crate) mod good_star {
         fn cost(&self) -> Cost {
             self.0
         }
+        fn pointer(&self) -> Option<Mode> {
+            self.1
+        }
     }
 
     impl Default for TaggedNode {
@@ -367,9 +370,12 @@ pub(crate) mod good_star {
 
         let mut output = std::collections::VecDeque::new();
 
-        let mut current_mode = graph_iter.next_back().unwrap().cheapest_mode();
-
+        let last_char = graph_iter.next_back().unwrap();
+        let mut current_mode = last_char.cheapest_mode();
         output.push_front(current_mode);
+        current_mode = last_char.get(current_mode).unwrap().pointer().unwrap();
+        output.push_front(current_mode);
+
         // let mut output = std::collections::VecDeque::from([current_best_mode]);
 
         // println!("\n");
@@ -397,16 +403,12 @@ pub(crate) mod good_star {
         // }
 
         while let Some(&character) = graph_iter.next_back() {
-            if let Some(tagged_node) = character.get(current_mode) {
-                if let Some(mode) = tagged_node.1 {
-                    current_mode = mode;
-                    output.push_front(current_mode);
-                } else {
-                    // output.push_front(current_best_mode);
-                    break;
-                }
+            if let Some(mode) = character.get(current_mode).unwrap().pointer() {
+                current_mode = mode;
+                output.push_front(current_mode);
             } else {
-                panic!("pointer to non-existant data");
+                // output.push_front(current_best_mode);
+                break;
             }
         }
 
