@@ -855,9 +855,9 @@ mod good_star {
     struct CharNodes(Mode, [TaggedNode; 3]);
 
     impl CharNodes {
-        fn get(self, category: Mode) -> Option<TaggedNode> {
+        fn get(&self, category: Mode) -> Option<TaggedNode> {
             let index = category.index();
-            if index > max(self) {
+            if index > self.max() {
                 None
             } else {
                 Some(self.1[index])
@@ -866,10 +866,47 @@ mod good_star {
 
         fn set_min(&mut self, category: Mode, value: TaggedNode) {
             let index = category.index();
-            if index > max(*self) || self.1[index] <= value {
+            if index > self.max() || self.1[index] <= value {
                 return;
             } else {
                 self.1[index] = value;
+            }
+        }
+
+        // max index for a character's node list
+        fn max(&self) -> usize {
+            self.0.index()
+        }
+
+        // propagate best score + edge weight
+        fn score_from_predecessor(&mut self, from: &Self, class: u8) {
+            let modes = Mode::LIST;
+            // check each node we're going from
+            for &from_mode in modes.iter() {
+                // if that node exists,
+                if let Some(TaggedNode(from_score, _)) = from.get(from_mode) {
+                    // check each node we're moving towards
+                    for &to_mode in modes.iter() {
+                        // and if THAT node exists,
+                        if to_mode.index() <= self.0.index() {
+                            // are we moving between two nodes of the same type?
+                            let same_subset = from_mode == to_mode;
+
+                            // calculate the value of the node we're moving towards
+                            let to_score = from_score + edge_weight(to_mode, same_subset, class);
+
+                            // if the score is lower than what's already there,
+                            // i.e. we're on a more optimal path, replace it
+                            if to_score < self.1[to_mode.index()].0 {
+                                self.1[to_mode.index()] = TaggedNode(to_score, Some(from_mode));
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                } else {
+                    break;
+                }
             }
         }
     }
@@ -896,41 +933,6 @@ mod good_star {
         }
     }
 
-    // propagate best score + edge weight
-    fn score_successor(from: &CharNodes, to: &mut CharNodes, class: u8) {
-        let modes = Mode::LIST;
-        // check each node we're going from
-        for &from_mode in modes.iter() {
-            // if that node exists,
-            if let Some(TaggedNode(from_score, _)) = {
-                let character = *from;
-                character.get(from_mode)
-            } {
-                // check each node we're moving towards
-                for &to_mode in modes.iter() {
-                    // and if THAT node exists,
-                    if to_mode.index() <= to.0.index() {
-                        // are we moving between two nodes of the same type?
-                        let same_subset = from_mode == to_mode;
-
-                        // calculate the value of the node we're moving towards
-                        let to_score = from_score + edge_weight(to_mode, same_subset, class);
-
-                        // if the score is lower than what's already there,
-                        // i.e. we're on a more optimal path, replace it
-                        if to_score < to.1[to_mode.index()].0 {
-                            to.1[to_mode.index()] = TaggedNode(to_score, Some(from_mode));
-                        }
-                    } else {
-                        break;
-                    }
-                }
-            } else {
-                break;
-            }
-        }
-    }
-
     // creates a graph of nodes along with their "g scores"
     fn create_graph(mode_vec: &Vec<Mode>, class: u8) -> Graph {
         let mut mode_iter = mode_vec.iter();
@@ -954,8 +956,7 @@ mod good_star {
         for &mode in mode_iter {
             previous_nodes = current_nodes;
             current_nodes = CharNodes(mode, [TaggedNode::default(); 3]);
-
-            score_successor(&previous_nodes, &mut current_nodes, class);
+            current_nodes.score_from_predecessor(&previous_nodes, class);
             output.push(current_nodes);
         }
 
@@ -996,7 +997,7 @@ mod good_star {
         //     println!("new graph index {} - {:?}", i, x.0);
         // }
 
-        println!("🤔 {:?}", output);
+        // println!("🤔 {:?}", output);
 
         // for (i, &character) in graph_backwards.enumerate().rev() {
         //     if let Some(tagged_node) = get(character, current_best_mode) {
@@ -1014,6 +1015,7 @@ mod good_star {
         //         println!("💥 {} {:?}", i, output);
         //     }
         // }
+
         while let Some(&character) = graph_backwards.next_back() {
             if let Some(tagged_node) = character.get(current_best_mode) {
                 if let Some(mode) = tagged_node.1 {
@@ -1049,12 +1051,6 @@ mod good_star {
         mout
     }
 
-    // max index for a character's node list
-    fn max(character: CharNodes) -> usize {
-        let mode = character.0;
-        mode.index()
-    }
-
     impl Mode {
         fn index(&self) -> usize {
             let mode = *self;
@@ -1085,7 +1081,7 @@ mod good_star {
                     } else if {
                         //
 
-                        [17].contains(&x)
+                        [17, 23].contains(&x)
 
                         //
                     } {
@@ -1103,7 +1099,7 @@ mod good_star {
                 ) % 3
             };
 
-            let mode_vec = (0..25).map(|x| Mode::LIST[scramble(x)]).collect::<Vec<_>>();
+            let mode_vec = (0..10).map(|x| Mode::LIST[scramble(x)]).collect::<Vec<_>>();
 
             println!("modes:\n{:?}", mode_vec);
             for class in 0..3 {
@@ -1115,14 +1111,22 @@ mod good_star {
                         crate::qr_standard::cc_indicator_bit_size(class, mode)
                     );
                 }
-                let a = create_graph(&mode_vec, class);
-                // let mut a = vec![];
-                // for i in 0..23 {
-                //     a.push((
-                //         Mode::LIST[(i / 3) % 2 + 1],
-                //         [TaggedNode(i as u32, Some(Mode::LIST[(i / 3) % 2])); 3],
-                //     ))
-                // }
+
+                let a = {
+                    if true {
+                        create_graph(&mode_vec, class)
+                    } else {
+                        let mut a = vec![];
+                        for i in 0..5 {
+                            a.push(CharNodes(
+                                Mode::LIST[(i / 3) % 2 + 1],
+                                [TaggedNode(i as u32, Some(Mode::LIST[(i / 3) % 2])); 3],
+                            ))
+                        }
+                        a
+                    }
+                };
+
                 helpy_print_graph(&a);
                 println!("\n");
                 println!("{:?}", optimal_path(&a));
