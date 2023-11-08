@@ -776,7 +776,7 @@ mod tests {
     #[test]
     fn test_bit_cost() {
         for count in 0..5000 {
-            for mode in [Numeric, AlphaNum, ASCII].into_iter() {
+            for mode in Mode::LIST.into_iter().rev() {
                 let string = vec![(mode, "1".chars().cycle().take(count).collect())];
                 let stream = make_token_stream(string);
                 let overhead = bit_overhead_template(&stream);

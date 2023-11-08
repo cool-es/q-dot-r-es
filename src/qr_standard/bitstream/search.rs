@@ -191,8 +191,15 @@ pub(crate) mod good_star {
     // 8 -> 48
 
     type Cost = u32;
+
     #[derive(PartialEq, Eq, Clone, Copy, Debug)]
     struct TaggedNode(Cost, Option<Mode>);
+
+    impl TaggedNode {
+        fn cost(&self) -> Cost {
+            self.0
+        }
+    }
 
     impl Default for TaggedNode {
         fn default() -> Self {
@@ -206,12 +213,6 @@ pub(crate) mod good_star {
         }
     }
 
-    impl Ord for TaggedNode {
-        fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-            self.0.cmp(&other.0)
-        }
-    }
-
     // the 1, 2 or 3 nodes associated with
     // a character
     #[derive(Clone, Copy)]
@@ -219,21 +220,33 @@ pub(crate) mod good_star {
 
     impl CharNodes {
         fn get(&self, category: Mode) -> Option<TaggedNode> {
-            let index = category.index();
-            if index > self.max() {
+            if !self.has(category) {
                 None
             } else {
-                Some(self.1[index])
+                Some(self.1[category.index()])
+            }
+        }
+
+        fn get_mut(&mut self, category: Mode) -> Option<&mut TaggedNode> {
+            if !self.has(category) {
+                None
+            } else {
+                Some(&mut self.1[category.index()])
             }
         }
 
         fn set_min(&mut self, category: Mode, value: TaggedNode) {
-            let index = category.index();
-            if index > self.max() || self.1[index] <= value {
-                return;
-            } else {
-                self.1[index] = value;
+            if let Some(v) = self.get(category) {
+                if value < v {
+                    self.1[category.index()] = value;
+                }
             }
+        }
+
+        fn has(&self, category: Mode) -> bool {
+            // this optimization doesn't hold for kanji...
+            category >= self.0
+            // category.index() <= self.max()
         }
 
         // max index for a character's node list
@@ -243,26 +256,24 @@ pub(crate) mod good_star {
 
         // propagate best score + edge weight
         fn score_from_predecessor(&mut self, from: &Self, class: u8) {
-            let modes = Mode::LIST;
             // check each node we're going from
-            for &from_mode in modes.iter() {
+            for from_mode in Mode::LIST.into_iter() {
                 // if that node exists,
                 if let Some(TaggedNode(from_score, _)) = from.get(from_mode) {
                     // check each node we're moving towards
-                    for &to_mode in modes.iter() {
+                    for to_mode in Mode::LIST.into_iter() {
                         // and if THAT node exists,
-                        if to_mode.index() <= self.0.index() {
+                        if let Some(TaggedNode(current_to_score, _)) = self.get(to_mode) {
                             // are we moving between two nodes of the same type?
                             let same_subset = from_mode == to_mode;
 
                             // calculate the value of the node we're moving towards
-                            let to_score = from_score + edge_weight(to_mode, same_subset, class);
+                            let tentative_to_score =
+                                from_score + edge_weight(to_mode, same_subset, class);
 
                             // if the score is lower than what's already there,
                             // i.e. we're on a more optimal path, replace it
-                            if to_score < self.1[to_mode.index()].0 {
-                                self.1[to_mode.index()] = TaggedNode(to_score, Some(from_mode));
-                            }
+                            self.set_min(to_mode, TaggedNode(tentative_to_score, Some(from_mode)));
                         } else {
                             break;
                         }
@@ -271,6 +282,19 @@ pub(crate) mod good_star {
                     break;
                 }
             }
+        }
+
+        fn cheapest_mode(&self) -> Mode {
+            let mut cheapest_mode = ASCII;
+            let mut lowest_cost = self.get(ASCII).unwrap();
+            for category in [AlphaNum, Numeric] {
+                if let Some(node) = self.get(category) {
+                    if node < lowest_cost {
+                        (cheapest_mode, lowest_cost) = (category, node);
+                    }
+                }
+            }
+            cheapest_mode
         }
     }
 
@@ -299,60 +323,53 @@ pub(crate) mod good_star {
     // creates a graph of nodes along with their "g scores"
     fn create_graph(mode_vec: &Vec<Mode>, class: u8) -> Graph {
         let mut mode_iter = mode_vec.iter();
-        let mut current_scores = [TaggedNode::default(); 3];
 
         // first character is a special case - the "same subset" parameter
         // is false for all modes
-        let init_mode = *mode_iter.next().expect("mode vector is empty");
-        for (init_score, to_mode) in current_scores
-            .iter_mut()
-            .zip(Mode::LIST)
-            .take(init_mode.index() + 1)
-        {
-            *init_score = TaggedNode(edge_weight(to_mode, false, class), None);
+        let mut current_nodes = CharNodes(
+            *mode_iter.next().expect("mode vector is empty"),
+            [TaggedNode::default(); 3],
+        );
+
+        for mode in Mode::LIST {
+            if let Some(node) = current_nodes.get_mut(mode) {
+                *node = TaggedNode(edge_weight(mode, false, class), None);
+            } else {
+                break;
+            }
         }
 
-        let mut current_nodes = CharNodes(init_mode, current_scores);
         let mut output: Graph = vec![current_nodes];
 
+        // remainder of graph
         let mut previous_nodes: CharNodes;
-        for &mode in mode_iter {
-            previous_nodes = current_nodes;
-            current_nodes = CharNodes(mode, [TaggedNode::default(); 3]);
+        for &char_mode in mode_iter {
+            (previous_nodes, current_nodes) = (
+                current_nodes,
+                CharNodes(char_mode, [TaggedNode::default(); 3]),
+            );
             current_nodes.score_from_predecessor(&previous_nodes, class);
             output.push(current_nodes);
         }
-
         output
     }
 
     fn optimal_path(graph: &Graph) -> Vec<Mode> {
-        let mut graph_backwards = graph.iter();
+        if graph.is_empty() {
+            return vec![];
+        }
 
-        for (i, &x) in graph_backwards.clone().enumerate() {
+        let mut graph_iter = graph.iter();
+
+        for (i, &x) in graph_iter.clone().enumerate() {
             println!("old graph index {} - {:?}", i, x.0);
         }
 
         let mut output = std::collections::VecDeque::new();
 
-        let mut current_best_mode = {
-            let character = *graph_backwards.next_back().expect("uhh");
-            let mut best_mode = ASCII;
-            let mut best_score = character.get(ASCII).unwrap().0;
-            for mode in [AlphaNum, Numeric] {
-                if let Some(TaggedNode(score, _)) = character.get(mode) {
-                    if score < best_score {
-                        best_mode = mode;
-                        best_score = score;
-                    }
-                } else {
-                    break;
-                }
-            }
-            best_mode
-        };
+        let mut current_mode = graph_iter.next_back().unwrap().cheapest_mode();
 
-        output.push_front(current_best_mode);
+        output.push_front(current_mode);
         // let mut output = std::collections::VecDeque::from([current_best_mode]);
 
         // println!("\n");
@@ -379,15 +396,17 @@ pub(crate) mod good_star {
         //     }
         // }
 
-        while let Some(&character) = graph_backwards.next_back() {
-            if let Some(tagged_node) = character.get(current_best_mode) {
+        while let Some(&character) = graph_iter.next_back() {
+            if let Some(tagged_node) = character.get(current_mode) {
                 if let Some(mode) = tagged_node.1 {
-                    current_best_mode = mode;
-                    output.push_front(current_best_mode);
+                    current_mode = mode;
+                    output.push_front(current_mode);
                 } else {
                     // output.push_front(current_best_mode);
                     break;
                 }
+            } else {
+                panic!("pointer to non-existant data");
             }
         }
 
