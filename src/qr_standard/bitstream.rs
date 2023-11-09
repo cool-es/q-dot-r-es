@@ -37,13 +37,6 @@ impl Mode {
     pub(crate) const LIST: [Self; 3] = [ASCII, AlphaNum, Numeric];
 }
 
-// level 2
-// #[derive(Clone)]
-// struct MarkedString {
-//     mode: Mode,
-//     string: String,
-// }
-
 // level 3
 #[derive(Clone)]
 pub(super) enum Token {

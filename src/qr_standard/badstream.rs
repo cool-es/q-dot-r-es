@@ -100,10 +100,7 @@ pub(crate) fn split_to_blocks_and_encode(
     let (bc, cw, dcw, optional) = info;
     let (bc2, _, dcw2) = optional.unwrap_or((0, 0, 0));
 
-    // if optional.is_some() {
-    //     panic!("multiple block types are not supported yet")
-    // }
-    // let (bc2, dcw2) = (0, 0);
+
 
     // check to make sure poly will split evenly
     assert!(
@@ -124,12 +121,10 @@ pub(crate) fn split_to_blocks_and_encode(
 
     for i in 0..bc {
         let (a, b) = (i * dcw, (i + 1) * dcw);
-        // unencoded.push(poly[a..b].to_vec());
         unencoded.push(first[a..b].to_vec());
     }
     for i in 0..bc2 {
         let (a, b) = (i * dcw2, (i + 1) * dcw2);
-        // unencoded.push(poly[a..b].to_vec());
         unencoded.push(second[a..b].to_vec());
     }
 

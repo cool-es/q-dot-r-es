@@ -100,10 +100,7 @@ impl Bitmap {
             }
             true
         } else {
-            /* println!(
-                "out-of-bounds write (x={} y={} w={} h={})",
-                x, y, self.width, self.height
-            ); */
+            
             false
         }
     }

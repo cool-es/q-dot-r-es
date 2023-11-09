@@ -50,7 +50,6 @@ pub(crate) fn qr_fcode_remainder(fcode: u32) -> u32 {
     output
 }
 
-
 // (fmt * 2^10 + remainder of (fmt * 2^10) / g) - this always has remainder 0
 // this works since all numbers in a galois field are their own additive inverse,
 // and since (remainder of (k + remainder of k)) == (remainder of k + remainder of k)
@@ -62,9 +61,6 @@ pub(crate) fn qr_generate_fcode(fmt: u8) -> Option<u16> {
     // i'm aware that this code is ridiculous
     Some(((fmt as u16) << 10) | (qr_fcode_remainder((fmt as u32) << 10)) as u16)
 }
-
-
-
 
 #[inline]
 pub(crate) fn bit_length(n: BigElement) -> u32 {
@@ -94,7 +90,6 @@ pub(crate) fn carryless_divide(dividend: BigElement, divisor: BigElement) -> Big
     }
     dnd
 }
-
 
 // helper function, uses precomputed tables
 #[inline]
@@ -136,88 +131,3 @@ pub(crate) fn table_divide(x: Element, y: Element) -> Element {
 pub(crate) fn table_pow(x: Element, power: u32) -> Element {
     exp(log(x) * power as usize)
 }
-
-// // old versions of the table operations
-// // not fully tested or confirmed to work flawlessly
-// mod _old {
-//     use super::*;
-
-//     // table index helper function
-//     fn element_to_usize(e: BigElement) -> usize {
-//         if e == 0 {
-//             panic!()
-//         } else {
-//             ((e - 1) % 255) as usize
-//         }
-//     }
-
-//     // "gf_mul"
-//     pub(crate) fn table_multiply(x: BigElement, y: BigElement, tables: &ExpLogLUTs) -> BigElement {
-//         if x == 0 || y == 0 {
-//             return 0;
-//         }
-
-//         let (exp, log) = tables;
-//         // exp(log(x) + log(y))
-//         exp[(log[element_to_usize(x)] + log[element_to_usize(y)]) % 255]
-//     }
-
-//     // "gf_div"
-//     pub(crate) fn table_divide(x: BigElement, y: BigElement, tables: &ExpLogLUTs) -> BigElement {
-//         if y == 0 {
-//             panic!()
-//         }
-//         if x == 0 {
-//             return 0;
-//         }
-
-//         let (exp, log) = tables;
-//         // exp(log(x) - log(y))
-//         exp[(log[element_to_usize(x)] + (255 - log[element_to_usize(y)])) % 255]
-//     }
-
-//     pub(crate) fn table_pow(x: BigElement, power: u32, tables: &ExpLogLUTs) -> BigElement {
-//         let (exp, log) = tables;
-//         exp[((log[element_to_usize(x)]) * power as usize) % 255]
-//     }
-
-//     // uses russian peasant multiplication
-//     // default values prim = 0 field_charac_full = 256, carryless = true
-//     /*
-//         Galois Field integer multiplication using Russian Peasant Multiplication algorithm
-//         (faster than the standard multiplication + modular reduction).
-//         If prim is 0 and carryless=False, then the function produces the result for
-//         a standard integer multiplication (no carry-less arithmetics nor modular reduction).
-//     */
-//     // i see literally no reason to use this
-//     /* pub(crate) fn galois_multiply_peasant_full(
-//         x: Element,
-//         y: Element,
-//         primitive: Element,
-//         field_charac_full: u32,
-//         carryless: bool,
-//     ) -> Element {
-//         let mut x = x;
-//         let mut y = y;
-//         let mut output = 0;
-
-//         while y > 0 {
-//             if (y & 1) != 0 {
-//                 output = if carryless { output ^ x } else { output + x };
-//             }
-//             y >>= 1;
-//             x <<= 1;
-//             if primitive > 0 && x & (field_charac_full as Element) != 0 {
-//                 x = x ^ primitive;
-//             }
-//         }
-//         output
-//     } */
-//     // attempting to make a nicer peasant multiply...
-//     // not sure what the field character is supposed to be, but i'm guessing 256
-//     // not using this
-//     /* pub(crate) fn galois_multiply_peasant_qr(x: Element, y: Element) -> Element {
-//         galois_multiply_peasant_full(x, y, QR_CODEWORD_GEN, 256, true)
-//     }
-//      */
-// }

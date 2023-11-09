@@ -32,22 +32,6 @@ pub(crate) fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> 
     let (deg1, deg2) = (poly1.len() - 1, poly2.len() - 1);
     output.resize(deg1 + deg2 + 1, 0);
 
-    // for each degree value
-    /*     for deg_step in 0..(deg1 + deg2) {
-        let mut sum = 0;
-
-        // i + j = k
-
-        for i in 0..=deg_step {
-            let j = deg_step - i;
-            if i > deg1 || j > deg2 {
-                continue;
-            }
-            sum ^= table_multiply(poly1[i], poly2[j]);
-        }
-        output[deg_step] = sum;
-    } */
-
     // imagine we write the polynomial product as a rectangle -
     // then, all the coefficients of the same degree lie along diagonals.
     // we sum all these coefficients before writing them to the output polynomial
@@ -82,16 +66,6 @@ pub(crate) fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> 
     output
 }
 
-// evaluates a polynomial for a specific value of x
-// "based on horner's scheme for maximum efficiency"
-/* pub(crate) fn polynomial_evaluate(poly: &Polynomial, x: Element, tables: &ExpLogLUTs) -> Element {
-    let mut output = poly[0];
-    for i in 1..poly.len() {
-        output = table_multiply(output, x) ^ poly[i];
-    }
-    output
-}
- */
 // wow! this sucks!
 /*
     def rs_generator_poly(nsym):

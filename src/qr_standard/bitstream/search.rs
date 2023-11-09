@@ -218,9 +218,7 @@ pub(crate) fn optimize_mode(string: String, class: u8) -> Vec<(Mode, String)> {
 
     let mut output = vec![];
 
-    // println!("{}: {:?}", chr, current_mode);
     for (mode, chr) in zip {
-        // println!("{}: {:?}", chr, mode);
         if mode == current_mode {
             push_string.push(chr);
         } else {
