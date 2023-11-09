@@ -2,7 +2,7 @@ use super::*;
 use Mode::*;
 use Token::*;
 
-mod search;
+pub mod search;
 
 /*
 something that's really complicated is deciding what level of complexity/abstraction i want to tackle this problem at. there are really 4 different levels:

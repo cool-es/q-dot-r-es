@@ -213,10 +213,40 @@ fn optimal_path(graph: &Graph) -> Vec<Mode> {
     Vec::from(output)
 }
 
+pub(crate) fn optimize_mode(string: String, class: u8) -> Vec<(Mode, String)> {
+    if string.is_empty() {
+        todo!()
+    }
+
+    let mode_vec = string.chars().map(|x| char_status(x).unwrap()).collect();
+
+    let good_vec = optimal_path(&create_graph(&mode_vec, class));
+
+    let mut zip = good_vec.into_iter().zip(string.chars());
+    let (mut current_mode, chr) = zip.next().unwrap();
+    let mut push_string = String::from(chr);
+
+    let mut output = vec![];
+
+    println!("{}: {:?}", chr, current_mode);
+    for (mode, chr) in zip {
+        println!("{}: {:?}", chr, mode);
+        if mode == current_mode {
+            push_string.push(chr);
+        } else {
+            output.push((current_mode, push_string.clone()));
+            current_mode = mode;
+            push_string = String::from(chr);
+        }
+    }
+    output.push((current_mode, push_string.clone()));
+
+    output
+}
+
 impl Mode {
-    fn index(&self) -> usize {
-        let mode = *self;
-        match mode {
+    fn index(self) -> usize {
+        match self {
             ASCII => 0,
             AlphaNum => 1,
             Numeric => 2,
@@ -334,7 +364,7 @@ mod tests {
 }
 
 // this is unused!
-pub(crate) mod a_star {
+mod a_star {
     #![allow(unused_variables, unreachable_code, unused_mut)]
 
     use super::Mode::{self, *};
