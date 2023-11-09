@@ -1,5 +1,3 @@
-#![allow(unused_variables, unused_assignments, unreachable_code, unused_mut)]
-
 use super::*;
 
 // a simpler search algorithm than a*

@@ -1,6 +1,3 @@
-// quick and dirty solution to start entering data into qr codes
-#![allow(unused_mut, unused_variables)]
-
 use super::*;
 
 pub(crate) type Badstream = Vec<bool>;
