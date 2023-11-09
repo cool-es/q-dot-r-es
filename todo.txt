@@ -1,5 +1,4 @@
-• mode overhead calculation for when to switch modes
-    finish optimize_mode()
+• automatically choose message class in make_qr()
 • remainder bits
     this might not be necessary since it works implicitly
     (though might be good to add explicit bounds checking)

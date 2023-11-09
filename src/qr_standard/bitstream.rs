@@ -2,6 +2,8 @@ use super::*;
 use Mode::*;
 use Token::*;
 
+pub mod search;
+
 /*
 something that's really complicated is deciding what level of complexity/abstraction i want to tackle this problem at. there are really 4 different levels:
 1. raw input string
@@ -11,7 +13,7 @@ something that's really complicated is deciding what level of complexity/abstrac
 and i was stuck choosing between 2 and 3, where either option would make it really complicated to skip over the missing step. so i chose to do both
 */
 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub(crate) enum Mode {
     // not implementing ECI at this time
 
@@ -31,12 +33,16 @@ pub(crate) enum Mode {
     Kanji,
 }
 
-// level 2
-#[derive(Clone)]
-struct MarkedString {
-    mode: Mode,
-    string: String,
+impl Mode {
+    pub(crate) const LIST: [Self; 3] = [ASCII, AlphaNum, Numeric];
 }
+
+// level 2
+// #[derive(Clone)]
+// struct MarkedString {
+//     mode: Mode,
+//     string: String,
+// }
 
 // level 3
 #[derive(Clone)]
@@ -236,7 +242,7 @@ pub(super) fn find_best_version(data: &Vec<Token>, level: u8) -> Result<u32, Str
 }
 
 pub(crate) fn compute_bit_hypothetical() {
-    let modes = [ASCII, AlphaNum, Numeric];
+    let modes = Mode::LIST;
     for (i, a) in [1, 10, 27].into_iter().enumerate() {
         println!("class {} (version {}..):", i + 1, a);
         for m1 in 0..3 {
@@ -582,21 +588,55 @@ pub(crate) fn wip_alt_optimize_mode(input: String) -> Vec<(Mode, String)> {
     todo!("not finished")
 }
 
-// plan: follow the qr standard's example implementation of mode switching
-#[allow(unused_mut, unused_variables, unreachable_code)]
-pub(crate) fn auto_mode_switch(input: String) -> Vec<(Mode, String)> {
-    // when i refer to switching "upwards" and "downwards", it means
-    // increased/decreased specificity. as in, smaller subset is higher
+// weights for graph traversal
+// (index of next element, weights to reach it)
+// index is necessary because the output list is abbreviated
+// required to use floats because this approximation
+// is the only way to form a (weighted) graph -
+// otherwise distances would vary depending on
+// where you started from
 
-    let mut chars = input.chars().map(|x| char_status(x));
-    let mut current_mode: Mode;
-    let mut push_string: String;
+// bool: are they the same?
+// entries: -> num, -> aln, -> asc
+type ModeSwitchWeights = (bool, [Option<f32>; 3]);
 
-    match chars.next().expect("input is empty!") {
-        _ => todo!(),
+#[allow(unused_variables, unreachable_code, unused_mut)]
+fn make_mode_graph(input: Vec<Mode>) -> Vec<(usize, ModeSwitchWeights)> {
+    let mut output: Vec<(usize, ModeSwitchWeights)> = vec![];
+
+    let mut mode_iter = input.into_iter().enumerate();
+    let (index, mut current_mode) = mode_iter.next().expect("mode vector is empty!");
+
+    let mut counts = <[f32; 3]>::default();
+    for (new_index, new_mode) in mode_iter {
+        output.push((new_index, mode_to_mode_weights(current_mode, new_mode, 0)));
     }
 
-    todo!()
+    output
+}
+
+fn vec_add_assign<T, U, const N: usize>(lhs: &mut [T; N], rhs: [U; N])
+where
+    T: for<'a> std::ops::AddAssign<&'a U>,
+{
+    for i in 0..N {
+        lhs[i] += &rhs[i];
+    }
+}
+
+fn mode_to_mode_weights(start: Mode, end: Mode, class: usize) -> ModeSwitchWeights {
+    let from = u32::from(start == end);
+    (
+        start == end,
+        [
+            // to num
+            (end == Numeric).then_some(((4 + [10, 12, 14][class]) * from) as f32 + 3.3),
+            // to aln
+            (end <= AlphaNum).then_some(((4 + [9, 11, 13][class]) * from) as f32 + 5.5),
+            // to ascii
+            Some(((4 + [8, 16, 16][class] + 8) * from) as f32),
+        ],
+    )
 }
 
 // verified accurate
@@ -736,7 +776,7 @@ mod tests {
     #[test]
     fn test_bit_cost() {
         for count in 0..5000 {
-            for mode in [Numeric, AlphaNum, ASCII].into_iter() {
+            for mode in Mode::LIST.into_iter().rev() {
                 let string = vec![(mode, "1".chars().cycle().take(count).collect())];
                 let stream = make_token_stream(string);
                 let overhead = bit_overhead_template(&stream);
