@@ -60,19 +60,6 @@ pub(crate) fn alignment_pattern_coords(version: u32) -> Vec<(usize, usize)> {
     output
 }
 
-// number of codewords in a given code version
-pub(crate) const CODEWORDS: [u32; 40] = [
-    26, 44, 70, 100, 134, 172, 196, 242, 292, 346, 404, 466, 532, 581, 655, 733, 815, 901, 991,
-    1085, 1156, 1258, 1364, 1474, 1588, 1706, 1828, 1921, 2051, 2185, 2323, 2465, 2611, 2761, 2876,
-    3034, 3196, 3362, 3532, 3706,
-];
-
-// the possible amounts of error correction codewords, ordered by size
-pub(crate) const ERROR_CORRECTION_CODEWORDS: [u32; 31] = [
-    7, 10, 13, 15, 16, 17, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 40, 42, 44, 46, 48, 50, 52, 54,
-    56, 58, 60, 62, 64, 66, 68,
-];
-
 // reverse-lookup to find the index for precomputed.rs > RDSM_GENERATOR_POLYNOMIALS
 #[inline]
 pub(crate) fn find_errc(input: usize) -> Option<usize> {
@@ -90,20 +77,6 @@ pub(crate) fn find_errc(input: usize) -> Option<usize> {
     )
 }
 
-pub(crate) fn find_errc2(input: u32) -> Option<usize> {
-    ERROR_CORRECTION_CODEWORDS.iter().position(|&a| a == input)
-}
-
-// table of characters for the alphanumeric encoding, ordered by index
-// the ascii indices are +48 for numbers, +55 for letters,
-// and for special chars, -4, -1, -1, 3, 3, 4, 4, 4, 14
-// (special chars have indices 36..=44 in this table)
-pub(super) const ALPHANUMERIC_TABLE: [char; 45] = [
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
-    'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ' ', '$',
-    '%', '*', '+', '-', '.', '/', ':',
-];
-
 // tested, works
 pub(super) fn find_alphanum(input: char) -> Option<u16> {
     Some(u16::from(match input {
@@ -120,25 +93,6 @@ pub(super) fn find_alphanum(input: char) -> Option<u16> {
         ':' => 44,
         _ => return None,
     }))
-}
-
-pub(crate) fn find_alphanum2(input: char) -> Option<usize> {
-    ALPHANUMERIC_TABLE.iter().position(|&a| a == input)
-}
-
-// remainder bits per version (pg. 21):
-// 2..=6       7 bits
-// 14..=20     3 bits
-// 21..=27     4 bits
-// 28..=34     3 bits
-// all other versions 0 bits
-pub(crate) fn remainder_bits(version: u32) -> u8 {
-    match version {
-        2..=6 => 7,
-        14..=20 | 28..=34 => 3,
-        21..=27 => 4,
-        _ => 0,
-    }
 }
 
 pub(crate) type VersionBlockInfo = (usize, usize, usize, Option<(usize, usize, usize)>);
@@ -464,33 +418,6 @@ pub(crate) const DATA_CODEWORDS: [[usize; 40]; 4] = [
     ],
 ];
 
-// i think something's wrong with this chart...
-//
-// class 1 (version 1..):
-// ascii-alphanumeric-ascii beats only ascii at 11 characters
-// ascii-numeric-ascii beats only ascii at 6 characters
-// alphanumeric-numeric-alphanumeric beats only alphanumeric at 14 characters
-// ascii-num-aln beats an immediate switch to aln at 7 characters
-// class 2 (version 10..):
-// ascii-alphanumeric-ascii beats only ascii at 15 characters
-// ascii-numeric-ascii beats only ascii at 8 characters
-// alphanumeric-numeric-alphanumeric beats only alphanumeric at 15 characters
-// ascii-num-aln beats an immediate switch to aln at 8 characters
-// class 3 (version 27..):
-// ascii-alphanumeric-ascii beats only ascii at 16 characters
-// ascii-numeric-ascii beats only ascii at 9 characters
-// alphanumeric-numeric-alphanumeric beats only alphanumeric at 17 characters
-// ascii-num-aln beats an immediate switch to aln at 9 characters
-pub(crate) const MODE_ECONOMY: [[usize; 4]; 3] = [
-    // asc-aln-asc, asc-num-asc, aln-num-aln, asc-num-aln
-    // class 1
-    [11, 6, 14, 7],
-    // class 2
-    [15, 8, 15, 8],
-    // class 3
-    [16, 9, 17, 9],
-];
-
 // no. of bits in the char count indicator by size class (1.. - 10.. - 27..),
 // and by mode (num-aln-asc-knj)
 const CC_INDICATOR_BITS: [[usize; 4]; 3] = [[10, 9, 8, 8], [12, 11, 16, 10], [14, 13, 16, 12]];
@@ -506,104 +433,5 @@ pub(crate) fn cc_indicator_bit_size(class: u8, mode: super::Mode) -> usize {
         }]
     } else {
         panic!("access out of bounds")
-    }
-}
-
-mod tests {
-    #[allow(unused_imports)]
-    use super::*;
-
-    #[test]
-    fn test_errc() {
-        for i in 0..70 {
-            assert!(find_errc(i) == find_errc2(i as u32));
-        }
-    }
-
-    #[test]
-    fn ec_block_tests() {
-        // ec block count, total codewords per block, data codewords per block
-        // test that the no. of codewords add up,
-        // that the no. of error-correcting codewords is increasing,
-        // and that the optional blocks have a larger number of codewords
-        for (index, &a) in EC_BLOCK_TABLE.iter().enumerate() {
-            let codeword_total = CODEWORDS[index] as usize;
-            let mut last_ecwords = 0;
-            for (ec_lvl, &contents) in a.iter().enumerate() {
-                let (block_count, cwords, dcwords, optional) = contents;
-                if let Some((block_count_2, cwords_2, dcwords_2)) = optional {
-                    // codewords match
-                    assert!(
-                        block_count * cwords + block_count_2 * cwords_2 == codeword_total,
-                        "version {}, error correction {} - codeword count mismatch",
-                        index + 1,
-                        ec_lvl
-                    );
-
-                    // ec codewords match
-                    assert!(
-                        ERROR_CORRECTION_CODEWORDS.contains(&((cwords - dcwords) as u32))
-                            && ERROR_CORRECTION_CODEWORDS
-                                .contains(&((cwords_2 - dcwords_2) as u32)),
-                        "version {}, error correction {} - ec codeword count mismatch",
-                        index + 1,
-                        ec_lvl
-                    );
-
-                    // ec codewords increasing
-                    assert!(
-                        last_ecwords
-                            < block_count * (cwords - dcwords)
-                                + block_count_2 * (cwords_2 - dcwords_2),
-                        "version {}, error correction {} - ec codewords not monotonic",
-                        index + 1,
-                        ec_lvl
-                    );
-                    last_ecwords =
-                        block_count * (cwords - dcwords) + block_count_2 * (cwords_2 - dcwords_2);
-
-                    // optional block bigger
-                    assert!(
-                        cwords < cwords_2,
-                        "version {}, error correction {} - optional block too small",
-                        index + 1,
-                        ec_lvl
-                    );
-
-                    // number of ec codewords equal between blocks
-                    assert!(
-                        cwords - dcwords == cwords_2 - dcwords_2,
-                        "version {}, error correction {} - error-correcting codewords not equal",
-                        index + 1,
-                        ec_lvl
-                    );
-                } else {
-                    // codewords match
-                    assert!(
-                        block_count * cwords == codeword_total,
-                        "version {}, error correction {} - codeword count mismatch",
-                        index + 1,
-                        ec_lvl
-                    );
-
-                    // ec codewords match
-                    assert!(
-                        ERROR_CORRECTION_CODEWORDS.contains(&((cwords - dcwords) as u32)),
-                        "version {}, error correction {} - ec codeword count mismatch",
-                        index + 1,
-                        ec_lvl
-                    );
-
-                    // ec codewords increasing
-                    assert!(
-                        last_ecwords < block_count * (cwords - dcwords),
-                        "version {}, error correction {} - ec codewords not monotonic",
-                        index + 1,
-                        ec_lvl
-                    );
-                    last_ecwords = block_count * (cwords - dcwords);
-                }
-            }
-        }
     }
 }
