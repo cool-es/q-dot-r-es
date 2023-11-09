@@ -25,27 +25,6 @@ pub(crate) fn polynomial_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomi
     output
 }
 
-// SUPPOSEDLY multiplies two polynomials over a galois field
-// need to dig into this - this seems very fishy
-pub(crate) fn polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
-    let mut output: Polynomial = vec![0; poly1.len() + poly2.len() - 1];
-
-    // since a polynomial's "length" is its degree + 1,
-    // output is degree d1+d2 => length (d1+1)+(d2+1)-1
-    // len() and resize() both count from 1, no fencepost error
-
-    // ... i+j won't reach the top coefficient?
-    // yes it will, it goes up to (l1+l2-1)-1
-    for i in 0..poly2.len() {
-        for j in 0..poly1.len() {
-            // the tutorial claims that this line is:
-            // "equivalent to r[i + j] = gf_add(r[i+j], gf_mul(p[i], q[j]))"
-            output[i + j] ^= table_multiply(poly1[j], poly2[i]);
-        }
-    }
-    output
-}
-
 // here's something i came up with...
 // it was simpler in my head.
 pub(crate) fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
@@ -136,12 +115,6 @@ pub(crate) fn make_rdsm_generator_polynomial(ec_symbols: u32) -> Polynomial {
     output
 }
 
-// helper function
-#[inline]
-pub(crate) fn length(poly: &Polynomial) -> usize {
-    poly.len() - leading_zeros(poly)
-}
-
 // helper function for polynomial_remainder
 fn leading_zeros(poly: &Polynomial) -> usize {
     for (i, &coefficient) in poly.iter().enumerate() {
@@ -208,70 +181,4 @@ pub(crate) fn encode_message(message: &Polynomial, ec_symbols: u32) -> Polynomia
     let remainder = polynomial_remainder(&message_padded, &generator_polynomial);
 
     polynomial_add(&message_padded, &remainder)
-}
-
-pub(crate) fn charprint(poly: &Polynomial) {
-    let mut output = String::new();
-    for &i in poly {
-        let o = i as u8;
-        output.push({
-            if o.is_ascii_control() {
-                '😨'
-            } else {
-                o as char
-            }
-        });
-    }
-    println!("{:?}", output);
-}
-
-pub(crate) fn prettyprint(poly: &Polynomial) {
-    let superscript = |input: usize| {
-        // ¹²³⁴⁵⁶⁷⁸⁹⁰
-        let mut output = String::new();
-        if input == 0 {
-            output.push('ˣ');
-            return output;
-        } else if input == 1 {
-            return output;
-        }
-        for i in (0..=input.ilog10()).rev() {
-            let digit = (input as u32 / 10u32.pow(i)) % 10;
-            output.push(match digit {
-                1 => '¹',
-                2 => '²',
-                3 => '³',
-                _ => char::from_u32('⁰' as u32 + digit).unwrap(),
-            })
-        }
-        output
-    };
-
-    let mut output = String::new();
-    let last_byte_not_zero = *poly.last().unwrap() != 0;
-    if poly[0] == 0 {
-        // polynomial has leading zeros - it shouldn't
-        output.push('🤔');
-    }
-    for i in 0..poly.len() {
-        if poly[i] != 0 {
-            let mut part: String;
-            if poly[i] == 1 {
-                part = format!("x{}", superscript(poly.len() - (i + 1)));
-            } else if i == poly.len() - 1 {
-                part = format!("a{}", superscript(log(poly[i])),);
-            } else {
-                part = format!(
-                    "a{}x{}",
-                    superscript(log(poly[i])),
-                    superscript(poly.len() - (i + 1))
-                );
-            }
-            if i < poly.len() - 1 && last_byte_not_zero {
-                part.push_str(" + ");
-            }
-            output.push_str(part.as_str());
-        }
-    }
-    println!("{}", output);
 }

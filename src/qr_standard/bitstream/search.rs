@@ -86,7 +86,7 @@ impl CharNodes {
                 // check each node we're moving towards
                 for to_mode in Mode::LIST.into_iter() {
                     // and if THAT node exists,
-                    if let Some(TaggedNode(current_to_score, _)) = self.get(to_mode) {
+                    if let Some(TaggedNode(..)) = self.get(to_mode) {
                         // are we moving between two nodes of the same type?
                         let same_subset = from_mode == to_mode;
 
