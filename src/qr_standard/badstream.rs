@@ -251,12 +251,11 @@ pub(crate) fn make_qr(
     level_choice: Option<u8>,
     mask_choice: Option<u8>,
 ) -> Bitmap {
-    // let tokens = make_token_stream(match input {
-    //     QRInput::Auto(str) => super::bitstream::search::optimize_mode(str,0),
-    //     QRInput::Manual(vec) => vec,
-    // });
     let tokens = make_token_stream(match input {
-        QRInput::Auto(str) => optimize_mode(str),
+        QRInput::Auto(str) => super::bitstream::search::optimize_mode(str, {
+            // todo - version class!
+            0
+        }),
         QRInput::Manual(vec) => vec,
     });
 
