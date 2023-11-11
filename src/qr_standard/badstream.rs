@@ -387,7 +387,8 @@ mod tests {
     // this is inaccurate, not sure why,
     // there's seemingly nothing wrong with split_to_blocks_and_encode...
     // but i don't see a reason to fix it nor remove it at this time
-    // #[test]
+    #[test]
+    #[ignore = "inaccurate result"]
     fn split_to_blocks_is_consistent() {
         for ver in 1..=40 {
             let info = get_block_info(ver, 0);
