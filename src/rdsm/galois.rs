@@ -7,6 +7,7 @@ pub(crate) type Element = u8;
 pub(crate) type BigElement = u32;
 
 // qr data generator/divisor polynomial, 0b100011101
+#[allow(dead_code)]
 pub(crate) const QR_CODEWORD_GEN: BigElement = 0x11D;
 // qr format generator/divisor polynomial, 0b10100110111
 pub(crate) const QR_FORMAT_GEN: BigElement = 0x537;

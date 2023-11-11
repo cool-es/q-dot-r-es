@@ -7,7 +7,6 @@ use qr_standard::Mode::*;
 use image::Bitmap;
 use qr_standard::*;
 use rdsm::*;
-// use testutil::*;
 
 fn main() -> std::io::Result<()> {
     main_qr_generator()
@@ -27,7 +26,7 @@ fn main_qr_generator() -> std::io::Result<()> {
 
     args.next();
     while let Some(argument) = args.next() {
-        if manual {
+        if manual && ["-m", "--manual"].contains(&argument.as_str()) {
             'goop: while let Some(argument) = args.next() {
                 match argument.as_str() {
                     "--numeric" | "-num" | "" => {

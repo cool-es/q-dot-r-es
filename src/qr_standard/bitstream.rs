@@ -30,6 +30,7 @@ pub(crate) enum Mode {
     ASCII,
 
     // 1 character / 13 bits
+    #[allow(dead_code)]
     Kanji,
 }
 
