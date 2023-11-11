@@ -11,42 +11,61 @@ use rdsm::*;
 
 fn main() -> std::io::Result<()> {
     main_qr_generator()
-    // mode_switch_brute_force_analysis();
-    // Ok(())
 }
 
 fn main_qr_generator() -> std::io::Result<()> {
-    let mut mode_data = Vec::new();
-    let mut name = Option::<String>::None;
+    let mut input_choice: Option<QRInput> = None;
     let mut level_choice = Option::<u8>::None;
     let mut mask_choice = Option::<u8>::None;
+    let mut name = Option::<String>::None;
+
+    let mut manual: bool = true;
+    let mut mode_data = Vec::new();
     let mut version_choice = Option::<u32>::None;
 
     let mut args = std::env::args();
 
-    // option to not accept slight input errors
-    let mut nice = false;
-
     args.next();
     while let Some(argument) = args.next() {
-        match argument.to_lowercase().as_str() {
-            "--numeric" | "-num" | "" => {
-                let number_string = args.next().expect("no data for numeric mode");
-                mode_data.push((Numeric, number_string));
-            }
-            "--alphanum" | "-aln" => {
-                let alphanum_string = args.next().expect("no data for alphanumeric mode");
-                mode_data.push((AlphaNum, {
-                    if nice {
-                        alphanum_string.to_ascii_uppercase()
-                    } else {
-                        alphanum_string
+        if manual {
+            'goop: while let Some(argument) = args.next() {
+                match argument.as_str() {
+                    "--numeric" | "-num" | "" => {
+                        let number_string = args.next().expect("no data for numeric mode");
+                        mode_data.push((Numeric, number_string));
                     }
-                }));
+                    "--alphanum" | "-aln" => {
+                        let alphanum_string = args.next().expect("no data for alphanumeric mode");
+                        mode_data.push((AlphaNum, alphanum_string));
+                    }
+                    "--ascii" | "-asc" => {
+                        let ascii_string = args.next().expect("no data for ASCII mode");
+                        mode_data.push((ASCII, ascii_string));
+                    }
+                    _ => {
+                        if argument.starts_with('-') {
+                            assert!(!mode_data.is_empty(), "manual input not specified");
+                            manual = false;
+                            break 'goop;
+                        } else {
+                            continue;
+                        }
+                    }
+                }
             }
-            "--ascii" | "-asc" => {
-                let ascii_string = args.next().expect("no data for ASCII mode");
-                mode_data.push((ASCII, ascii_string));
+        }
+
+        match argument.as_str() {
+            "--input" | "-i" => {
+                assert!(
+                    mode_data.is_empty() && manual,
+                    "can't combine manual and automatic mode switching!"
+                );
+                assert!(input_choice.is_none(), "can't use multiple inputs!");
+
+                manual = false;
+                let auto_string = args.next().expect("no data for ASCII mode");
+                input_choice = Some(QRInput::Auto(auto_string));
             }
 
             "--name" | "-n" => {
@@ -101,7 +120,6 @@ fn main_qr_generator() -> std::io::Result<()> {
                 }
             }
 
-            "--nice" => nice = true,
             _ => panic!("{} - incorrect argument", argument),
         }
     }
@@ -113,20 +131,23 @@ fn main_qr_generator() -> std::io::Result<()> {
         assert!((0..=7).contains(&m), "mask must be one of 0, ..., 7");
     }
 
-    let input = if mode_data.is_empty() {
-        // if no manual mode data has been read from the arguments,
-        // we get unprocessed data from stdin instead
-        let mut input_string = String::new();
-        std::io::stdin().read_line(&mut input_string)?;
-        // stdin input ends on a newline, remove it
-        input_string.pop();
-        QRInput::Auto(input_string)
+    let input = if let Some(i) = input_choice {
+        i
     } else {
-        QRInput::Manual(mode_data)
+        if mode_data.is_empty() {
+            // if no manual mode data has been read from the arguments,
+            // we get unprocessed data from stdin instead
+            let mut input_string = String::new();
+            std::io::stdin().read_line(&mut input_string)?;
+            // stdin input ends on a newline, remove it
+            input_string.pop();
+            QRInput::Auto(input_string)
+        } else {
+            QRInput::Manual(mode_data)
+        }
     };
 
     let name = name.unwrap_or("out".to_string());
     let output = make_qr(input, version_choice, level_choice, mask_choice).as_xbm_border(&name);
-    std::fs::write(format!("{}.xbm", name), output)?;
-    Ok(())
+    std::fs::write(format!("{}.xbm", name), output)
 }
