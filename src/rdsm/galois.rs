@@ -1,37 +1,40 @@
 use crate::*;
 // functions from the wikiversity "reed-solomon codes for coders" article
 
-// an element in the finite field GF(2^8)
+/// An element in the finite field GF(2^8).
 pub(crate) type Element = u8;
-// a polynomial over GF(2)
+/// A polynomial over GF(2).
 pub(crate) type BigElement = u32;
 
-// qr data generator/divisor polynomial, 0b100011101
+/// The QR code data generator/divisor polynomial, `1 0001 1101`.
 #[allow(dead_code)]
 pub(crate) const QR_CODEWORD_GEN: BigElement = 0x11D;
-// qr format generator/divisor polynomial, 0b10100110111
+/// The QR code format generator/divisor polynomial, `101 0011 0111`.
 pub(crate) const QR_FORMAT_GEN: BigElement = 0x537;
 
-// exp/log tables for the "table_*" functions
+// exp table for the `table_*` functions
+#[doc(hidden)]
 pub(super) const EXPVALUES: usize = 255;
+// log table for the `table_*` functions
+#[doc(hidden)]
 pub(super) const LOGVALUES: usize = EXPVALUES;
+#[doc(hidden)]
 pub(crate) type ExpLogLUTs = ([Element; EXPVALUES], [usize; LOGVALUES]);
 
-// returns the remainder of fmt divided by g in GF(2^8), assuming fmt < 2^15
-// named "check format" because it returns qr format data:
 /*
-    The format code should produce a remainder of zero
-    when it is divided by the generator of the code.
-    This function can also be used to encode the 5-bit format information.
-    encoded_format = (format<<10) + qr_check_format(format<<10)
+The format code should produce a remainder of zero
+when it is divided by the generator of the code.
+This function can also be used to encode the 5-bit format information.
+encoded_format = (format<<10) + qr_check_format(format<<10)
 
-    The process for checking the encoded information is similar to long
-    division, but uses exclusive-or instead of subtraction. The format code
-    should produce a remainder of zero when it is "divided" by the so-called
-    generator of the code. QR format codes use the generator 10100110111.
-    This process is demonstrated for the format information
-    in the example code (000111101011001) below.
+The process for checking the encoded information is similar to long
+division, but uses exclusive-or instead of subtraction. The format code
+should produce a remainder of zero when it is "divided" by the so-called
+generator of the code. QR format codes use the generator 10100110111.
+This process is demonstrated for the format information
+in the example code (000111101011001) below.
 */
+/// The remainder of the input divided by [QR_FORMAT_GEN], assuming it's <2¹⁵.
 pub(crate) fn qr_fcode_remainder(fcode: u32) -> u32 {
     // 0b10100110111
     let mut output = fcode;
@@ -51,9 +54,10 @@ pub(crate) fn qr_fcode_remainder(fcode: u32) -> u32 {
     output
 }
 
-// (fmt * 2^10 + remainder of (fmt * 2^10) / g) - this always has remainder 0
+// (`fmt * 2^10` + remainder of `(fmt * 2^10) / g)` - this always has remainder 0.
 // this works since all numbers in a galois field are their own additive inverse,
-// and since (remainder of (k + remainder of k)) == (remainder of k + remainder of k)
+// and since (remainder of (k + remainder of k)) ==(remainder of k + remainder of k).
+/// Generate a QR code's 15-bit format code.
 pub(crate) fn qr_generate_fcode(fmt: u8) -> Option<u16> {
     if fmt >= 32 {
         return None;
@@ -63,6 +67,7 @@ pub(crate) fn qr_generate_fcode(fmt: u8) -> Option<u16> {
     Some(((fmt as u16) << 10) | (qr_fcode_remainder((fmt as u32) << 10)) as u16)
 }
 
+#[doc(hidden)]
 #[inline]
 pub(crate) fn bit_length(n: BigElement) -> u32 {
     if let Some(x) = n.checked_ilog2() {
@@ -72,6 +77,8 @@ pub(crate) fn bit_length(n: BigElement) -> u32 {
     }
 }
 
+/// Carryless division over GF(2)\[X\]. Only called by
+/// `qr_generate_vcode`.
 pub(crate) fn carryless_divide(dividend: BigElement, divisor: BigElement) -> BigElement {
     if bit_length(dividend) < bit_length(divisor) {
         return dividend;
@@ -92,15 +99,13 @@ pub(crate) fn carryless_divide(dividend: BigElement, divisor: BigElement) -> Big
     dnd
 }
 
-// helper function, uses precomputed tables
+/// Exponential function within GF(2⁸).
 #[inline]
 pub(crate) fn exp(n: usize) -> Element {
     QR_EXP_LOG_TABLE.0[n % 255]
 }
 
-// ditto
-// i keep debating whether to make this function ->  Option<usize> instead
-// it would make the other functions a lot uglier though!
+/// Logarithm function within GF(2⁸).
 pub(crate) fn log(e: Element) -> usize {
     if e == 0 {
         panic!()
@@ -109,7 +114,7 @@ pub(crate) fn log(e: Element) -> usize {
     }
 }
 
-// "gf_mul"
+/// Multiplication in GF(2⁸). Uses look-up tables.
 pub(crate) fn table_multiply(x: Element, y: Element) -> Element {
     if x == 0 || y == 0 {
         return 0;
@@ -118,7 +123,7 @@ pub(crate) fn table_multiply(x: Element, y: Element) -> Element {
     exp(log(x) + log(y))
 }
 
-// "gf_div"
+/// Division in GF(2⁸). Uses look-up tables.
 pub(crate) fn table_divide(x: Element, y: Element) -> Element {
     if y == 0 {
         panic!()
@@ -129,6 +134,7 @@ pub(crate) fn table_divide(x: Element, y: Element) -> Element {
     exp(log(x) + (255 - log(y)))
 }
 
+/// `pow` in GF(2⁸), where the other argument is an integer. Uses look-up tables.
 pub(crate) fn table_pow(x: Element, power: u32) -> Element {
     exp(log(x) * power as usize)
 }

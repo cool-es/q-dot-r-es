@@ -53,7 +53,7 @@ pub(crate) fn pad_to(codeword_length: usize, stream: &mut Badstream) {
     }
 }
 
-// pushes a byte without any alignment checks
+/// pushes a byte without any alignment checks
 pub(crate) fn push_byte(byte: u8, stream: &mut Badstream) {
     for k in (0..=7).rev() {
         stream.push((byte & (1 << k)) != 0);
@@ -193,7 +193,7 @@ pub(crate) fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> 
     output
 }
 
-// container to hold input data based on if it's mode-switched or not
+/// container to hold input data based on if it's mode-switched or not
 #[derive(Clone, Debug)]
 pub(crate) enum QRInput {
     Auto(String),

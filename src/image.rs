@@ -1,4 +1,4 @@
-// image format with gaps in its byte data: start of rows are byte aligned
+/// image format with gaps in its byte data: start of rows are byte aligned
 #[derive(Clone)]
 pub(crate) struct Bitmap {
     // width, height fields are private so that they can't be mutated
@@ -13,7 +13,7 @@ impl Bitmap {
 
     // the curly brackets here really mess with my syntax highlighting... but the code itself is correct
 
-    // as_xbm but with an added 8px quiet-zone border on all sides
+    /// `as_xbm()`, but with an added 8 pixel quiet-zone border on all sides
     pub(crate) fn as_xbm_border(&self, name: &str) -> String {
         assert!(
             name.is_ascii() && !name.contains(char::is_whitespace),
@@ -129,13 +129,14 @@ impl Bitmap {
     }
 }
 
-// this code below assumes data is saved in a way where the rows all start with
-// a new byte, which leaves empty space in the last byte of every row
-// if the width isn't a multiple of 8
+/// converts xy coordinates to the pixel's vector/bit indices:
+/// `(n, i)` = bit `i` of `vec[n]`.
+/// returns None when coords are out of bounds.
+///
+/// assumes data is saved in a way where the rows all start with
+/// a new byte, which leaves empty space in the last byte of every row
+/// if the width isn't a multiple of 8.
 pub(super) fn xy_to_index(x: usize, y: usize, w: usize, h: usize) -> Option<(usize, u8)> {
-    // converts xy coordinates to the pixel's vector/bit indices:
-    // Some(n, i) => bit i in vec[n]
-    // returns None when coords are out of bounds
     if x > w || y > h {
         return None;
     }

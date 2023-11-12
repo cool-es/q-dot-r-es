@@ -1,4 +1,4 @@
-// the centers of alignment patterns in both x and y dimensions
+/// the centers of alignment patterns in both x and y dimensions
 pub(super) const AP_COORD_INDICES: [&[usize]; 40] = [
     &[],
     &[6, 18],
@@ -60,7 +60,7 @@ pub(crate) fn alignment_pattern_coords(version: u32) -> Vec<(usize, usize)> {
     output
 }
 
-// reverse-lookup to find the index for precomputed.rs > RDSM_GENERATOR_POLYNOMIALS
+/// reverse-lookup to find the index for precomputed.rs > RDSM_GENERATOR_POLYNOMIALS
 #[inline]
 pub(crate) fn find_errc(input: usize) -> Option<usize> {
     Some(
@@ -97,12 +97,15 @@ pub(super) fn find_alphanum(input: char) -> Option<u16> {
 
 pub(crate) type VersionBlockInfo = (usize, usize, usize, Option<(usize, usize, usize)>);
 
-// error correction data (pg. 41...)
-// access with ERROR_CORRECTION_TABLE[version-1][correction level]
-// correction levels are ordered L - M - Q - H
-// data format is:
-// ec block count, total codewords per block, data codewords per block
-// if there is just one block variant, the other pair member will be None
+/// error correction data (pg. 41...).
+/// access with
+/// ```
+/// EC_BLOCK_TABLE[version-1][correction_level]
+/// ```
+/// correction levels are ordered L - M - Q - H.
+/// data format is:
+/// ec block count, total codewords per block, data codewords per block.
+/// if there is just one block variant, the other pair member will be `None`.
 const EC_BLOCK_TABLE: [[VersionBlockInfo; 4]; 40] = [
     [
         // version 1
@@ -394,7 +397,7 @@ pub(crate) fn get_block_info(version: u32, level: u8) -> VersionBlockInfo {
     EC_BLOCK_TABLE[version as usize - 1][level as usize]
 }
 
-// available data codewords per level and version
+/// available data codewords per level and version
 pub(crate) const DATA_CODEWORDS: [[usize; 40]; 4] = [
     [
         19, 34, 55, 80, 108, 136, 156, 194, 232, 274, 324, 370, 428, 461, 523, 589, 647, 721, 795,
@@ -418,8 +421,8 @@ pub(crate) const DATA_CODEWORDS: [[usize; 40]; 4] = [
     ],
 ];
 
-// no. of bits in the char count indicator by size class (1.. - 10.. - 27..),
-// and by mode (num-aln-asc-knj)
+/// no. of bits in the char count indicator by size class (1.. - 10.. - 27..),
+/// and by mode (num-aln-asc-knj)
 const CC_INDICATOR_BITS: [[usize; 4]; 3] = [[10, 9, 8, 8], [12, 11, 16, 10], [14, 13, 16, 12]];
 
 pub(crate) fn cc_indicator_bit_size(class: u8, mode: super::Mode) -> usize {

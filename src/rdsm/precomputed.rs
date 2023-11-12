@@ -1,5 +1,6 @@
 use super::*;
 
+/// The non-zero elements of GF(2⁸). Lookup table for [exp] and [log].
 pub(crate) const QR_EXP_LOG_TABLE: ExpLogLUTs = (
     [
         // 255 values of usize -> element
@@ -43,9 +44,9 @@ pub(crate) const QR_EXP_LOG_TABLE: ExpLogLUTs = (
     ],
 );
 
-// all possible reed-solomon generator polynomials in use in QR codes
-// values from tables.rs > ERROR_CORRECTION_CODEWORDS
-// values coincide with the standards doc
+/// All possible Reed-Solomon generator polynomials used for QR codes, for [encode_message].
+///
+/// All values coincide with the ones given in the standards document.
 pub(crate) const RDSM_GENERATOR_POLYNOMIALS: [&[Element]; 31] = [
     &[0x01, 0x7F, 0x7A, 0x9A, 0xA4, 0x0B, 0x44, 0x75],
     &[

@@ -1,17 +1,25 @@
+//! Bitmap operations related to the QR standard.
+
 use super::*;
 
+/// Lookup tables specific to the QR standard.
 mod tables;
 pub(crate) use tables::*;
+/// High-level encoding of characters.
 mod bitstream;
 pub(crate) use bitstream::*;
+/// Low-level encoding of binary streams.
 mod badstream;
 pub(crate) use badstream::*;
 
+/// Return `false` only for a valid QR code version (`1..=40`).
 #[inline]
 fn bad_version(version: u32) -> bool {
     !(1..=40).contains(&version)
 }
 
+// Return the version of a QR code based on its width.
+#[doc(hidden)]
 #[inline]
 fn size_to_version(size: usize) -> Option<u32> {
     if size % 4 == 1 && (21..=177).contains(&size) {
@@ -21,6 +29,7 @@ fn size_to_version(size: usize) -> Option<u32> {
     }
 }
 
+/// Return `w - 1`, where `w` is the width of a version of QR code.
 fn version_to_max_index(version: u32) -> Option<usize> {
     if bad_version(version) {
         None
@@ -29,6 +38,7 @@ fn version_to_max_index(version: u32) -> Option<usize> {
     }
 }
 
+/// Is `(x, y)` a valid coordinate in a certain QR code?
 fn out_of_bounds(x: usize, y: usize, version: u32) -> bool {
     if bad_version(version) {
         true
@@ -39,14 +49,19 @@ fn out_of_bounds(x: usize, y: usize, version: u32) -> bool {
     }
 }
 
-// ImgRowAligned methods, ditto
+/// Methods specific to the QR standard.
 impl image::Bitmap {
+    /// Apply a QR masking pattern to the image.
     pub(crate) fn qr_mask_xor(&mut self, pattern: u8) {
         qr_mask_xor(self, pattern)
     }
+
+    /// Calculate the penalty score incurred by a certain masking pattern.
     pub(crate) fn qr_penalty(&self) -> u32 {
         penalties::total_penalty(self)
     }
+
+    /// Return the QR code version (if any) based on the bitmap's dimensions.
     pub(crate) fn qr_version(&self) -> Option<u32> {
         let (x, y) = self.dims();
         if x != y {
@@ -55,16 +70,14 @@ impl image::Bitmap {
             size_to_version(x)
         }
     }
+
+    /// Create a blank QR code template.
     pub(crate) fn new_blank_qr(version: u32) -> Self {
         new_blank_qr_code(version)
     }
 }
 
-// xor one of the qr masking patterns over the bitmap, directly
-// efficient, should replace _new_qr_mask():
-// _new_qr_mask(a, b, x) == new(a, b).qr_mask_xor(x)
-// i wrote this on the first try just before bedtime. go me
-// modified to leave gaps in the pattern for valid qr version sizes
+#[doc(hidden)]
 fn qr_mask_xor(input: &mut Bitmap, mask: u8) {
     let maybe_version = {
         if input.dims().0 != input.dims().1 {
@@ -101,9 +114,11 @@ fn qr_mask_xor(input: &mut Bitmap, mask: u8) {
     }
 }
 
+#[doc(hidden)]
 mod penalties {
     use crate::image::Bitmap;
 
+    // Calculate the total penalty.
     pub(super) fn total_penalty(input: &Bitmap) -> u32 {
         let width = input.dims().0;
         let ones = input.debug_bits().iter().map(|x| x.count_ones()).sum();
@@ -140,15 +155,14 @@ mod penalties {
         adjacent(width, get) + block(width, get) + fake_marker(width, get) + proportion(width, ones)
     }
 
-    // Adjacent modules in row/column in same color
+    // Penalty: "Adjacent modules in row/column in same color".
+    // penalty: `3 + i`, where i is the amount by which the number of adjacent modules of the same color exceeds 5.
     fn adjacent<F>(width: usize, get: F) -> u32
     where
         F: Fn(usize, usize) -> bool,
     {
         let max = width - 1;
 
-        // penalty: 3 + i
-        // i is the amount by which the number of adjacent modules of the same color exceeds 5
         let mut penalty = 0;
         for line in 0..=max {
             // get row n
@@ -180,6 +194,8 @@ mod penalties {
         penalty as u32
     }
 
+    /// penalty: `3 * (m - 1) * (n - 1)`
+    /// where the block size = `m * n`
     fn block<F>(width: usize, get: F) -> u32
     where
         F: Fn(usize, usize) -> bool,
@@ -189,9 +205,6 @@ mod penalties {
         // to create a version 40 code, the
         // function get() is called, approximately,
         // NINETY EIGHT MILLION TIMES !!!
-
-        // penalty: 3 * (m - 1) * (n - 1)
-        // where the block size = m * n
 
         // look for rectangles width (width of symbol), ... , 2
         // by using a sliding frame, and mark already-scored pixels.
@@ -266,8 +279,8 @@ mod penalties {
         penalty as u32
     }
 
-    // 1:1:3:1:1 ratio (dark:light:dark:light:dark) pattern in row/column
-    // named "fake marker" because it can be confused with the position markers
+    /// 1:1:3:1:1 ratio (dark:light:dark:light:dark) pattern in row/column.
+    /// named "fake marker" because it can be confused with the position markers
     fn fake_marker<F>(width: usize, get: F) -> u32
     where
         F: Fn(usize, usize) -> bool,
@@ -303,7 +316,7 @@ mod penalties {
     }
 
     // #[allow(unused_variables)]
-    // Proportion of dark modules in entire symbol
+    /// Proportion of dark modules in entire symbol
     fn proportion(width: usize, ones: u32) -> u32 {
         // penalty: 10 * k
         // k is the rating of the deviation of the proportion of dark modules in the symbol from 50% in steps of 5%
@@ -317,11 +330,12 @@ mod penalties {
     }
 }
 
-// raw data for format writing/reading operations
-// format data in a ~qr symbol~ is replicated in two positions:
-// this function gives pairs of coordinates (x1, y1), (x2, y2)
-// relative to top left module of the finder pattern
-// from LSB (0) to MSB (14) (see pg. 60)
+/// raw data for format writing/reading operations.
+///
+/// format data in a qr symbol is replicated in two positions.
+/// this function gives pairs of coordinates `(x1, y1)`, `(x2, y2)`
+/// relative to top left module of the finder pattern
+/// from LSB (0) to MSB (14) (see pg. 60).
 fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize, usize))> {
     if bad_version(version) || bit > 14 {
         // undefined
@@ -453,8 +467,9 @@ pub(crate) fn coord_is_data(x: usize, y: usize, version: u32) -> bool {
     coord_status(x, y, version).is_some_and(|c| c == 0)
 }
 
-// from 0 to 5:
-// data, position, timing, format, alignment, version, that one bit
+/// returns the type of pixel taken up by a coordinate in a qr code.
+///
+/// from 0 to 5: data, position, timing, format, alignment, version, that one bit
 pub(crate) fn coord_status(x: usize, y: usize, version: u32) -> Option<u8> {
     if out_of_bounds(x, y, version) {
         return None;
@@ -490,6 +505,7 @@ pub(crate) fn coord_status(x: usize, y: usize, version: u32) -> Option<u8> {
     })
 }
 
+#[doc(hidden)]
 fn new_blank_qr_code(version: u32) -> Bitmap {
     let max = version_to_max_index(version).expect("invalid version");
     let mut output = Bitmap::new(max + 1, max + 1);
@@ -542,8 +558,8 @@ fn new_blank_qr_code(version: u32) -> Bitmap {
     output
 }
 
-// generate the 18-bit version info data (versions 7 and up)
 // tested, works!
+/// generate the 18-bit version info data (versions 7 and up)
 fn qr_generate_vcode(version: u32) -> u32 {
     // version code generator for (18,6) BCH code:
     // 0x1F25 = 0b1111100100101
@@ -551,9 +567,9 @@ fn qr_generate_vcode(version: u32) -> u32 {
 }
 
 // in the style of format_info_coords. again:
-// this function gives pairs of coordinates (x1, y1), (x2, y2)
-// relative to top left module of the finder pattern
-// from LSB (0) to MSB (17) (see pg. 61)
+/// this function gives pairs of coordinates `(x1, y1)`, `(x2, y2)`
+/// relative to top left module of the finder pattern
+/// from LSB (0) to MSB (17) (see pg. 61)
 fn version_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize, usize))> {
     if bad_version(version) || version < 7 || bit > 17 {
         // undefined

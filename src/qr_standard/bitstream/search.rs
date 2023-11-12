@@ -1,28 +1,29 @@
+// a simpler search algorithm than a*:
+// compute the "g score" of every node,
+// backtrack and pick the lowest value.
+//
+// if two characters are of the same type,
+// there is no reason to switch modes.
+//
+// any message of length n has at most
+// 6n-6 edges (alternating between aln-asc).
 use super::*;
 
-// a simpler search algorithm than a*
-// compute the "g score" of every node,
-// backtrack and pick the lowest value
-
-// if two characters are of the same type,
-// there is no reason to switch modes
-
-// any message of length n has at most
-// 6n-6 edges (alternating between aln-asc)
-
-// the cheapest known way to reach a character
-// we approximate the cost of a single aln/num
-// char as 11/2 and 10/3 respectively, but if we
-// multiply it by 6 it makes an integer
-// 10/3 -> 20
-// 11/2 -> 33
-// 8 -> 48
-
+/// The cheapest known way to reach a character.
 type Cost = u32;
 
+/// A node in a graph, with extra information.
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-struct TaggedNode(Cost, Option<Mode>);
+struct TaggedNode(
+    /// The cost of the cheapest way to
+    /// get here.
+    Cost,
+    /// The ID of the previous node along
+    /// the cheapest known way to get here.
+    Option<Mode>,
+);
 
+#[doc(hidden)]
 impl TaggedNode {
     fn pointer(&self) -> Option<Mode> {
         self.1
@@ -41,12 +42,14 @@ impl PartialOrd for TaggedNode {
     }
 }
 
-// the 1, 2 or 3 nodes associated with
-// a character
+/// The nodes associated with a character.
+///
+/// Each character is given a node for every subset it is part of.
 #[derive(Clone, Copy)]
 struct CharNodes(Mode, [TaggedNode; 3]);
 
 impl CharNodes {
+    /// Access a certain node for a given character.
     fn get(&self, category: Mode) -> Option<TaggedNode> {
         if !self.has(category) {
             None
@@ -55,6 +58,7 @@ impl CharNodes {
         }
     }
 
+    /// A mutual reference to a certain node.
     fn get_mut(&mut self, category: Mode) -> Option<&mut TaggedNode> {
         if !self.has(category) {
             None
@@ -63,6 +67,7 @@ impl CharNodes {
         }
     }
 
+    /// Replace a cost value in a node, if the new value is smaller.
     fn set_min(&mut self, category: Mode, value: TaggedNode) {
         if let Some(v) = self.get(category) {
             if value < v {
@@ -71,13 +76,17 @@ impl CharNodes {
         }
     }
 
+    /// Does this character have a node of this type?
     fn has(&self, category: Mode) -> bool {
         // this optimization doesn't hold for kanji...
         category >= self.0
         // category.index() <= self.max()
     }
 
-    // propagate best score + edge weight
+    /// Propagate the lowest-cost route alternatives from
+    /// the previous character.
+    ///
+    /// This function forms the backbone of the search algorithm.
     fn score_from_predecessor(&mut self, from: &Self, class: u8) {
         // check each node we're going from
         for from_mode in Mode::LIST.into_iter() {
@@ -107,6 +116,7 @@ impl CharNodes {
         }
     }
 
+    /// The type of the node with the lowest cost.
     fn cheapest_mode(&self) -> Mode {
         let mut cheapest_mode = ASCII;
         let mut lowest_cost = self.get(ASCII).unwrap();
@@ -121,10 +131,21 @@ impl CharNodes {
     }
 }
 
-// the nodes corresponding to the full message
+/// The nodes corresponding to the full message.
 type Graph = Vec<CharNodes>;
 
-// averaged distance between neighbors
+/// Calculate the added cost of getting from one node to another.
+///
+/// We approximate the cost of alphanumerics and
+/// numerics as their average bits per character:
+/// 5.5 (11 / 2) and 3.33... (10 / 3) respectively.
+/// We multiply this by 6 to get an integer again,
+/// so numeric characters are awarded 20 points,
+/// alphanumerics 33, and ASCII characters 48.
+///
+/// Switching to a new mode incurs an overhead (mode switch
+/// marker and character count indicator), which is only
+/// added if the `same_subset` flag is set to `false`.
 fn edge_weight(to_mode: Mode, same_subset: bool, class: u8) -> Cost {
     (if !same_subset {
         // we multiply by 6 to get rid of decimals
@@ -143,7 +164,7 @@ fn edge_weight(to_mode: Mode, same_subset: bool, class: u8) -> Cost {
     }
 }
 
-// creates a graph of nodes along with their "g scores"
+/// Create a graph of nodes, along with their respective costs and pointers.
 fn create_graph(mode_vec: &Vec<Mode>, class: u8) -> Graph {
     let mut mode_iter = mode_vec.iter();
 
@@ -177,6 +198,7 @@ fn create_graph(mode_vec: &Vec<Mode>, class: u8) -> Graph {
     output
 }
 
+/// Retrace the optimal path back through a graph.
 fn optimal_path(graph: &Graph) -> Vec<Mode> {
     if graph.is_empty() {
         return vec![];
@@ -203,6 +225,7 @@ fn optimal_path(graph: &Graph) -> Vec<Mode> {
     Vec::from(output)
 }
 
+/// Optimize
 pub(crate) fn optimize_mode(string: String, class: u8) -> Vec<(Mode, String)> {
     if string.is_empty() {
         todo!()
@@ -233,6 +256,7 @@ pub(crate) fn optimize_mode(string: String, class: u8) -> Vec<(Mode, String)> {
 }
 
 impl Mode {
+    #[doc(hidden)]
     fn index(self) -> usize {
         match self {
             ASCII => 0,

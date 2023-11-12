@@ -1,3 +1,5 @@
+//! The *"Q-dot-R-es"* QR code generator.
+
 mod image;
 mod qr_standard;
 mod rdsm;
