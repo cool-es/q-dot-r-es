@@ -100,7 +100,6 @@ impl Bitmap {
             }
             true
         } else {
-            
             false
         }
     }

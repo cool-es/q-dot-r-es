@@ -100,8 +100,6 @@ pub(crate) fn split_to_blocks_and_encode(
     let (bc, cw, dcw, optional) = info;
     let (bc2, _, dcw2) = optional.unwrap_or((0, 0, 0));
 
-
-
     // check to make sure poly will split evenly
     assert!(
         poly.len() == dcw * bc + dcw2 * bc2,

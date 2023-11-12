@@ -1,6 +1,5 @@
 use super::*;
 
-
 pub(crate) const QR_EXP_LOG_TABLE: ExpLogLUTs = (
     [
         // 255 values of usize -> element
