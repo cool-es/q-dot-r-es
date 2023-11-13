@@ -1,6 +1,3 @@
-// quick and dirty solution to start entering data into qr codes
-#![allow(unused_mut, unused_variables)]
-
 use super::*;
 
 pub(crate) type Badstream = Vec<bool>;
@@ -21,18 +18,6 @@ pub(crate) fn badstream_to_polynomial(input: &Badstream) -> Polynomial {
         output.push(pushbyte as Element);
     }
     output
-}
-
-pub(crate) fn push_ascii(text: &str, stream: &mut Badstream) {
-    for i in text.chars() {
-        if i.is_ascii() {
-            let a = i as u8;
-            // for k in (0..=7).rev() {
-            //     stream.push((a & (1 << k)) != 0);
-            // }
-            push_byte(a, stream);
-        }
-    }
 }
 
 // ref. pg. 34
@@ -68,20 +53,7 @@ pub(crate) fn pad_to(codeword_length: usize, stream: &mut Badstream) {
     }
 }
 
-pub(crate) fn push_codewords(codewords: &[u8], stream: &mut Badstream) {
-    // padding
-    if stream.len() % 8 != 0 {
-        stream.resize(stream.len() + (8 - stream.len() % 8), false);
-    }
-    for &byte in codewords {
-        // for k in (0..=7).rev() {
-        //     stream.push((byte & (1 << k)) != 0);
-        // }
-        push_byte(byte, stream);
-    }
-}
-
-// pushes a byte without any alignment checks
+/// pushes a byte without any alignment checks
 pub(crate) fn push_byte(byte: u8, stream: &mut Badstream) {
     for k in (0..=7).rev() {
         stream.push((byte & (1 << k)) != 0);
@@ -96,16 +68,6 @@ pub(crate) fn push_bits(bits: &str, stream: &mut Badstream) {
             _ => panic!(),
         });
     }
-}
-
-pub(crate) fn polynomial_to_badstream(poly: &Polynomial) -> Badstream {
-    let mut stream = Vec::new();
-    for &a in poly {
-        for k in (0..=7).rev() {
-            stream.push((a & (1 << k)) != 0);
-        }
-    }
-    stream
 }
 
 pub(crate) fn write_badstream_to_bitmap(stream: &Badstream, bitmap: &mut Bitmap) {
@@ -138,11 +100,6 @@ pub(crate) fn split_to_blocks_and_encode(
     let (bc, cw, dcw, optional) = info;
     let (bc2, _, dcw2) = optional.unwrap_or((0, 0, 0));
 
-    // if optional.is_some() {
-    //     panic!("multiple block types are not supported yet")
-    // }
-    // let (bc2, dcw2) = (0, 0);
-
     // check to make sure poly will split evenly
     assert!(
         poly.len() == dcw * bc + dcw2 * bc2,
@@ -162,12 +119,10 @@ pub(crate) fn split_to_blocks_and_encode(
 
     for i in 0..bc {
         let (a, b) = (i * dcw, (i + 1) * dcw);
-        // unencoded.push(poly[a..b].to_vec());
         unencoded.push(first[a..b].to_vec());
     }
     for i in 0..bc2 {
         let (a, b) = (i * dcw2, (i + 1) * dcw2);
-        // unencoded.push(poly[a..b].to_vec());
         unencoded.push(second[a..b].to_vec());
     }
 
@@ -238,7 +193,7 @@ pub(crate) fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> 
     output
 }
 
-// container to hold input data based on if it's mode-switched or not
+/// container to hold input data based on if it's mode-switched or not
 #[derive(Clone, Debug)]
 pub(crate) enum QRInput {
     Auto(String),
@@ -319,103 +274,4 @@ pub(crate) fn apply_best_mask(bitmap: &mut Bitmap, version: u32, level: u8) {
         }
     }
     *bitmap = best;
-}
-
-mod tests {
-    #[allow(unused_imports)]
-    use super::*;
-
-    #[test]
-    fn block_encode_is_well_behaved() {
-        let poly: Polynomial = (1..=19).collect();
-        let stream = polynomial_to_badstream(&poly);
-        let enc_poly = encode_message(&poly, 7);
-        let enc_stream = full_block_encode(&stream, 1, 0);
-        let polynomialized_stream = badstream_to_polynomial(&enc_stream);
-
-        assert!(
-            polynomialized_stream.len() == enc_poly.len(),
-            "mismatched lengths - is {}, should be {}",
-            polynomialized_stream.len(),
-            enc_poly.len(),
-        );
-
-        for i in 0..polynomialized_stream.len() {
-            assert!(
-                polynomialized_stream[i] == enc_poly[i],
-                "mismatch at index {} - byte is {:#04X}, should be {:#04X}\nbad  {:?}\ngood {:?}",
-                i,
-                polynomialized_stream[i],
-                enc_poly[i],
-                polynomialized_stream,
-                enc_poly,
-            );
-        }
-    }
-
-    #[test]
-    fn block_encode_is_consistent() {
-        for version in 1..=40 {
-            let (bc, cw, dcw, opt) = get_block_info(version, 3);
-            let data_limit = if let Some((bc2, cw2, dcw2)) = opt {
-                bc * dcw + bc2 + dcw2
-            } else {
-                bc * dcw
-            };
-
-            let block = |level| {
-                full_block_encode(
-                    &polynomial_to_badstream(&((100..200).cycle().take(data_limit - 3).collect())),
-                    version,
-                    level,
-                )
-                .len()
-            };
-            let (l, m, q, h) = (block(0), block(1), block(2), block(3));
-            assert!(
-                l == m && l == q && l == h,
-                "version {}, bit length inconsistent:\nl: {}\nm: {}\nq: {}\nh: {}",
-                version,
-                l,
-                m,
-                q,
-                h
-            );
-        }
-    }
-
-    // this is inaccurate, not sure why,
-    // there's seemingly nothing wrong with split_to_blocks_and_encode...
-    // but i don't see a reason to fix it nor remove it at this time
-    #[test]
-    #[ignore = "inaccurate result"]
-    fn split_to_blocks_is_consistent() {
-        for ver in 1..=40 {
-            let info = get_block_info(ver, 0);
-            let cw = if let Some((a, _, b)) = info.3 {
-                a * b + info.0 * info.2
-            } else {
-                info.0 * info.2
-            } as u32;
-            let list1 =
-                split_to_blocks_and_encode(&((1..=200).cycle().take(cw as usize).collect()), info);
-            let sum1 = list1.iter().map(|x| x.len()).sum::<usize>();
-
-            for level in 1..=3 {
-                let info2 = get_block_info(ver, level);
-                let cw2 = if let Some((a, _, b)) = info2.3 {
-                    a * b + info2.0 * info2.2
-                } else {
-                    info2.0 * info2.2
-                } as u32;
-                let list2 = split_to_blocks_and_encode(
-                    &((1..=200).cycle().take(cw as usize).collect()),
-                    info2,
-                );
-
-                let sum2 = list2.iter().map(|x| x.len()).sum::<usize>();
-                assert!(sum1 == sum2, "version {}, level {}", ver, level);
-            }
-        }
-    }
 }

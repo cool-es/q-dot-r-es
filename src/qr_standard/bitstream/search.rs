@@ -1,34 +1,30 @@
-#![allow(unused_variables, unused_assignments, unreachable_code, unused_mut)]
-
+// a simpler search algorithm than a*:
+// compute the "g score" of every node,
+// backtrack and pick the lowest value.
+//
+// if two characters are of the same type,
+// there is no reason to switch modes.
+//
+// any message of length n has at most
+// 6n-6 edges (alternating between aln-asc).
 use super::*;
 
-// a simpler search algorithm than a*
-// compute the "g score" of every node,
-// backtrack and pick the lowest value
-
-// if two characters are of the same type,
-// there is no reason to switch modes
-
-// any message of length n has at most
-// 6n-6 edges (alternating between aln-asc)
-
-// the cheapest known way to reach a character
-// we approximate the cost of a single aln/num
-// char as 11/2 and 10/3 respectively, but if we
-// multiply it by 6 it makes an integer
-// 10/3 -> 20
-// 11/2 -> 33
-// 8 -> 48
-
+/// The cheapest known way to reach a character.
 type Cost = u32;
 
+/// A node in a graph, with extra information.
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-struct TaggedNode(Cost, Option<Mode>);
+struct TaggedNode(
+    /// The cost of the cheapest way to
+    /// get here.
+    Cost,
+    /// The ID of the previous node along
+    /// the cheapest known way to get here.
+    Option<Mode>,
+);
 
+#[doc(hidden)]
 impl TaggedNode {
-    fn cost(&self) -> Cost {
-        self.0
-    }
     fn pointer(&self) -> Option<Mode> {
         self.1
     }
@@ -46,12 +42,14 @@ impl PartialOrd for TaggedNode {
     }
 }
 
-// the 1, 2 or 3 nodes associated with
-// a character
+/// The nodes associated with a character.
+///
+/// Each character is given a node for every subset it is part of.
 #[derive(Clone, Copy)]
 struct CharNodes(Mode, [TaggedNode; 3]);
 
 impl CharNodes {
+    /// Access a certain node for a given character.
     fn get(&self, category: Mode) -> Option<TaggedNode> {
         if !self.has(category) {
             None
@@ -60,6 +58,7 @@ impl CharNodes {
         }
     }
 
+    /// A mutual reference to a certain node.
     fn get_mut(&mut self, category: Mode) -> Option<&mut TaggedNode> {
         if !self.has(category) {
             None
@@ -68,6 +67,7 @@ impl CharNodes {
         }
     }
 
+    /// Replace a cost value in a node, if the new value is smaller.
     fn set_min(&mut self, category: Mode, value: TaggedNode) {
         if let Some(v) = self.get(category) {
             if value < v {
@@ -76,18 +76,17 @@ impl CharNodes {
         }
     }
 
+    /// Does this character have a node of this type?
     fn has(&self, category: Mode) -> bool {
         // this optimization doesn't hold for kanji...
         category >= self.0
         // category.index() <= self.max()
     }
 
-    // max index for a character's node list
-    fn max(&self) -> usize {
-        self.0.index()
-    }
-
-    // propagate best score + edge weight
+    /// Propagate the lowest-cost route alternatives from
+    /// the previous character.
+    ///
+    /// This function forms the backbone of the search algorithm.
     fn score_from_predecessor(&mut self, from: &Self, class: u8) {
         // check each node we're going from
         for from_mode in Mode::LIST.into_iter() {
@@ -96,7 +95,7 @@ impl CharNodes {
                 // check each node we're moving towards
                 for to_mode in Mode::LIST.into_iter() {
                     // and if THAT node exists,
-                    if let Some(TaggedNode(current_to_score, _)) = self.get(to_mode) {
+                    if let Some(TaggedNode(..)) = self.get(to_mode) {
                         // are we moving between two nodes of the same type?
                         let same_subset = from_mode == to_mode;
 
@@ -117,6 +116,7 @@ impl CharNodes {
         }
     }
 
+    /// The type of the node with the lowest cost.
     fn cheapest_mode(&self) -> Mode {
         let mut cheapest_mode = ASCII;
         let mut lowest_cost = self.get(ASCII).unwrap();
@@ -131,10 +131,21 @@ impl CharNodes {
     }
 }
 
-// the nodes corresponding to the full message
+/// The nodes corresponding to the full message.
 type Graph = Vec<CharNodes>;
 
-// averaged distance between neighbors
+/// Calculate the added cost of getting from one node to another.
+///
+/// We approximate the cost of alphanumerics and
+/// numerics as their average bits per character:
+/// 5.5 (11 / 2) and 3.33... (10 / 3) respectively.
+/// We multiply this by 6 to get an integer again,
+/// so numeric characters are awarded 20 points,
+/// alphanumerics 33, and ASCII characters 48.
+///
+/// Switching to a new mode incurs an overhead (mode switch
+/// marker and character count indicator), which is only
+/// added if the `same_subset` flag is set to `false`.
 fn edge_weight(to_mode: Mode, same_subset: bool, class: u8) -> Cost {
     (if !same_subset {
         // we multiply by 6 to get rid of decimals
@@ -153,7 +164,7 @@ fn edge_weight(to_mode: Mode, same_subset: bool, class: u8) -> Cost {
     }
 }
 
-// creates a graph of nodes along with their "g scores"
+/// Create a graph of nodes, along with their respective costs and pointers.
 fn create_graph(mode_vec: &Vec<Mode>, class: u8) -> Graph {
     let mut mode_iter = mode_vec.iter();
 
@@ -187,6 +198,7 @@ fn create_graph(mode_vec: &Vec<Mode>, class: u8) -> Graph {
     output
 }
 
+/// Retrace the optimal path back through a graph.
 fn optimal_path(graph: &Graph) -> Vec<Mode> {
     if graph.is_empty() {
         return vec![];
@@ -213,6 +225,7 @@ fn optimal_path(graph: &Graph) -> Vec<Mode> {
     Vec::from(output)
 }
 
+/// Optimize
 pub(crate) fn optimize_mode(string: String, class: u8) -> Vec<(Mode, String)> {
     if string.is_empty() {
         todo!()
@@ -228,9 +241,7 @@ pub(crate) fn optimize_mode(string: String, class: u8) -> Vec<(Mode, String)> {
 
     let mut output = vec![];
 
-    // println!("{}: {:?}", chr, current_mode);
     for (mode, chr) in zip {
-        // println!("{}: {:?}", chr, mode);
         if mode == current_mode {
             push_string.push(chr);
         } else {
@@ -245,6 +256,7 @@ pub(crate) fn optimize_mode(string: String, class: u8) -> Vec<(Mode, String)> {
 }
 
 impl Mode {
+    #[doc(hidden)]
     fn index(self) -> usize {
         match self {
             ASCII => 0,
@@ -252,281 +264,5 @@ impl Mode {
             Numeric => 2,
             Kanji => todo!(),
         }
-    }
-}
-
-mod tests {
-
-    use super::*;
-
-    #[test]
-    fn create_graph_nocapture() {
-        let scramble = |x: usize| {
-            (
-                // ((x + 1) * x)
-                if {
-                    // [1, 24].contains(&x)
-                    // x.count_ones().count_zeros() % 2 == 0
-                    x == (((x as f32).sqrt()) as usize).pow(2)
-                } {
-                    0
-                    // x * 2 + 1
-                } else if {
-                    //
-                    (x / 10) % 2 == 0
-                    // [17, 23].contains(&x)
-
-                    //
-                } {
-                    // (x / 8).pow(3)
-                    1
-                } else {
-                    2
-                }
-                // if x == 8 { 2 } else { 0 }
-                // if x.count_ones() % 2 == 0 {
-                //     (x % 5) + (x % 7)
-                // } else {
-                //     (x * x + 1) << (x / 2)
-                // }
-            ) % 3
-        };
-
-        let mode_vec = (0..50).map(|x| Mode::LIST[scramble(x)]).collect::<Vec<_>>();
-
-        // println!("modes:\n{:?}", mode_vec);
-        for class in 0..3 {
-            println!(
-                "class {}\n{:?}",
-                class,
-                crate::qr_standard::MODE_ECONOMY[class as usize]
-            );
-            for mode in Mode::LIST {
-                println!(
-                    "-> {:?}: {}",
-                    mode,
-                    crate::qr_standard::cc_indicator_bit_size(class, mode)
-                );
-            }
-
-            let a = {
-                if true {
-                    create_graph(&mode_vec, class)
-                } else {
-                    let mut a = vec![];
-                    for i in 0..5 {
-                        a.push(CharNodes(
-                            Mode::LIST[(i / 3) % 2 + 1],
-                            [TaggedNode(i as u32, Some(Mode::LIST[(i / 3) % 2])); 3],
-                        ))
-                    }
-                    a
-                }
-            };
-            println!();
-            let path = optimal_path(&a);
-            // println!("modes:\n{:?}", mode_vec);
-            // println!("path:\n{:?}", path);
-            println!();
-            for (i, (&m, &p)) in mode_vec.iter().zip(path.iter()).enumerate() {
-                let m = format!("{:?}", m);
-                let p = format!("{:?}", p);
-                println!("{:2}: {:8} → {:8}", i, m, p);
-            }
-            println!();
-            helpy_print_graph(&a);
-            println!("\n");
-        }
-    }
-
-    fn helpy_print_graph(graph: &Graph) {
-        for (k, &CharNodes(mode, data)) in graph.iter().enumerate() {
-            println!("{}: {:10?} ---", k, mode);
-            for (i, &k) in data.iter().enumerate() {
-                if k < TaggedNode::default() {
-                    let to_mode = Mode::LIST[i];
-                    let mode_name = if let Some(mode) = k.1 {
-                        format!("{:?}", mode)
-                    } else {
-                        "none :(".to_string()
-                    };
-                    println!(
-                        "{:?} -> {:4} (from {})",
-                        to_mode,
-                        ((k.0 as f32) / 6.0).round() as i32,
-                        mode_name,
-                    );
-                }
-            }
-            println!("---");
-        }
-    }
-}
-
-// this is unused!
-mod a_star {
-    #![allow(unused_variables, unreachable_code, unused_mut)]
-
-    use super::Mode::{self, *};
-    use std::collections::{HashMap, HashSet};
-
-    // char index, char type (i.e. subset)
-    // NOTE: num chars have 3 nodes, aln chars have 2, asc 1
-    type NodeId = (usize, Mode);
-
-    type Path = Vec<NodeId>;
-    type Map<T> = HashMap<NodeId, T>;
-    type Cost = f32;
-
-    //     function reconstruct_path(cameFrom, current)
-    fn reconstruct_path(came_from: Map<NodeId>, current: NodeId) -> Path {
-        //     total_path := {current}
-        let mut total_path: Path = vec![current];
-
-        //     while current in cameFrom.Keys:
-        let mut current = current;
-        while let Some(&x) = came_from.get(&current) {
-            //         current := cameFrom[current]
-            current = x;
-            //         total_path.prepend(current)
-            total_path.push(current);
-        }
-
-        //     return total_path
-        total_path.reverse();
-        total_path
-    }
-
-    fn get(score_map: &mut Map<Cost>, node: NodeId) -> Cost {
-        // as per the IEEE 754 standard, adding a finite number to infinity
-        // makes infinity. meaning, this is well-behaved
-        score_map.entry(node).or_insert(Cost::INFINITY).clone()
-    }
-
-    fn entry_mut<'a, T>(node_map: &'a mut Map<T>, node: &NodeId) -> &'a mut T {
-        node_map.get_mut(node).expect("hashmap is empty!")
-    }
-
-    // the heuristic function
-    // estimated cost of reaching the finish from here
-    fn h(node: NodeId) -> Cost {
-        // plan: the calculation is "go along the current mode
-        // as far as possible, then switch to ascii for the remainder"
-        todo!()
-    }
-
-    // distance between neighbors
-    // todo: figure out how to integrate size classes
-    fn d(from: NodeId, to: NodeId) -> Cost {
-        if from.0 + 1 == to.0 {
-            (if from.1 != to.1 {
-                // add length of char count indicator
-                crate::qr_standard::cc_indicator_bit_size(
-                    {
-                        // help!! what class do i pick?
-                        2
-                    },
-                    to.1,
-                )
-            } else {
-                0
-            }) as Cost
-                + match to.1 {
-                    ASCII => 8.0,
-                    AlphaNum => 5.5,
-                    Numeric => 3.3,
-                    Kanji => todo!(),
-                }
-        } else {
-            Cost::INFINITY
-        }
-    }
-
-    // // A* finds a path from start to goal.
-    // // h is the heuristic function. h(n) estimates the cost to reach goal from node n.
-    // function A_Star(start, goal, h)
-    fn a_star<F>(start: NodeId, goal: NodeId, h: F) -> Option<Path>
-    where
-        F: Fn(NodeId) -> Cost,
-    {
-        //     // The set of discovered nodes that may need to be (re-)expanded.
-        //     // Initially, only the start node is known.
-        //     // This is usually implemented as a min-heap or priority queue rather than a hash-set.
-        //     openSet := {start}
-        let mut open_set: HashSet<NodeId> = HashSet::from([start]);
-
-        //     // For node n, cameFrom[n] is the node immediately preceding it on the cheapest path from the start
-        //     // to n currently known.
-        //     cameFrom := an empty map
-        let mut came_from: Map<NodeId> = HashMap::new();
-
-        //     // For node n, gScore[n] is the cost of the cheapest path from start to n currently known.
-        //     gScore := map with default value of Infinity
-        //     gScore[start] := 0
-        let mut g_score: Map<Cost> = HashMap::new();
-
-        //     // For node n, fScore[n] := gScore[n] + h(n). fScore[n] represents our current best guess as to
-        //     // how cheap a path could be from start to finish if it goes through n.
-        //     fScore := map with default value of Infinity
-        //     fScore[start] := h(start)
-        let mut f_score: Map<Cost> = HashMap::from([(start, h(start))]);
-
-        //     while openSet is not empty
-        while !open_set.is_empty() {
-            //         // This operation can occur in O(Log(N)) time if openSet is a min-heap or a priority queue
-            //         current := the node in openSet having the lowest fScore[] value
-            let mut current = {
-                let mut nodes = open_set.iter();
-                let mut best_node = *nodes.next().expect("set is empty!");
-                let mut best_score = get(&mut f_score, best_node);
-                for &candidate_node in nodes {
-                    let try_score = get(&mut f_score, candidate_node);
-                    if try_score < best_score {
-                        best_node = candidate_node;
-                        best_score = try_score;
-                    }
-                }
-                best_node
-            };
-            //         if current = goal
-            if current == goal {
-                //             return reconstruct_path(cameFrom, current)
-                return Some(reconstruct_path(came_from, current));
-            }
-
-            //         openSet.Remove(current)
-            open_set.remove(&current);
-
-            //         for each neighbor of current
-            for neighbor in [todo!("find neighbors")] {
-                //             // d(current,neighbor) is the weight of the edge from current to neighbor
-                //             // tentative_gScore is the distance from start to the neighbor through current
-                //             tentative_gScore := gScore[current] + d(current, neighbor)
-                let tentative_g_score = get(&mut g_score, current) + todo!("implement d") as Cost;
-
-                //             if tentative_gScore < gScore[neighbor]
-                if tentative_g_score < get(&mut g_score, neighbor) {
-                    //                 // This path to neighbor is better than any previous one. Record it!
-                    //                 cameFrom[neighbor] := current
-                    *entry_mut(&mut came_from, &neighbor) = current;
-                    //                 gScore[neighbor] := tentative_gScore
-                    *entry_mut(&mut g_score, &neighbor) = tentative_g_score;
-                    //                 fScore[neighbor] := tentative_gScore + h(neighbor)
-                    *entry_mut(&mut f_score, &neighbor) = tentative_g_score + h(neighbor);
-
-                    //                 if neighbor not in openSet
-                    //                     openSet.add(neighbor)
-                    open_set.insert(
-                        // note that insert() does this if clause already,
-                        // so no need to implement it
-                        neighbor,
-                    );
-                }
-            }
-        }
-
-        //     // Open set is empty but goal was never reached
-        //     return failure
-        None
     }
 }

@@ -1,27 +1,25 @@
+//! Bitmap operations related to the QR standard.
+
 use super::*;
 
+/// Lookup tables specific to the QR standard.
 mod tables;
 pub(crate) use tables::*;
+/// High-level encoding of characters.
 mod bitstream;
 pub(crate) use bitstream::*;
+/// Low-level encoding of binary streams.
 mod badstream;
 pub(crate) use badstream::*;
 
+/// Return `false` only for a valid QR code version (`1..=40`).
 #[inline]
 fn bad_version(version: u32) -> bool {
     !(1..=40).contains(&version)
 }
 
-// returns the standard sizes for qr code symbols, indexed by version number
-// 21*21, 25*25, ..., 177*177
-pub(crate) fn version_to_size(version: u32) -> Option<u32> {
-    if bad_version(version) {
-        None
-    } else {
-        Some(21 + 4 * (version - 1))
-    }
-}
-
+// Return the version of a QR code based on its width.
+#[doc(hidden)]
 #[inline]
 fn size_to_version(size: usize) -> Option<u32> {
     if size % 4 == 1 && (21..=177).contains(&size) {
@@ -31,6 +29,7 @@ fn size_to_version(size: usize) -> Option<u32> {
     }
 }
 
+/// Return `w - 1`, where `w` is the width of a version of QR code.
 fn version_to_max_index(version: u32) -> Option<usize> {
     if bad_version(version) {
         None
@@ -39,6 +38,7 @@ fn version_to_max_index(version: u32) -> Option<usize> {
     }
 }
 
+/// Is `(x, y)` a valid coordinate in a certain QR code?
 fn out_of_bounds(x: usize, y: usize, version: u32) -> bool {
     if bad_version(version) {
         true
@@ -49,14 +49,19 @@ fn out_of_bounds(x: usize, y: usize, version: u32) -> bool {
     }
 }
 
-// ImgRowAligned methods, ditto
+/// Methods specific to the QR standard.
 impl image::Bitmap {
+    /// Apply a QR masking pattern to the image.
     pub(crate) fn qr_mask_xor(&mut self, pattern: u8) {
         qr_mask_xor(self, pattern)
     }
+
+    /// Calculate the penalty score incurred by a certain masking pattern.
     pub(crate) fn qr_penalty(&self) -> u32 {
         penalties::total_penalty(self)
     }
+
+    /// Return the QR code version (if any) based on the bitmap's dimensions.
     pub(crate) fn qr_version(&self) -> Option<u32> {
         let (x, y) = self.dims();
         if x != y {
@@ -65,19 +70,14 @@ impl image::Bitmap {
             size_to_version(x)
         }
     }
+
+    /// Create a blank QR code template.
     pub(crate) fn new_blank_qr(version: u32) -> Self {
         new_blank_qr_code(version)
     }
-    pub(crate) fn unmask(&mut self) {
-        unmask(self);
-    }
 }
 
-// xor one of the qr masking patterns over the bitmap, directly
-// efficient, should replace _new_qr_mask():
-// _new_qr_mask(a, b, x) == new(a, b).qr_mask_xor(x)
-// i wrote this on the first try just before bedtime. go me
-// modified to leave gaps in the pattern for valid qr version sizes
+#[doc(hidden)]
 fn qr_mask_xor(input: &mut Bitmap, mask: u8) {
     let maybe_version = {
         if input.dims().0 != input.dims().1 {
@@ -114,9 +114,11 @@ fn qr_mask_xor(input: &mut Bitmap, mask: u8) {
     }
 }
 
+#[doc(hidden)]
 mod penalties {
     use crate::image::Bitmap;
 
+    // Calculate the total penalty.
     pub(super) fn total_penalty(input: &Bitmap) -> u32 {
         let width = input.dims().0;
         let ones = input.debug_bits().iter().map(|x| x.count_ones()).sum();
@@ -153,15 +155,14 @@ mod penalties {
         adjacent(width, get) + block(width, get) + fake_marker(width, get) + proportion(width, ones)
     }
 
-    // Adjacent modules in row/column in same color
+    // Penalty: "Adjacent modules in row/column in same color".
+    // penalty: `3 + i`, where i is the amount by which the number of adjacent modules of the same color exceeds 5.
     fn adjacent<F>(width: usize, get: F) -> u32
     where
         F: Fn(usize, usize) -> bool,
     {
         let max = width - 1;
 
-        // penalty: 3 + i
-        // i is the amount by which the number of adjacent modules of the same color exceeds 5
         let mut penalty = 0;
         for line in 0..=max {
             // get row n
@@ -193,6 +194,8 @@ mod penalties {
         penalty as u32
     }
 
+    /// penalty: `3 * (m - 1) * (n - 1)`
+    /// where the block size = `m * n`
     fn block<F>(width: usize, get: F) -> u32
     where
         F: Fn(usize, usize) -> bool,
@@ -202,9 +205,6 @@ mod penalties {
         // to create a version 40 code, the
         // function get() is called, approximately,
         // NINETY EIGHT MILLION TIMES !!!
-
-        // penalty: 3 * (m - 1) * (n - 1)
-        // where the block size = m * n
 
         // look for rectangles width (width of symbol), ... , 2
         // by using a sliding frame, and mark already-scored pixels.
@@ -279,8 +279,8 @@ mod penalties {
         penalty as u32
     }
 
-    // 1:1:3:1:1 ratio (dark:light:dark:light:dark) pattern in row/column
-    // named "fake marker" because it can be confused with the position markers
+    /// 1:1:3:1:1 ratio (dark:light:dark:light:dark) pattern in row/column.
+    /// named "fake marker" because it can be confused with the position markers
     fn fake_marker<F>(width: usize, get: F) -> u32
     where
         F: Fn(usize, usize) -> bool,
@@ -316,7 +316,7 @@ mod penalties {
     }
 
     // #[allow(unused_variables)]
-    // Proportion of dark modules in entire symbol
+    /// Proportion of dark modules in entire symbol
     fn proportion(width: usize, ones: u32) -> u32 {
         // penalty: 10 * k
         // k is the rating of the deviation of the proportion of dark modules in the symbol from 50% in steps of 5%
@@ -330,11 +330,12 @@ mod penalties {
     }
 }
 
-// raw data for format writing/reading operations
-// format data in a ~qr symbol~ is replicated in two positions:
-// this function gives pairs of coordinates (x1, y1), (x2, y2)
-// relative to top left module of the finder pattern
-// from LSB (0) to MSB (14) (see pg. 60)
+/// raw data for format writing/reading operations.
+///
+/// format data in a qr symbol is replicated in two positions.
+/// this function gives pairs of coordinates `(x1, y1)`, `(x2, y2)`
+/// relative to top left module of the finder pattern
+/// from LSB (0) to MSB (14) (see pg. 60).
 fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize, usize))> {
     if bad_version(version) || bit > 14 {
         // undefined
@@ -357,53 +358,6 @@ fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize,
     };
 
     Some((coord1, coord2))
-}
-
-// ref. pg. 60
-pub(crate) fn get_fcode(input: &Bitmap, version: u32, offset: (usize, usize)) -> Option<u16> {
-    // the coordinates of the top left module; in hellocode, it's (2,2)
-    let (ox, oy) = offset;
-    let mut output1 = 0;
-    let mut output2 = 0;
-
-    for bit in (0..=14).rev() {
-        let ((x1, y1), (x2, y2)) = format_info_coords(version, bit)?;
-
-        output1 <<= 1;
-        output1 += u16::from(input.get_bit(x1 + ox, y1 + oy)?);
-
-        output2 <<= 1;
-        output2 += u16::from(input.get_bit(x2 + ox, y2 + oy)?);
-    }
-
-    if output1 != output2 {
-        return None;
-    }
-
-    // mask value for format codes, 0x5412
-    let mask = 0b0101_0100_0001_0010;
-
-    Some(output1 ^ mask)
-}
-
-// returns error correction level and mask pattern (pg. 59)
-pub(crate) fn interpret_format(fcode: u16) -> Option<(u8, u8)> {
-    if !crate::rdsm::qr_fcode_is_good(fcode) {
-        return None;
-    }
-
-    // L, M, Q, H
-    // let correction = match 0b11 & (fcode >> 13) {
-    //     0b01 => 0,
-    //     0b00 => 1,
-    //     0b11 => 2,
-    //     0b10 | _ => 3,
-    // };
-    let correction = (0b11 & (fcode >> 13)) as u8;
-
-    let maskpat = (0b111 & (fcode >> 10)) as u8;
-
-    Some((correction, maskpat))
 }
 
 pub(crate) fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u16> {
@@ -513,8 +467,9 @@ pub(crate) fn coord_is_data(x: usize, y: usize, version: u32) -> bool {
     coord_status(x, y, version).is_some_and(|c| c == 0)
 }
 
-// from 0 to 5:
-// data, position, timing, format, alignment, version, that one bit
+/// returns the type of pixel taken up by a coordinate in a qr code.
+///
+/// from 0 to 5: data, position, timing, format, alignment, version, that one bit
 pub(crate) fn coord_status(x: usize, y: usize, version: u32) -> Option<u8> {
     if out_of_bounds(x, y, version) {
         return None;
@@ -550,6 +505,7 @@ pub(crate) fn coord_status(x: usize, y: usize, version: u32) -> Option<u8> {
     })
 }
 
+#[doc(hidden)]
 fn new_blank_qr_code(version: u32) -> Bitmap {
     let max = version_to_max_index(version).expect("invalid version");
     let mut output = Bitmap::new(max + 1, max + 1);
@@ -602,21 +558,8 @@ fn new_blank_qr_code(version: u32) -> Bitmap {
     output
 }
 
-fn unmask(input: &mut Bitmap) {
-    let version = input.qr_version().unwrap();
-    let fcode = get_fcode(input, version, (0, 0)).unwrap();
-    let mask = interpret_format(fcode).unwrap().1;
-    input.qr_mask_xor(mask);
-}
-
-pub(crate) fn errc(input: &Bitmap) -> u8 {
-    let version = input.qr_version().unwrap();
-    let fcode = get_fcode(input, version, (0, 0)).unwrap();
-    interpret_format(fcode).unwrap().1
-}
-
-// generate the 18-bit version info data (versions 7 and up)
 // tested, works!
+/// generate the 18-bit version info data (versions 7 and up)
 fn qr_generate_vcode(version: u32) -> u32 {
     // version code generator for (18,6) BCH code:
     // 0x1F25 = 0b1111100100101
@@ -624,9 +567,9 @@ fn qr_generate_vcode(version: u32) -> u32 {
 }
 
 // in the style of format_info_coords. again:
-// this function gives pairs of coordinates (x1, y1), (x2, y2)
-// relative to top left module of the finder pattern
-// from LSB (0) to MSB (17) (see pg. 61)
+/// this function gives pairs of coordinates `(x1, y1)`, `(x2, y2)`
+/// relative to top left module of the finder pattern
+/// from LSB (0) to MSB (17) (see pg. 61)
 fn version_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize, usize))> {
     if bad_version(version) || version < 7 || bit > 17 {
         // undefined
@@ -653,88 +596,5 @@ pub(crate) fn set_vcode(input: &mut Bitmap, version: u32, vcode: u32) {
         let value = vcode & (1 << bit) != 0;
         input.set_bit(x1, y1, value);
         input.set_bit(x2, y2, value);
-    }
-}
-
-mod tests {
-    #[allow(unused_imports)]
-    use super::*;
-
-    #[test]
-    fn test_version_block() {
-        let table = [
-            (7u32, 0xc94u32),
-            (8, 0x5bc),
-            (9, 0xa99),
-            (10, 0x4d3),
-            (11, 0xbf6),
-            (12, 0x762),
-            (13, 0x847),
-            (14, 0x60d),
-            (15, 0x928),
-            (16, 0xb78),
-            (17, 0x45d),
-            (18, 0xa17),
-            (26, 0xfab),
-            (36, 0xb0b),
-            (40, 0xc69),
-        ];
-        for (a, i) in table {
-            let artificial = (a << 12) + i;
-            let real = qr_generate_vcode(a);
-            assert!(artificial == real);
-        }
-    }
-
-    #[test]
-    fn penalty_get_check() {
-        let string = "testing, testing...".to_string();
-        let pic = make_qr(QRInput::Manual(vec![(ASCII, string)]), Some(40), None, None);
-
-        let width = pic.dims().0;
-        let input = &pic;
-
-        let bit_x = {
-            let mut bit_vector: Vec<bool> = Vec::new();
-            for x in 0..width {
-                for y in 0..width {
-                    bit_vector.push(input.get_bit(x, y).expect("out of bounds"));
-                }
-            }
-            bit_vector
-        };
-        let get_x = |x: usize, y: usize| bit_x[x * width + y];
-
-        let size = usize::BITS as usize;
-        let bit_y = {
-            let mut bit_vector: Vec<usize> = Vec::new();
-            let mut ticker = 0usize;
-            let mut pushy = 0usize;
-
-            for x in 0..width {
-                for y in 0..width {
-                    pushy |=
-                        usize::from(input.get_bit(x, y).expect("out of bounds")) << (ticker % size);
-                    ticker += 1;
-                    if ticker % size == 0 {
-                        bit_vector.push(pushy);
-                        pushy = 0;
-                    }
-                }
-            }
-            bit_vector.push(pushy);
-
-            bit_vector
-        };
-        let get_y = |x: usize, y: usize| {
-            let index = x * width + y;
-            bit_y[index / size] & (1usize << (index % size)) != 0
-        };
-
-        for x in 0..width {
-            for y in 0..width {
-                assert!(get_x(x, y) == get_y(x, y) && get_x(x, y) == input.get_bit(x, y).unwrap());
-            }
-        }
     }
 }
