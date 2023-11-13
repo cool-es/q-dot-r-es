@@ -231,7 +231,16 @@ pub(crate) fn optimize_mode(string: String, class: u8) -> Vec<(Mode, String)> {
         todo!()
     }
 
-    let mode_vec = string.chars().map(|x| char_status(x).unwrap()).collect();
+    let mode_vec = string
+        .chars()
+        .map(|x| {
+            if let Some(mode) = char_status(x) {
+                mode
+            } else {
+                panic!("\"{}\" is not a valid input character!", x)
+            }
+        })
+        .collect();
 
     let good_vec = optimal_path(&create_graph(&mode_vec, class));
 
