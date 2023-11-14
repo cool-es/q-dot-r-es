@@ -77,11 +77,7 @@ pub(crate) fn find_errc(input: usize) -> Option<usize> {
     )
 }
 
-pub(super) fn find_alphanum(input: char) -> Option<u16> {
-    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"
-        .find(input)
-        .map(|x| x as u16)
-}
+pub(super) const ALPHANUM_SET: &str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
 
 pub(crate) type VersionBlockInfo = (usize, usize, usize, Option<(usize, usize, usize)>);
 

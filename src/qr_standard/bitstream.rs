@@ -112,7 +112,12 @@ fn string_to_alphanum(input: &str) -> Vec<Token> {
     let mut output: Vec<Token> = vec![ModeAndCount(AlphaNum, input.len() as u16)];
     for i in input
         .chars()
-        .map(|x| find_alphanum(x).expect("invalid alphanumeric input!"))
+        .map(|x| {
+            ALPHANUM_SET
+                .find(x)
+                .map(|x| x as u16)
+                .expect("invalid alphanumeric input!")
+        })
         .collect::<Vec<u16>>()
         .chunks(2)
     {
@@ -303,7 +308,7 @@ fn char_status(x: char) -> Option<Mode> {
 #[doc(hidden)]
 #[inline]
 fn is_alphanum(x: char) -> bool {
-    find_alphanum(x).is_some()
+    ALPHANUM_SET.contains(x)
 }
 
 #[doc(hidden)]
