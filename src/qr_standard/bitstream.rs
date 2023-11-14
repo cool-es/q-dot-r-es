@@ -291,10 +291,10 @@ pub(super) fn find_best_version(data: &Vec<Token>, level: u8) -> Result<u32, Str
 
 /// Returns the smallest mode subset of an ASCII character.
 fn char_status(x: char) -> Option<Mode> {
-    Some(if is_numeric(x) {
+    Some(if x.is_ascii_digit() {
         // ascii, alphanumeric and numeric
         Numeric
-    } else if is_alphanum(x) {
+    } else if ALPHANUM_SET.contains(x) {
         // ascii and alphanumeric
         AlphaNum
     } else if x.is_ascii() {
@@ -303,16 +303,4 @@ fn char_status(x: char) -> Option<Mode> {
     } else {
         return None;
     })
-}
-
-#[doc(hidden)]
-#[inline]
-fn is_alphanum(x: char) -> bool {
-    ALPHANUM_SET.contains(x)
-}
-
-#[doc(hidden)]
-#[inline]
-fn is_numeric(x: char) -> bool {
-    x.is_ascii_digit()
 }
