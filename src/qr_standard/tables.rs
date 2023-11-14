@@ -77,22 +77,10 @@ pub(crate) fn find_errc(input: usize) -> Option<usize> {
     )
 }
 
-// tested, works
 pub(super) fn find_alphanum(input: char) -> Option<u16> {
-    Some(u16::from(match input {
-        '0'..='9' => (input as u8) - 48,
-        'A'..='Z' => (input as u8) - 55,
-        ' ' => 36,
-        '$' => 37,
-        '%' => 38,
-        '*' => 39,
-        '+' => 40,
-        '-' => 41,
-        '.' => 42,
-        '/' => 43,
-        ':' => 44,
-        _ => return None,
-    }))
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"
+        .find(input)
+        .map(|x| x as u16)
 }
 
 pub(crate) type VersionBlockInfo = (usize, usize, usize, Option<(usize, usize, usize)>);
