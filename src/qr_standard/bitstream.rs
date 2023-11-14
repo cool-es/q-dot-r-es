@@ -236,13 +236,13 @@ fn bit_overhead_template(data: &Vec<Token>) -> Overhead {
 }
 
 fn compute_bit_overhead(overhead: Overhead, version: u32) -> usize {
-    let table = match version {
+    let table = CC_INDICATOR_BITS[match version {
         // no. of bits in char count indicator per version
-        1..=9 => [10, 9, 8, 8],
-        10..=26 => [12, 11, 16, 10],
-        27..=40 => [14, 13, 16, 12],
+        1..=9 => 0,
+        10..=26 => 1,
+        27..=40 => 2,
         _ => panic!(),
-    };
+    }];
     let (mut sum, indicators) = overhead;
     for m in 0..=3 {
         sum += table[m] * indicators[m];

@@ -407,7 +407,8 @@ pub(crate) const DATA_CODEWORDS: [[usize; 40]; 4] = [
 
 /// no. of bits in the char count indicator by size class (1.. - 10.. - 27..),
 /// and by mode (num-aln-asc-knj)
-const CC_INDICATOR_BITS: [[usize; 4]; 3] = [[10, 9, 8, 8], [12, 11, 16, 10], [14, 13, 16, 12]];
+pub(super) const CC_INDICATOR_BITS: [[usize; 4]; 3] =
+    [[10, 9, 8, 8], [12, 11, 16, 10], [14, 13, 16, 12]];
 
 pub(crate) fn cc_indicator_bit_size(class: u8, mode: super::Mode) -> usize {
     use super::Mode::*;
