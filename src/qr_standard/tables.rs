@@ -99,17 +99,13 @@ const fn _vbi(total_codewords: usize, level_data: [[usize; 3]; 4]) -> [VersionBl
         assert!((total_codewords - bc2) % (bc1 + bc2) == 0);
         let cw1 = (total_codewords - bc2) / (bc1 + bc2);
         let dcw1 = cw1 - ecc;
+        let opt = if bc2 == 0 {
+            None
+        } else {
+            Some((bc2, cw1 + 1, dcw1 + 1))
+        };
 
-        arr[i] = (
-            bc1,
-            cw1,
-            dcw1,
-            if bc2 == 0 {
-                None
-            } else {
-                Some((bc2, cw1 + 1, dcw1 + 1))
-            },
-        );
+        arr[i] = (bc1, cw1, dcw1, opt);
         i += 1;
     }
 
