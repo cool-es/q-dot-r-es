@@ -206,15 +206,15 @@ pub(crate) fn make_qr(
     level_choice: Option<u8>,
     mask_choice: Option<u8>,
 ) -> Bitmap {
-    let tokens = make_token_stream(match input {
-        QRInput::Auto(str) => super::bitstream::search::optimize_mode(str, {
-            // todo - version class!
-            0
-        }),
-        QRInput::Manual(vec) => vec,
-    });
-
     let level = level_choice.unwrap_or(2);
+
+    let input = match input {
+        QRInput::Auto(str) => find_best_mode_optimization(str, level),
+        QRInput::Manual(vec) => vec,
+    };
+
+    let tokens = make_token_stream(input);
+
     let best_ver = find_best_version(&tokens, level).expect("make_qr()");
 
     let version = if let Some(chosen_ver) = version_choice {
@@ -274,4 +274,129 @@ pub(crate) fn apply_best_mask(bitmap: &mut Bitmap, version: u32, level: u8) {
         }
     }
     *bitmap = best;
+}
+
+/// Find the best possible mode optimization for the message.
+///
+/// Since mode optimization is defined circularly (the mode
+/// switching influences the message size, which influences
+/// what version QR code is chosen, which influences what
+/// mode switching is optimal), it's necessary to do this
+/// step before the optimal QR version can be decided on.
+fn find_best_mode_optimization(str: String, level: u8) -> Vec<(Mode, String)> {
+    use super::bitstream::search::optimize_mode;
+
+    // the limiting sizes for each code class, in codewords
+    // = [274, 1468]
+    let class_limits = {
+        let dcw = DATA_CODEWORDS[level as usize];
+        [dcw[10 - 1], dcw[27 - 1]]
+    };
+
+    // check if the code fits in the first class, (version 1..)
+    // then the second class (version 10..)
+    for class in 0..2 {
+        let marked_string = optimize_mode(&str, class as u8);
+
+        // calculate the total message size, in bits
+        let cost = marked_string
+            .iter()
+            .map(|(mode, string)| bit_cost(string.len(), class, *mode))
+            .sum();
+
+        // if the message fits the limit with at least one codeword,
+        // or exactly 0 bits, to spare, then return it
+        if let Some(diff) = (8 * class_limits[class]).checked_sub(cost) {
+            if diff > 7 || diff == 0 {
+                return marked_string;
+            }
+        }
+    }
+
+    // code must be third class (version 27..),
+    // so no calculation is necessary
+    optimize_mode(&str, 2)
+}
+
+// verified accurate
+// returns the number of bits it takes to print `count` characters
+// in a given mode and size class of qr code
+fn bit_cost(count: usize, class: usize, mode: Mode) -> usize {
+    let cc_bits = CC_INDICATOR_BITS[class];
+    4 + match mode {
+        Numeric => 4 + cc_bits[0] + ((10 * count + 1) as f32 / 3.0).round() as usize,
+        AlphaNum => 4 + cc_bits[1] + 11 * (count / 2) + 6 * (count % 2),
+        ASCII => 4 + cc_bits[2] + 8 * count,
+        Kanji => todo!("refer to kanji bit information"),
+    }
+}
+
+#[test]
+fn fbmo_test() {
+    let lims = |level: u8| {
+        let dcw = DATA_CODEWORDS[level as usize];
+        [dcw[10 - 1], dcw[27 - 1], dcw[40 - 1]]
+    };
+
+    let find_mode_class_modded = |str: String, level: u8| {
+        let class_limits = lims(level);
+
+        let mut class = 0;
+        'output: loop {
+            let marked_string = super::bitstream::search::optimize_mode(&str, class as u8);
+
+            let cost = marked_string
+                .iter()
+                .map(|(mode, string)| bit_cost(string.len(), class, *mode))
+                .sum();
+
+            if let Some(diff) = (8 * class_limits[class]).checked_sub(cost) {
+                if diff == 0 || diff > 7 {
+                    assert!(marked_string == find_best_mode_optimization(str, level));
+                    break 'output (class, cost);
+                }
+            } else if class >= 2 {
+                assert!(marked_string == find_best_mode_optimization(str, level));
+                break 'output (class, cost);
+            }
+            class += 1;
+        }
+    };
+
+    let level = 0;
+    let lims = lims(level);
+
+    for char_rep_count in 0..20 {
+        let mut count = 0;
+
+        for str_length in char_rep_count..100 {
+            let mut chars: Vec<char> = std::iter::repeat('1').take(char_rep_count).collect();
+            chars.extend(std::iter::repeat('a').take(char_rep_count));
+            let str: String = chars.into_iter().cycle().take(str_length).collect();
+
+            let (class, cost) = find_mode_class_modded(str.clone(), level);
+
+            let diff = (8 * lims[class]).checked_sub(cost);
+
+            assert!(
+                count <= cost,
+                "count {}:\n{}\ncost {} is < prev.cost {}",
+                count,
+                str,
+                cost,
+                count
+            );
+            count = cost;
+
+            assert!(
+                diff.is_some() && diff.unwrap() > if class > 0 { lims[class - 1] } else { 0 },
+                "count {} length {}:\n{}\ncost {} is > limit {}",
+                char_rep_count,
+                str_length,
+                str,
+                cost,
+                lims[class]
+            );
+        }
+    }
 }
