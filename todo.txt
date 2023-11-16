@@ -2,7 +2,7 @@
 • remainder bits
     this might not be necessary since it works implicitly
     (though might be good to add explicit bounds checking)
-• check to see if arbitrary data is possible (emoji, etc)
+• check to see if arbitrary data is possible (emoji, etc) - utf-8?
 • clean up code (remove the allow(dead_code))
 • add stats printing (version, bit count, etc)
 • add comments and documentation so it's readable to others
