@@ -226,21 +226,23 @@ fn optimal_path(graph: &Graph) -> Vec<Mode> {
 }
 
 /// Optimize
-pub(crate) fn optimize_mode(string: String, class: u8) -> Vec<(Mode, String)> {
+pub(crate) fn optimize_mode(string: &String, class: u8) -> Vec<(Mode, String)> {
+    let char_to_mode = |x| {
+        if let Some(mode) = char_status(x) {
+            mode
+        } else {
+            panic!("\"{}\" is not a valid input character!", x)
+        }
+    };
+
     if string.is_empty() {
-        todo!()
+        return vec![];
+    } else if string.len() == 1 {
+        let mode = char_to_mode(string.chars().next().unwrap());
+        return vec![(mode, string.to_string())];
     }
 
-    let mode_vec = string
-        .chars()
-        .map(|x| {
-            if let Some(mode) = char_status(x) {
-                mode
-            } else {
-                panic!("\"{}\" is not a valid input character!", x)
-            }
-        })
-        .collect();
+    let mode_vec = string.chars().map(char_to_mode).collect();
 
     let good_vec = optimal_path(&create_graph(&mode_vec, class));
 
