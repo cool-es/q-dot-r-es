@@ -28,7 +28,7 @@ fn main_qr_generator() -> std::io::Result<()> {
 
     args.next();
     while let Some(argument) = args.next() {
-        if manual && ["-m", "--manual"].contains(&argument.as_str()) {
+        if manual && ["--manual"].contains(&argument.as_str()) {
             'goop: while let Some(argument) = args.next() {
                 match argument.as_str() {
                     "--numeric" | "-num" | "" => {
@@ -121,6 +121,7 @@ fn main_qr_generator() -> std::io::Result<()> {
                 }
             }
 
+            "--manual" => {}
             _ => panic!("{} - incorrect argument", argument),
         }
     }
