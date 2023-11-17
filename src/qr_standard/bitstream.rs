@@ -80,9 +80,26 @@ pub(super) enum Token {
 }
 
 fn string_to_ascii(input: &str) -> Vec<Token> {
-    assert!(input.is_ascii(), "invalid ascii input!");
+    // will run with arguments like
+    // --manual -asc "🤔💭 wow"
+    
+    // debug
+    // let input = if !input.is_ascii() {
+    //     eprintln!("debug: not ascii");
+    //     let mut buf = [0u8; 4];
+    //     let mut string = String::new();
+
+    //     for c in input.chars() {
+    //         string.push_str(c.encode_utf8(&mut buf));
+    //     }
+
+    //     string
+    // } else {
+    //     input.to_string()
+    // };
+
     let mut output: Vec<Token> = vec![ModeAndCount(ASCII, input.len() as u16)];
-    for i in input.chars() {
+    for i in input.bytes() {
         output.push(Character(ASCII, 8, u16::from(i as u8)));
     }
     output
@@ -183,6 +200,12 @@ pub(super) fn make_token_stream(input: Vec<(Mode, String)>) -> Vec<Token> {
 /// Convert a vector of tokens into a single stream of bits.
 pub(super) fn tokens_to_badstream(stream: Vec<Token>, version: u32) -> Badstream {
     let mut output: Badstream = Vec::new();
+
+    //debug!
+    push_bits("011100011010", &mut output);
+    // 0111 + 0001 1010
+    // eci indicator + switch to utf-8
+
     for token in stream {
         push_token_to_badstream(&mut output, token, version);
     }
