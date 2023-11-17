@@ -151,23 +151,18 @@ fn string_to_alphanum(input: &str) -> Vec<Token> {
 fn push_token_to_badstream(stream: &mut Badstream, token: Token, version: u32) {
     match token {
         ModeAndCount(mode, count) => {
-            let a: &str = match mode {
-                Numeric => "0001",
-                AlphaNum => "0010",
-                ASCII => "0100",
-                Kanji => "1000",
-            };
-            let b = match version {
-                1..=9 => 0,
-                10..=26 => 1,
-                27..=40 => 2,
-                _ => panic!(),
-            };
+            push_bits(
+                match mode {
+                    Numeric => "0001",
+                    AlphaNum => "0010",
+                    ASCII => "0100",
+                    Kanji => "1000",
+                },
+                stream,
+            );
 
-            let width: usize = cc_indicator_bit_size(b, mode);
+            let width: usize = cc_indicator_bit_size(version_to_class(version), mode);
             let string = format!("{:016b}", count);
-
-            push_bits(a, stream);
             push_bits(&string[(16 - width)..], stream);
         }
         Character(_, width, address) => {
@@ -258,13 +253,7 @@ fn bit_overhead_template(data: &Vec<Token>) -> Overhead {
 }
 
 fn compute_bit_overhead(overhead: Overhead, version: u32) -> usize {
-    let table = CC_INDICATOR_BITS[match version {
-        // no. of bits in char count indicator per version
-        1..=9 => 0,
-        10..=26 => 1,
-        27..=40 => 2,
-        _ => panic!(),
-    }];
+    let table = CC_INDICATOR_BITS[version_to_class(version) as usize];
     let (mut sum, indicators) = overhead;
     for m in 0..=3 {
         sum += table[m] * indicators[m];

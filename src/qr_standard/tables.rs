@@ -334,3 +334,14 @@ pub(crate) fn cc_indicator_bit_size(class: u8, mode: super::Mode) -> usize {
         panic!("access out of bounds")
     }
 }
+
+#[inline]
+pub(crate) const fn version_to_class(version: u32) -> u8 {
+    match version {
+        // no. of bits in char count indicator per version
+        1..=9 => 0,
+        10..=26 => 1,
+        27..=40 => 2,
+        _ => panic!(),
+    }
+}
