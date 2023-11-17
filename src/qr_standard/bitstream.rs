@@ -89,7 +89,7 @@ pub(super) enum Token {
 fn string_to_ascii(input: &str) -> Vec<Token> {
     // will run with arguments like
     // --manual -asc "🤔💭 wow"
-    
+
     // debug
     // let input = if !input.is_ascii() {
     //     eprintln!("debug: not ascii");

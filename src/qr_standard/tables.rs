@@ -388,9 +388,9 @@ pub(crate) mod eci {
     const WINDOWS_1251: u32 = 22;
     const WINDOWS_1252: u32 = 23;
     const WINDOWS_1256: u32 = 24;
-    
+
     const US_ASCII: u32 = 27;
-    
+
     const ISO_IEC_646_INV: u32 = 170;
     const BINARY_DATA: u32 = 899;
 }
