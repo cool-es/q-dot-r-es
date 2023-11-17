@@ -75,6 +75,13 @@ pub(super) enum Token {
     /// the mode field might be superfluous...
     Character(usize, u16),
 
+    /// An Extended Channel Interpretation marker.
+    ///
+    /// It functions as an overarching mode-switch
+    /// that decides how the resultant byte data
+    /// from the QR code should be (re-)interpreted.
+    EciChange(u32),
+
     /// the bit sequence `0000`
     Terminator,
 }
@@ -150,6 +157,22 @@ fn string_to_alphanum(input: &str) -> Vec<Token> {
 /// Convert a `Token` character into its equivalent bit sequence.
 fn push_token_to_badstream(stream: &mut Badstream, token: Token, version: u32) {
     match token {
+        EciChange(mode) => {
+            let string = match mode {
+                // 0bbb bbbb
+                0..=0x7F => format!("0{:07b}", mode),
+
+                // 10bb bbbb  bbbb bbbb
+                0x80..=0x3FFF => format!("10{:014b}", mode),
+
+                // 110b bbbb  bbbb bbbb  bbbb bbbb
+                0x4000..=999999 => format!("110{:021b}", mode),
+
+                _ => panic!(),
+            };
+            push_bits("0111", stream);
+            push_bits(&string, stream);
+        }
         ModeAndCount(mode, count) => {
             push_bits(
                 match mode {
@@ -236,6 +259,14 @@ fn bit_overhead_template(data: &Vec<Token>) -> Overhead {
 
     for i in data {
         match i {
+            EciChange(mode) => {
+                bit_sum += match mode {
+                    0..=0x7F => 4 + 8,
+                    0x80..=0x3FFF => 4 + 16,
+                    0x4000..=999999 => 4 + 24,
+                    _ => panic!(),
+                };
+            }
             ModeAndCount(mode, _) => {
                 bit_sum += 4;
                 count_indicators[match mode {
