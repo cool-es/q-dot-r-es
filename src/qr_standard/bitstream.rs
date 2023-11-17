@@ -134,11 +134,11 @@ fn string_to_alphanum(input: &str) -> Vec<Token> {
 fn push_token_to_badstream(stream: &mut Badstream, token: Token, version: u32) {
     match token {
         ModeAndCount(mode, count) => {
-            let a: (usize, &str) = match mode {
-                Numeric => (0, "0001"),
-                AlphaNum => (1, "0010"),
-                ASCII => (2, "0100"),
-                Kanji => (3, "1000"),
+            let a: &str = match mode {
+                Numeric => "0001",
+                AlphaNum => "0010",
+                ASCII => "0100",
+                Kanji => "1000",
             };
             let b = match version {
                 1..=9 => 0,
@@ -147,11 +147,10 @@ fn push_token_to_badstream(stream: &mut Badstream, token: Token, version: u32) {
                 _ => panic!(),
             };
 
-            // number of bits in char count indicator - see pg. 24
-            let width: usize = [[10, 9, 8, 8], [12, 11, 16, 10], [14, 13, 16, 12]][b][a.0];
+            let width: usize = cc_indicator_bit_size(b, mode);
             let string = format!("{:016b}", count);
 
-            push_bits(a.1, stream);
+            push_bits(a, stream);
             push_bits(&string[(16 - width)..], stream);
         }
         Character(_, width, address) => {
