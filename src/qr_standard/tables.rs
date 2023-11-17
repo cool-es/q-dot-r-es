@@ -345,3 +345,52 @@ pub(crate) const fn version_to_class(version: u32) -> u8 {
         _ => panic!(),
     }
 }
+
+/// Constant identifiers for ECI modes.
+pub(crate) mod eci {
+    #![allow(dead_code)]
+    #![doc(hidden)]
+
+    const CODE_PAGE_437: u32 = 0;
+    const CODE_PAGE_437_2: u32 = 2;
+
+    const LATIN_1: u32 = 1;
+    const LATIN_1_2: u32 = 3;
+    const LATIN_2: u32 = 4;
+    const LATIN_3: u32 = 5;
+    const LATIN_4: u32 = 6;
+    const LATIN_5: u32 = 11;
+    const LATIN_6: u32 = 12;
+    const LATIN_7: u32 = 15;
+    const LATIN_8: u32 = 16;
+    const LATIN_9: u32 = 17;
+    const LATIN_10: u32 = 18;
+    const LATIN_ARABIC: u32 = 8;
+    const LATIN_CYRILLIC: u32 = 7;
+    const LATIN_GREEK: u32 = 9;
+    const LATIN_HEBREW: u32 = 10;
+    const LATIN_THAI: u32 = 13;
+
+    const SHIFT_JIS: u32 = 20;
+    const BIG_5: u32 = 28;
+    const GBT_2312: u32 = 29;
+    const KS_X_1001: u32 = 30;
+    const GBK: u32 = 31;
+    const GB_18030: u32 = 32;
+
+    const UTF8: u32 = 26;
+    const UTF16_BE: u32 = 25;
+    const UTF16_LE: u32 = 33;
+    const UTF32_BE: u32 = 34;
+    const UTF32_LE: u32 = 35;
+
+    const WINDOWS_1250: u32 = 21;
+    const WINDOWS_1251: u32 = 22;
+    const WINDOWS_1252: u32 = 23;
+    const WINDOWS_1256: u32 = 24;
+    
+    const US_ASCII: u32 = 27;
+    
+    const ISO_IEC_646_INV: u32 = 170;
+    const BINARY_DATA: u32 = 899;
+}
