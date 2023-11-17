@@ -75,12 +75,36 @@ pub(super) enum Token {
     /// the mode field might be superfluous...
     Character(usize, u16),
 
+    /// An Extended Channel Interpretation marker.
+    ///
+    /// It functions as an overarching mode-switch
+    /// that decides how the resultant byte data
+    /// from the QR code should be (re-)interpreted.
+    EciChange(u32),
+
     /// the bit sequence `0000`
     Terminator,
 }
 
 fn string_to_ascii(input: &str) -> Vec<Token> {
-    assert!(input.is_ascii(), "invalid ascii input!");
+    // will run with arguments like
+    // --manual -asc "🤔💭 wow"
+
+    // debug
+    // let input = if !input.is_ascii() {
+    //     eprintln!("debug: not ascii");
+    //     let mut buf = [0u8; 4];
+    //     let mut string = String::new();
+
+    //     for c in input.chars() {
+    //         string.push_str(c.encode_utf8(&mut buf));
+    //     }
+
+    //     string
+    // } else {
+    //     input.to_string()
+    // };
+
     let mut output: Vec<Token> = vec![ModeAndCount(ASCII, input.len() as u16)];
     for i in input.bytes() {
         output.push(Character(8, u16::from(i as u8)));
@@ -133,6 +157,22 @@ fn string_to_alphanum(input: &str) -> Vec<Token> {
 /// Convert a `Token` character into its equivalent bit sequence.
 fn push_token_to_badstream(stream: &mut Badstream, token: Token, version: u32) {
     match token {
+        EciChange(mode) => {
+            let string = match mode {
+                // 0bbb bbbb
+                0..=0x7F => format!("0{:07b}", mode),
+
+                // 10bb bbbb  bbbb bbbb
+                0x80..=0x3FFF => format!("10{:014b}", mode),
+
+                // 110b bbbb  bbbb bbbb  bbbb bbbb
+                0x4000..=999999 => format!("110{:021b}", mode),
+
+                _ => panic!(),
+            };
+            push_bits("0111", stream);
+            push_bits(&string, stream);
+        }
         ModeAndCount(mode, count) => {
             push_bits(
                 match mode {
@@ -159,8 +199,12 @@ fn push_token_to_badstream(stream: &mut Badstream, token: Token, version: u32) {
 }
 
 /// Stitch a vector of labeled strings into a vector of `Token` characters.
-pub(super) fn make_token_stream(input: Vec<(Mode, String)>) -> Vec<Token> {
+pub(super) fn make_token_stream(input: Vec<(Mode, String)>, eci: Option<u32>) -> Vec<Token> {
     let mut stream: Vec<Token> = Vec::new();
+
+    if let Some(char_set) = eci {
+        stream.push(EciChange(char_set));
+    }
     for (mode, data) in input {
         stream.extend(match mode {
             Numeric => string_to_numeric(&data),
@@ -177,6 +221,12 @@ pub(super) fn make_token_stream(input: Vec<(Mode, String)>) -> Vec<Token> {
 /// Convert a vector of tokens into a single stream of bits.
 pub(super) fn tokens_to_badstream(stream: Vec<Token>, version: u32) -> Badstream {
     let mut output: Badstream = Vec::new();
+
+    //debug!
+    push_bits("011100011010", &mut output);
+    // 0111 + 0001 1010
+    // eci indicator + switch to utf-8
+
     for token in stream {
         push_token_to_badstream(&mut output, token, version);
     }
@@ -213,6 +263,14 @@ fn bit_overhead_template(data: &Vec<Token>) -> Overhead {
 
     for i in data {
         match i {
+            EciChange(mode) => {
+                bit_sum += match mode {
+                    0..=0x7F => 4 + 8,
+                    0x80..=0x3FFF => 4 + 16,
+                    0x4000..=999999 => 4 + 24,
+                    _ => panic!(),
+                };
+            }
             ModeAndCount(mode, _) => {
                 bit_sum += 4;
                 count_indicators[match mode {

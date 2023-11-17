@@ -231,14 +231,18 @@ pub(crate) fn optimize_mode(string: &String, class: u8) -> Vec<(Mode, String)> {
         if let Some(mode) = char_status(x) {
             mode
         } else {
-            panic!("\"{}\" is not a valid input character!", x)
+            // panic!("\"{}\" is not a valid input character!", x)
+
+            // removing filtering because ASCII mode
+            // is equivalent to byte data, which we want
+            ASCII
         }
     };
 
     if string.is_empty() {
         return vec![];
     } else if string.len() == 1 {
-        let mode = char_to_mode(string.chars().next().unwrap());
+        let mode = char_to_mode(string.bytes().next().unwrap() as char);
         return vec![(mode, string.to_string())];
     }
 

@@ -208,12 +208,17 @@ pub(crate) fn make_qr(
 ) -> Bitmap {
     let level = level_choice.unwrap_or(2);
 
+    let utf8_encoding = match input {
+        QRInput::Auto(ref str) => !str.is_ascii(),
+        QRInput::Manual(ref vec) => vec.iter().any(|(m, s)| *m == ASCII && !s.is_ascii()),
+    };
+
     let input = match input {
         QRInput::Auto(str) => find_best_mode_optimization(str, level),
         QRInput::Manual(vec) => vec,
     };
 
-    let tokens = make_token_stream(input);
+    let tokens = make_token_stream(input, if utf8_encoding { Some(eci::UTF8) } else { None });
 
     let best_ver = find_best_version(&tokens, level).expect("make_qr()");
 
@@ -286,6 +291,8 @@ pub(crate) fn apply_best_mask(bitmap: &mut Bitmap, version: u32, level: u8) {
 fn find_best_mode_optimization(str: String, level: u8) -> Vec<(Mode, String)> {
     use super::bitstream::search::optimize_mode;
 
+    let maybe_eci_header = if !str.is_ascii() { 8 } else { 0 };
+
     // the limiting sizes for each code class, in codewords
     // = [274, 1468]
     let class_limits = {
@@ -302,7 +309,8 @@ fn find_best_mode_optimization(str: String, level: u8) -> Vec<(Mode, String)> {
         let cost = marked_string
             .iter()
             .map(|(mode, string)| bit_cost(string.len(), class, *mode))
-            .sum();
+            .sum::<usize>()
+            + maybe_eci_header;
 
         // if the message fits the limit with at least one codeword,
         // or exactly 0 bits, to spare, then return it
