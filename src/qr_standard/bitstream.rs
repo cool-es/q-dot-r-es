@@ -73,7 +73,7 @@ pub(super) enum Token {
     ///
     /// fields are mode, bit length, bit value.
     /// the mode field might be superfluous...
-    Character(Mode, usize, u16),
+    Character(usize, u16),
 
     /// the bit sequence `0000`
     Terminator,
@@ -100,7 +100,7 @@ fn string_to_ascii(input: &str) -> Vec<Token> {
 
     let mut output: Vec<Token> = vec![ModeAndCount(ASCII, input.len() as u16)];
     for i in input.bytes() {
-        output.push(Character(ASCII, 8, u16::from(i as u8)));
+        output.push(Character(8, u16::from(i as u8)));
     }
     output
 }
@@ -115,11 +115,11 @@ fn string_to_numeric(input: &str) -> Vec<Token> {
         .chunks(3)
     {
         if i.len() == 3 {
-            output.push(Character(AlphaNum, 10, i[0] * 100 + i[1] * 10 + i[2]));
+            output.push(Character(10, i[0] * 100 + i[1] * 10 + i[2]));
         } else if i.len() == 2 {
-            output.push(Character(AlphaNum, 7, i[0] * 10 + i[1]));
+            output.push(Character(7, i[0] * 10 + i[1]));
         } else {
-            output.push(Character(AlphaNum, 4, i[0]));
+            output.push(Character(4, i[0]));
         }
     }
     output
@@ -139,9 +139,9 @@ fn string_to_alphanum(input: &str) -> Vec<Token> {
         .chunks(2)
     {
         if i.len() == 2 {
-            output.push(Character(AlphaNum, 11, i[0] * 45 + i[1]));
+            output.push(Character(11, i[0] * 45 + i[1]));
         } else {
-            output.push(Character(AlphaNum, 6, i[0]));
+            output.push(Character(6, i[0]));
         }
     }
     output
@@ -165,7 +165,7 @@ fn push_token_to_badstream(stream: &mut Badstream, token: Token, version: u32) {
             let string = format!("{:016b}", count);
             push_bits(&string[(16 - width)..], stream);
         }
-        Character(_, width, address) => {
+        Character(width, address) => {
             let string = format!("{:016b}", address);
             push_bits(&string[(16 - width)..], stream);
         }
@@ -245,7 +245,7 @@ fn bit_overhead_template(data: &Vec<Token>) -> Overhead {
                     Kanji => 3,
                 }] += 1;
             }
-            Character(_, length, _) => bit_sum += *length,
+            Character(length, _) => bit_sum += *length,
             Terminator => bit_sum += 4,
         }
     }
