@@ -207,13 +207,23 @@ pub(crate) fn make_qr(
     mask_choice: Option<u8>,
 ) -> Bitmap {
     let level = level_choice.unwrap_or(2);
+    let mut utf8_encoding = false;
 
     let input = match input {
-        QRInput::Auto(str) => find_best_mode_optimization(str, level),
+        QRInput::Auto(str) => {
+            utf8_encoding = !str.is_ascii();
+            find_best_mode_optimization(str, level)
+        }
         QRInput::Manual(vec) => vec,
     };
 
-    let tokens = make_token_stream(input);
+    let tokens = if utf8_encoding {
+        let mut vec = vec![Token::EciChange(eci::UTF8)];
+        vec.append(&mut make_token_stream(input));
+        vec
+    } else {
+        make_token_stream(input)
+    };
 
     let best_ver = find_best_version(&tokens, level).expect("make_qr()");
 

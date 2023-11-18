@@ -201,13 +201,7 @@ fn push_token_to_badstream(stream: &mut Badstream, token: Token, version: u32) {
 /// Stitch a vector of labeled strings into a vector of `Token` characters.
 pub(super) fn make_token_stream(input: Vec<(Mode, String)>) -> Vec<Token> {
     let mut stream: Vec<Token> = Vec::new();
-    let mut no_eci_header = true;
-
     for (mode, data) in input {
-        if !data.is_ascii() && no_eci_header {
-            stream.push(EciChange(eci::UTF8));
-            no_eci_header = false;
-        }
         stream.extend(match mode {
             Numeric => string_to_numeric(&data),
             AlphaNum => string_to_alphanum(&data),
