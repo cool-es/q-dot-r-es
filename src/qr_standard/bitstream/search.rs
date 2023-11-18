@@ -160,7 +160,6 @@ fn edge_weight(to_mode: Mode, same_subset: bool, class: u8) -> Cost {
         AlphaNum => 33,
         // 6 * 10/3
         Numeric => 20,
-        Kanji => todo!(),
     }
 }
 
@@ -267,7 +266,6 @@ impl Mode {
             ASCII => 0,
             AlphaNum => 1,
             Numeric => 2,
-            Kanji => todo!(),
         }
     }
 }

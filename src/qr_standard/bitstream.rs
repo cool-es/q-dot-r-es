@@ -48,12 +48,6 @@ pub(crate) enum Mode {
     /// to the QR code as-is. Therefore, each ASCII [token character](Token::Character)
     /// is exactly one byte.
     ASCII,
-
-    /// Currently unimplemented.
-    ///
-    /// One kanji [token character](Token::Character) fits 1 character in 13 bits.
-    #[allow(dead_code)]
-    Kanji,
 }
 
 impl Mode {
@@ -160,7 +154,6 @@ fn push_token_to_badstream(stream: &mut Badstream, token: Token, version: u32) {
                     Numeric => "0001",
                     AlphaNum => "0010",
                     ASCII => "0100",
-                    Kanji => "1000",
                 },
                 stream,
             );
@@ -191,7 +184,6 @@ pub(super) fn make_token_stream(input: Vec<(Mode, String)>, eci: Option<u32>) ->
             Numeric => string_to_numeric(&data),
             AlphaNum => string_to_alphanum(&data),
             ASCII => string_to_ascii(&data),
-            _ => panic!("unsupported mode"),
         });
     }
     stream.push(Terminator);
@@ -258,7 +250,6 @@ fn bit_overhead_template(data: &Vec<Token>) -> Overhead {
                     Numeric => 0,
                     AlphaNum => 1,
                     ASCII => 2,
-                    Kanji => 3,
                 }] += 1;
             }
             Character(length, _) => bit_sum += *length,
