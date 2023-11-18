@@ -225,13 +225,7 @@ pub(crate) fn make_qr(
         }
     };
 
-    let tokens = if utf8_encoding {
-        let mut vec = vec![Token::EciChange(eci::UTF8)];
-        vec.append(&mut make_token_stream(input));
-        vec
-    } else {
-        make_token_stream(input)
-    };
+    let tokens = make_token_stream(input, if utf8_encoding { Some(eci::UTF8) } else { None });
 
     let best_ver = find_best_version(&tokens, level).expect("make_qr()");
 
