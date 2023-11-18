@@ -150,6 +150,6 @@ fn main_qr_generator() -> std::io::Result<()> {
     };
 
     let name = name.unwrap_or("out".to_string());
-    let output = make_qr(input, version_choice, level_choice, mask_choice).as_xbm_border(&name);
+    let output = make_qr(input, version_choice, level_choice, mask_choice).as_xbm(&name, true);
     std::fs::write(format!("{}.xbm", name), output)
 }
