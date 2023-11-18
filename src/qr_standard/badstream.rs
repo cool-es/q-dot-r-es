@@ -214,7 +214,15 @@ pub(crate) fn make_qr(
             utf8_encoding = !str.is_ascii();
             find_best_mode_optimization(str, level)
         }
-        QRInput::Manual(vec) => vec,
+        QRInput::Manual(vec) => {
+            for i in vec.iter().filter(|(m, _)| *m == ASCII) {
+                if !i.1.is_ascii() {
+                    utf8_encoding = true;
+                    break;
+                }
+            }
+            vec
+        }
     };
 
     let tokens = if utf8_encoding {
