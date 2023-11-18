@@ -1,10 +1,6 @@
 • remainder bits
     this might not be necessary since it works implicitly
     (though might be good to add explicit bounds checking)
-• check to see if arbitrary data is possible (emoji, etc) - utf-8?
-    for utf-8 mode, only byte mode is allowed
-    and that ECI is in force for the whole message
-    (no optimization possible)
 • add stats printing (version, bit count, etc)
 • add comments and documentation so it's readable to others
 • restructure code to be divided into logical sections:
@@ -16,10 +12,6 @@
         reed-solomon
     graphics
         bitmap type + operations
-
-going through the standards doc:
-• data modes, mode switching (pg. 22)
-    mostly done!! great job me!! kanji and ECI remain
 
 ~~~~~~~~~~~~
 
