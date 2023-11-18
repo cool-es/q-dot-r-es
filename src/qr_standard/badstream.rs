@@ -286,6 +286,8 @@ pub(crate) fn apply_best_mask(bitmap: &mut Bitmap, version: u32, level: u8) {
 fn find_best_mode_optimization(str: String, level: u8) -> Vec<(Mode, String)> {
     use super::bitstream::search::optimize_mode;
 
+    let maybe_eci_header = if !str.is_ascii() { 8 } else { 0 };
+
     // the limiting sizes for each code class, in codewords
     // = [274, 1468]
     let class_limits = {
@@ -302,7 +304,8 @@ fn find_best_mode_optimization(str: String, level: u8) -> Vec<(Mode, String)> {
         let cost = marked_string
             .iter()
             .map(|(mode, string)| bit_cost(string.len(), class, *mode))
-            .sum();
+            .sum::<usize>()
+            + maybe_eci_header;
 
         // if the message fits the limit with at least one codeword,
         // or exactly 0 bits, to spare, then return it
