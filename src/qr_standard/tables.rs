@@ -328,7 +328,6 @@ pub(crate) fn cc_indicator_bit_size(class: u8, mode: super::Mode) -> usize {
             Numeric => 0,
             AlphaNum => 1,
             ASCII => 2,
-            Kanji => 3,
         }]
     } else {
         panic!("access out of bounds")

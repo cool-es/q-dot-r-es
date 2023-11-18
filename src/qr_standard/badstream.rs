@@ -335,6 +335,5 @@ fn bit_cost(count: usize, class: usize, mode: Mode) -> usize {
         Numeric => 4 + cc_bits[0] + ((10 * count + 1) as f32 / 3.0).round() as usize,
         AlphaNum => 4 + cc_bits[1] + 11 * (count / 2) + 6 * (count % 2),
         ASCII => 4 + cc_bits[2] + 8 * count,
-        Kanji => todo!("refer to kanji bit information"),
     }
 }
