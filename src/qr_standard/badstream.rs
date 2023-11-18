@@ -207,22 +207,15 @@ pub(crate) fn make_qr(
     mask_choice: Option<u8>,
 ) -> Bitmap {
     let level = level_choice.unwrap_or(2);
-    let mut utf8_encoding = false;
+
+    let utf8_encoding = match input {
+        QRInput::Auto(ref str) => !str.is_ascii(),
+        QRInput::Manual(ref vec) => vec.iter().any(|(m, s)| *m == ASCII && !s.is_ascii()),
+    };
 
     let input = match input {
-        QRInput::Auto(str) => {
-            utf8_encoding = !str.is_ascii();
-            find_best_mode_optimization(str, level)
-        }
-        QRInput::Manual(vec) => {
-            for i in vec.iter().filter(|(m, _)| *m == ASCII) {
-                if !i.1.is_ascii() {
-                    utf8_encoding = true;
-                    break;
-                }
-            }
-            vec
-        }
+        QRInput::Auto(str) => find_best_mode_optimization(str, level),
+        QRInput::Manual(vec) => vec,
     };
 
     let tokens = make_token_stream(input, if utf8_encoding { Some(eci::UTF8) } else { None });
