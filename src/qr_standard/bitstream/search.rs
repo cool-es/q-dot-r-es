@@ -227,17 +227,7 @@ fn optimal_path(graph: &Graph) -> Vec<Mode> {
 
 /// Optimize
 pub(crate) fn optimize_mode(string: &String, class: u8) -> Vec<(Mode, String)> {
-    let char_to_mode = |x| {
-        if let Some(mode) = char_status(x) {
-            mode
-        } else {
-            // panic!("\"{}\" is not a valid input character!", x)
-
-            // removing filtering because ASCII mode
-            // is equivalent to byte data, which we want
-            ASCII
-        }
-    };
+    let char_to_mode = |x| char_status(x).unwrap_or(ASCII);
 
     if string.is_empty() {
         return vec![];
