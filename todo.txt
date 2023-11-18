@@ -13,10 +13,6 @@
     graphics
         bitmap type + operations
 
-maybe:
-• penalty routine still mysterious - do more troubleshooting
-    idk if i need to, it's kind of a technicality whether it works right or not
-
 ~~~~~~~~~~~~
 
 example stats output i want:
