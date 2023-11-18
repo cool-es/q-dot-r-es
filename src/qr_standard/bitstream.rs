@@ -71,8 +71,7 @@ pub(super) enum Token {
     /// one character, which can vary in length
     /// between 4 and 13 bits.
     ///
-    /// fields are mode, bit length, bit value.
-    /// the mode field might be superfluous...
+    /// fields are bit length, bit value.
     Character(usize, u16),
 
     /// An Extended Channel Interpretation marker.
@@ -87,24 +86,6 @@ pub(super) enum Token {
 }
 
 fn string_to_ascii(input: &str) -> Vec<Token> {
-    // will run with arguments like
-    // --manual -asc "🤔💭 wow"
-
-    // debug
-    // let input = if !input.is_ascii() {
-    //     eprintln!("debug: not ascii");
-    //     let mut buf = [0u8; 4];
-    //     let mut string = String::new();
-
-    //     for c in input.chars() {
-    //         string.push_str(c.encode_utf8(&mut buf));
-    //     }
-
-    //     string
-    // } else {
-    //     input.to_string()
-    // };
-
     let mut output: Vec<Token> = vec![ModeAndCount(ASCII, input.len() as u16)];
     for i in input.bytes() {
         output.push(Character(8, u16::from(i as u8)));
