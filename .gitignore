@@ -1,4 +1,5 @@
 /target
 /.vscode
-codegen.py
+*.py
 *.xbm
+*.txt
