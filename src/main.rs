@@ -153,3 +153,78 @@ fn main_qr_generator() -> std::io::Result<()> {
     let output = make_qr(input, version_choice, level_choice, mask_choice).as_xbm(&name, true);
     std::fs::write(format!("{}.xbm", name), output)
 }
+
+#[test]
+fn test_gauntlet() {
+    for i in 0..100 {
+        print!("{}...", i);
+        {
+            const NUM_LIST: &[usize] = &[
+            // 20, 21, 23, 42, 43, 44, 45, 71, 72, 73, 76, 104, 105, 107, 138, 139, 140, 141, 172,
+        ];
+            /* for i in *(NUM_LIST.last()).unwrap_or(&0)..1000 */
+            {
+                // print!("{} ... ", i);
+                // if NUM_LIST.contains(&i) {
+                //     println!("skipped");
+                //     continue;
+                // }
+                let a = std::iter::repeat('1').take(i).collect::<String>();
+                make_qr(QRInput::Auto(a), None, None, None);
+                // println!("good");
+            }
+        }
+        {
+            const ALN_LIST: &[usize] = &[
+            // 13, 14, 26, 27, 43, 44, 64, 65, 84, 85, 87, 104, 105, 106, 122, 123, 154, 155, 186,
+        ];
+            /* for i in *(ALN_LIST.last()).unwrap_or(&0)..1000 */
+            {
+                // print!("{} ... ", i);
+                // if ALN_LIST.contains(&i) {
+                //     println!("skipped");
+                //     continue;
+                // }
+                let a = std::iter::repeat('A').take(i).collect::<String>();
+                make_qr(QRInput::Auto(a), None, None, None);
+                // println!("good");
+            }
+        }
+        {
+            const ASC_LIST: &[usize] = &[
+            // 9, 10, 11, 18, 19, 20, 30, 31, 32, 44, 45, 46, 58
+            ];
+            /* for i in *(ASC_LIST.last()).unwrap_or(&0)..1000 */
+            {
+                // print!("{} ... ", i);
+                // if ASC_LIST.contains(&i) {
+                //     println!("skipped");
+                //     continue;
+                // }
+                let a = std::iter::repeat('a').take(i).collect::<String>();
+                make_qr(QRInput::Auto(a), None, None, None);
+                // println!("good");
+            }
+        }
+        {
+            const MAN_LIST: &[usize] = &[/* 5 */];
+            /* for i in *(MAN_LIST.last()).unwrap_or(&0)..1000 */
+            {
+                // print!("{} ... ", i);
+                // if MAN_LIST.contains(&i) {
+                //     println!("skipped");
+                //     continue;
+                // }
+                let a = [(ASCII, format!("1")), (AlphaNum, format!("1"))]
+                    .into_iter()
+                    .cycle()
+                    .take(i)
+                    .collect::<Vec<_>>();
+                // let a = std::iter::repeat('a').take(i).collect::<String>();
+                make_qr(QRInput::Manual(a), None, None, None);
+                // println!("good");
+            }
+        }
+        println!(" good");
+    }
+}
