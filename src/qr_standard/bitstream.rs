@@ -195,11 +195,6 @@ pub(super) fn make_token_stream(input: Vec<(Mode, String)>, eci: Option<u32>) ->
 pub(super) fn tokens_to_badstream(stream: Vec<Token>, version: u32) -> Badstream {
     let mut output: Badstream = Vec::new();
 
-    //debug!
-    push_bits("011100011010", &mut output);
-    // 0111 + 0001 1010
-    // eci indicator + switch to utf-8
-
     for token in stream {
         push_token_to_badstream(&mut output, token, version);
     }
