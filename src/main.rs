@@ -228,3 +228,31 @@ fn test_gauntlet() {
         println!(" good");
     }
 }
+
+#[test]
+fn depanic() -> Result<(), String> {
+    use QRInput::{self, *};
+
+    let check = |x: QRInput| std::panic::catch_unwind(|| make_qr(x, None, None, None));
+    let make_string = |str: &str, i: usize| str.chars().cycle().take(i).collect::<String>();
+
+    let mut offenders = vec![];
+    for i in 0..100 {
+        for str in ["a", "A", "1", "A1", "a1", "aA"] {
+            let a = make_string(str, i);
+            if check(Auto(a)).is_err() {
+                offenders.push((str.to_string(), i));
+            }
+        }
+    }
+
+    if offenders.is_empty() {
+        Ok(())
+    } else {
+        let str = offenders
+            .iter()
+            .map(|(str, i)| format!("('{}', {}) ", str, i))
+            .collect::<String>();
+        Err(str)
+    }
+}
