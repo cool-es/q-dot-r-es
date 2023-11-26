@@ -2,12 +2,9 @@ mod image;
 mod qr_standard;
 mod rdsm;
 
-use qr::*;
 use qr_standard::Mode::*;
 
-use image::Bitmap;
 use qr_standard::*;
-use rdsm::*;
 
 fn main() -> std::io::Result<()> {
     main_qr_generator()
