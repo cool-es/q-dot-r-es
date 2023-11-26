@@ -13,9 +13,9 @@ pub const QR_CODEWORD_GEN: BigElement = 0x11D;
 pub const QR_FORMAT_GEN: BigElement = 0x537;
 
 // exp table for the `table_*` functions
-pub(super) const EXPVALUES: usize = 255;
+pub const EXPVALUES: usize = 255;
 // log table for the `table_*` functions
-pub(super) const LOGVALUES: usize = EXPVALUES;
+pub const LOGVALUES: usize = EXPVALUES;
 pub type ExpLogLUTs = ([Element; EXPVALUES], [usize; LOGVALUES]);
 
 /*

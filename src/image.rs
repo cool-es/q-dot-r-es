@@ -138,7 +138,7 @@ impl Bitmap {
 /// assumes data is saved in a way where the rows all start with
 /// a new byte, which leaves empty space in the last byte of every row
 /// if the width isn't a multiple of 8.
-pub(super) fn xy_to_index(x: usize, y: usize, w: usize, h: usize) -> Option<(usize, u8)> {
+pub fn xy_to_index(x: usize, y: usize, w: usize, h: usize) -> Option<(usize, u8)> {
     if x > w || y > h {
         return None;
     }
@@ -152,12 +152,7 @@ pub(super) fn xy_to_index(x: usize, y: usize, w: usize, h: usize) -> Option<(usi
     Some((n, i))
 }
 
-pub(super) fn index_to_xy(
-    vec_index: usize,
-    bit_index: u8,
-    w: usize,
-    h: usize,
-) -> Option<(usize, usize)> {
+pub fn index_to_xy(vec_index: usize, bit_index: u8, w: usize, h: usize) -> Option<(usize, usize)> {
     let row_bytes = w.div_ceil(8);
 
     let x = (vec_index % row_bytes) * 8 + (7 - bit_index) as usize;

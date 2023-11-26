@@ -116,7 +116,7 @@ mod penalties {
     use crate::image::Bitmap;
 
     // Calculate the total penalty.
-    pub(super) fn total_penalty(input: &Bitmap) -> u32 {
+    pub fn total_penalty(input: &Bitmap) -> u32 {
         let width = input.dims().0;
         let ones = input.debug_bits().iter().map(|x| x.count_ones()).sum();
 

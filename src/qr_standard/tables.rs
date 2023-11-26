@@ -1,5 +1,5 @@
 /// the centers of alignment patterns in both x and y dimensions
-pub(super) const AP_COORD_INDICES: [&[usize]; 40] = [
+pub const AP_COORD_INDICES: [&[usize]; 40] = [
     &[],
     &[6, 18],
     &[6, 22],
@@ -77,7 +77,7 @@ pub fn find_errc(input: usize) -> Option<usize> {
     )
 }
 
-pub(super) const ALPHANUM_SET: &str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
+pub const ALPHANUM_SET: &str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
 
 pub type VersionBlockInfo = (usize, usize, usize, Option<(usize, usize, usize)>);
 
@@ -317,8 +317,7 @@ pub const DATA_CODEWORDS: [[usize; 40]; 4] = [
 
 /// no. of bits in the char count indicator by size class (1.. - 10.. - 27..),
 /// and by mode (num-aln-asc-knj)
-pub(super) const CC_INDICATOR_BITS: [[usize; 4]; 3] =
-    [[10, 9, 8, 8], [12, 11, 16, 10], [14, 13, 16, 12]];
+pub const CC_INDICATOR_BITS: [[usize; 4]; 3] = [[10, 9, 8, 8], [12, 11, 16, 10], [14, 13, 16, 12]];
 
 pub fn cc_indicator_bit_size(class: u8, mode: super::Mode) -> usize {
     use super::Mode::*;
