@@ -13,12 +13,9 @@ pub const QR_CODEWORD_GEN: BigElement = 0x11D;
 pub const QR_FORMAT_GEN: BigElement = 0x537;
 
 // exp table for the `table_*` functions
-#[doc(hidden)]
 pub(super) const EXPVALUES: usize = 255;
 // log table for the `table_*` functions
-#[doc(hidden)]
 pub(super) const LOGVALUES: usize = EXPVALUES;
-#[doc(hidden)]
 pub type ExpLogLUTs = ([Element; EXPVALUES], [usize; LOGVALUES]);
 
 /*
@@ -67,7 +64,6 @@ pub fn qr_generate_fcode(fmt: u8) -> Option<u16> {
     Some(((fmt as u16) << 10) | (qr_fcode_remainder((fmt as u32) << 10)) as u16)
 }
 
-#[doc(hidden)]
 #[inline]
 pub fn bit_length(n: BigElement) -> u32 {
     if let Some(x) = n.checked_ilog2() {

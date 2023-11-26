@@ -23,7 +23,6 @@ struct TaggedNode(
     Option<Mode>,
 );
 
-#[doc(hidden)]
 impl TaggedNode {
     fn pointer(&self) -> Option<Mode> {
         self.1
@@ -260,7 +259,6 @@ pub fn optimize_mode(string: &String, class: u8) -> Vec<(Mode, String)> {
 }
 
 impl Mode {
-    #[doc(hidden)]
     fn index(self) -> usize {
         match self {
             ASCII => 0,

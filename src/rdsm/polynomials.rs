@@ -96,7 +96,6 @@ pub fn make_rdsm_generator_polynomial(ec_symbols: u32) -> Polynomial {
     output
 }
 
-#[doc(hidden)]
 fn leading_zeros(poly: &Polynomial) -> usize {
     for (i, &coefficient) in poly.iter().enumerate() {
         if coefficient != 0 {

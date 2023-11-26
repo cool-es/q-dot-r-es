@@ -19,7 +19,6 @@ fn bad_version(version: u32) -> bool {
 }
 
 // Return the version of a QR code based on its width.
-#[doc(hidden)]
 #[inline]
 fn size_to_version(size: usize) -> Option<u32> {
     if size % 4 == 1 && (21..=177).contains(&size) {
@@ -77,7 +76,6 @@ impl image::Bitmap {
     }
 }
 
-#[doc(hidden)]
 fn qr_mask_xor(input: &mut Bitmap, mask: u8) {
     let maybe_version = {
         if input.dims().0 != input.dims().1 {
@@ -114,7 +112,6 @@ fn qr_mask_xor(input: &mut Bitmap, mask: u8) {
     }
 }
 
-#[doc(hidden)]
 mod penalties {
     use crate::image::Bitmap;
 
@@ -505,7 +502,6 @@ pub fn coord_status(x: usize, y: usize, version: u32) -> Option<u8> {
     })
 }
 
-#[doc(hidden)]
 fn new_blank_qr_code(version: u32) -> Bitmap {
     let max = version_to_max_index(version).expect("invalid version");
     let mut output = Bitmap::new(max + 1, max + 1);

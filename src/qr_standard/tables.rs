@@ -81,7 +81,6 @@ pub(super) const ALPHANUM_SET: &str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+
 
 pub type VersionBlockInfo = (usize, usize, usize, Option<(usize, usize, usize)>);
 
-#[doc(hidden)]
 // generates up to 24 version block info points from 13 variables
 // total_codewords: the number of codewords that fit in a code
 // level_data: array of
@@ -348,7 +347,6 @@ pub const fn version_to_class(version: u32) -> u8 {
 /// Constant identifiers for ECI modes.
 pub mod eci {
     #![allow(dead_code)]
-    #![doc(hidden)]
 
     pub const CODE_PAGE_437: u32 = 0;
     pub const CODE_PAGE_437_2: u32 = 2;
