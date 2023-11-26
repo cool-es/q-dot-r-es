@@ -225,7 +225,7 @@ fn optimal_path(graph: &Graph) -> Vec<Mode> {
 }
 
 /// Optimize
-pub(crate) fn optimize_mode(string: &String, class: u8) -> Vec<(Mode, String)> {
+pub fn optimize_mode(string: &String, class: u8) -> Vec<(Mode, String)> {
     let char_to_mode = |x| char_status(x).unwrap_or(ASCII);
 
     if string.is_empty() {

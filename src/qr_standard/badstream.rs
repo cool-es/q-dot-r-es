@@ -1,8 +1,8 @@
 use super::*;
 
-pub(crate) type Badstream = Vec<bool>;
+pub type Badstream = Vec<bool>;
 
-pub(crate) fn badstream_to_polynomial(input: &Badstream) -> Polynomial {
+pub fn badstream_to_polynomial(input: &Badstream) -> Polynomial {
     let mut output: Polynomial = Vec::new();
 
     let mut pushbyte: u8 = 0;
@@ -22,7 +22,7 @@ pub(crate) fn badstream_to_polynomial(input: &Badstream) -> Polynomial {
 
 // ref. pg. 34
 // 0xEC and 0x11 are the pad codewords, 11101100 and 00010001
-pub(crate) fn pad_to(codeword_length: usize, stream: &mut Badstream) {
+pub fn pad_to(codeword_length: usize, stream: &mut Badstream) {
     // stream is too long
     if stream.len().div_ceil(8) > codeword_length {
         panic!(
@@ -54,13 +54,13 @@ pub(crate) fn pad_to(codeword_length: usize, stream: &mut Badstream) {
 }
 
 /// pushes a byte without any alignment checks
-pub(crate) fn push_byte(byte: u8, stream: &mut Badstream) {
+pub fn push_byte(byte: u8, stream: &mut Badstream) {
     for k in (0..=7).rev() {
         stream.push((byte & (1 << k)) != 0);
     }
 }
 
-pub(crate) fn push_bits(bits: &str, stream: &mut Badstream) {
+pub fn push_bits(bits: &str, stream: &mut Badstream) {
     for number in bits.chars() {
         stream.push(match number {
             '0' => false,
@@ -70,7 +70,7 @@ pub(crate) fn push_bits(bits: &str, stream: &mut Badstream) {
     }
 }
 
-pub(crate) fn write_badstream_to_bitmap(stream: &Badstream, bitmap: &mut Bitmap) {
+pub fn write_badstream_to_bitmap(stream: &Badstream, bitmap: &mut Bitmap) {
     let version = bitmap.qr_version().expect("invalid bitmap size");
     let max = bitmap.dims().0 - 1;
     let (mut x, mut y) = (max, max);
@@ -91,10 +91,7 @@ pub(crate) fn write_badstream_to_bitmap(stream: &Badstream, bitmap: &mut Bitmap)
     }
 }
 
-pub(crate) fn split_to_blocks_and_encode(
-    poly: &Polynomial,
-    info: VersionBlockInfo,
-) -> Vec<Polynomial> {
+pub fn split_to_blocks_and_encode(poly: &Polynomial, info: VersionBlockInfo) -> Vec<Polynomial> {
     // number of blocks of this type, codewords per block, data codewords per block
     // note that the number of error correcting codewords is the same for all blocks!
     let (bc, cw, dcw, optional) = info;
@@ -135,7 +132,7 @@ pub(crate) fn split_to_blocks_and_encode(
     output
 }
 
-pub(crate) fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstream {
+pub fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstream {
     let block_info = get_block_info(version, level);
     let (block_count, codewords, data_codewords, optional) = block_info;
     let ec_codewords = codewords - data_codewords;
@@ -195,12 +192,12 @@ pub(crate) fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> 
 
 /// container to hold input data based on if it's mode-switched or not
 #[derive(Clone, Debug)]
-pub(crate) enum QRInput {
+pub enum QRInput {
     Auto(String),
     Manual(Vec<(Mode, String)>),
 }
 
-pub(crate) fn make_qr(
+pub fn make_qr(
     input: QRInput,
     version_choice: Option<u32>,
     level_choice: Option<u8>,
@@ -265,7 +262,7 @@ fn apply_mask(bitmap: &mut Bitmap, version: u32, level: u8, mask: u8) {
     bitmap.qr_mask_xor(mask);
 }
 
-pub(crate) fn apply_best_mask(bitmap: &mut Bitmap, version: u32, level: u8) {
+pub fn apply_best_mask(bitmap: &mut Bitmap, version: u32, level: u8) {
     let mut best = Bitmap::new(1, 1);
     let mut penalty = u32::MAX;
     for mask in 0..=7 {

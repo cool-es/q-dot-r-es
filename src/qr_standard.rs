@@ -4,13 +4,13 @@ use super::*;
 
 /// Lookup tables specific to the QR standard.
 mod tables;
-pub(crate) use tables::*;
+pub use tables::*;
 /// High-level encoding of characters.
 mod bitstream;
-pub(crate) use bitstream::*;
+pub use bitstream::*;
 /// Low-level encoding of binary streams.
 mod badstream;
-pub(crate) use badstream::*;
+pub use badstream::*;
 
 /// Return `false` only for a valid QR code version (`1..=40`).
 #[inline]
@@ -52,17 +52,17 @@ fn out_of_bounds(x: usize, y: usize, version: u32) -> bool {
 /// Methods specific to the QR standard.
 impl image::Bitmap {
     /// Apply a QR masking pattern to the image.
-    pub(crate) fn qr_mask_xor(&mut self, pattern: u8) {
+    pub fn qr_mask_xor(&mut self, pattern: u8) {
         qr_mask_xor(self, pattern)
     }
 
     /// Calculate the penalty score incurred by a certain masking pattern.
-    pub(crate) fn qr_penalty(&self) -> u32 {
+    pub fn qr_penalty(&self) -> u32 {
         penalties::total_penalty(self)
     }
 
     /// Return the QR code version (if any) based on the bitmap's dimensions.
-    pub(crate) fn qr_version(&self) -> Option<u32> {
+    pub fn qr_version(&self) -> Option<u32> {
         let (x, y) = self.dims();
         if x != y {
             None
@@ -72,7 +72,7 @@ impl image::Bitmap {
     }
 
     /// Create a blank QR code template.
-    pub(crate) fn new_blank_qr(version: u32) -> Self {
+    pub fn new_blank_qr(version: u32) -> Self {
         new_blank_qr_code(version)
     }
 }
@@ -360,7 +360,7 @@ fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize,
     Some((coord1, coord2))
 }
 
-pub(crate) fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u16> {
+pub fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u16> {
     if correction_level > 3 || mask_pattern > 7 {
         return None;
     }
@@ -368,7 +368,7 @@ pub(crate) fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u1
     crate::rdsm::qr_generate_fcode((correction_level << 3) | mask_pattern)
 }
 
-pub(crate) fn set_fcode(input: &mut Bitmap, version: u32, fcode: u16) {
+pub fn set_fcode(input: &mut Bitmap, version: u32, fcode: u16) {
     let mask = 0b0101_0100_0001_0010u16;
 
     for bit in 0..=14 {
@@ -392,7 +392,7 @@ pub(crate) fn set_fcode(input: &mut Bitmap, version: u32, fcode: u16) {
 //     todo!()
 // }
 
-pub(crate) fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)> {
+pub fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)> {
     // naive, slow, and robust implementation of "next data bit"
     // simply zigzag as if the pattern was blank,
     // returning the next valid coord
@@ -463,14 +463,14 @@ fn coord_is_alignment_pattern(x: usize, y: usize, version: u32) -> bool {
 }
 
 #[inline]
-pub(crate) fn coord_is_data(x: usize, y: usize, version: u32) -> bool {
+pub fn coord_is_data(x: usize, y: usize, version: u32) -> bool {
     coord_status(x, y, version).is_some_and(|c| c == 0)
 }
 
 /// returns the type of pixel taken up by a coordinate in a qr code.
 ///
 /// from 0 to 5: data, position, timing, format, alignment, version, that one bit
-pub(crate) fn coord_status(x: usize, y: usize, version: u32) -> Option<u8> {
+pub fn coord_status(x: usize, y: usize, version: u32) -> Option<u8> {
     if out_of_bounds(x, y, version) {
         return None;
     }
@@ -590,7 +590,7 @@ fn version_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize
 }
 
 // in the style of set_fcode
-pub(crate) fn set_vcode(input: &mut Bitmap, version: u32, vcode: u32) {
+pub fn set_vcode(input: &mut Bitmap, version: u32, vcode: u32) {
     for bit in 0..=17 {
         let ((x1, y1), (x2, y2)) = version_info_coords(version, bit).expect("bad version");
         let value = vcode & (1 << bit) != 0;

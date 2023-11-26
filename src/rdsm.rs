@@ -9,7 +9,7 @@ mod polynomials;
 /// Precomputed look-up tables.
 mod precomputed;
 
-pub(crate) use galois::*;
-pub(crate) use polynomials::*;
-pub(crate) use precomputed::*;
+pub use galois::*;
+pub use polynomials::*;
+pub use precomputed::*;
 // use precomputed::PC_EXP_LOG_TABLE;

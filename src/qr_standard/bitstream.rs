@@ -24,7 +24,7 @@ and i was stuck choosing between 2 and 3, where either option would make it real
 /// like this is that it allows for more efficient
 /// data compression.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
-pub(crate) enum Mode {
+pub enum Mode {
     /// Base-10 digits: 0 to 9.
     ///
     /// A numeric [token character](Token::Character) contains at most 3 digits, which
@@ -52,7 +52,7 @@ pub(crate) enum Mode {
 
 impl Mode {
     /// The three ASCII subsets, ordered by inclusion.
-    pub(crate) const LIST: [Self; 3] = [ASCII, AlphaNum, Numeric];
+    pub const LIST: [Self; 3] = [ASCII, AlphaNum, Numeric];
 }
 
 // level 3

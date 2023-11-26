@@ -1,7 +1,7 @@
 use super::{galois::*, RDSM_GENERATOR_POLYNOMIALS};
 
 /// A polynomial over a Galois field, ordered from highest power to lowest.
-pub(crate) type Polynomial = Vec<Element>;
+pub type Polynomial = Vec<Element>;
 
 // "polynomials" section starts below
 // polynomials are written in descending order:
@@ -9,7 +9,7 @@ pub(crate) type Polynomial = Vec<Element>;
 // (i personally don't think that's a good decision, but)
 
 /// Add two polynomials.
-pub(crate) fn polynomial_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
+pub fn polynomial_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
     let mut output: Polynomial = Vec::new();
     // resize the vector to fit the higher-degree (longer) polynomial
     let (p1_len, p2_len) = (poly1.len(), poly2.len());
@@ -30,7 +30,7 @@ pub(crate) fn polynomial_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomi
 // it was simpler in my head.
 
 /// An original polynomial multiplication algorithm.
-pub(crate) fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
+pub fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
     let mut output: Polynomial = Vec::new();
     let (deg1, deg2) = (poly1.len() - 1, poly2.len() - 1);
     output.resize(deg1 + deg2 + 1, 0);
@@ -83,7 +83,7 @@ pub(crate) fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> 
 /// This function is called by [encode_message] in fall-back
 /// cases, but not when generating QR codes. `ec_symbols`
 /// is the number of error-correcting symbols needed.
-pub(crate) fn make_rdsm_generator_polynomial(ec_symbols: u32) -> Polynomial {
+pub fn make_rdsm_generator_polynomial(ec_symbols: u32) -> Polynomial {
     // from what i can tell, the end result here is
     // (x + 1)(x + a)(x + a^2)...(x + a^ec_symbols)
     let mut output: Polynomial = vec![1];
@@ -107,7 +107,7 @@ fn leading_zeros(poly: &Polynomial) -> usize {
 }
 
 /// The remainder left after polynomial division.
-pub(crate) fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) -> Polynomial {
+pub fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) -> Polynomial {
     assert!(divisor[0] != 0, "divisor has a leading 0");
     let diff = if let Some(d) = dividend.len().checked_sub(divisor.len()) {
         d
@@ -155,7 +155,7 @@ def rs_encode_msg(msg_in, nsym):
 /// of error-correcting symbols requested is part of the QR standard,
 /// find its precomputed polynomial in [RDSM_GENERATOR_POLYNOMIALS].
 /// Otherwise, generate it using [make_rdsm_generator_polynomial].
-pub(crate) fn encode_message(message: &Polynomial, ec_symbols: u32) -> Polynomial {
+pub fn encode_message(message: &Polynomial, ec_symbols: u32) -> Polynomial {
     // will only generate codes "manually" if they are not qr standard
     let generator_polynomial: Polynomial =
         if let Some(index) = crate::qr_standard::find_errc(ec_symbols as usize) {
