@@ -1,3 +1,4 @@
+use crate::rdsm::QR_EXP_LOG_TABLE;
 use crate::*;
 // functions from the wikiversity "reed-solomon codes for coders" article
 

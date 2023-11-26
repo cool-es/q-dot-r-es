@@ -1,4 +1,8 @@
 use super::*;
+use crate::{
+    qr_standard::Mode::{self, *},
+    rdsm::{encode_message, Element, Polynomial},
+};
 
 pub type Badstream = Vec<bool>;
 

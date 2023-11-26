@@ -2,6 +2,7 @@ mod image;
 mod qr_standard;
 mod rdsm;
 
+use qr::*;
 use qr_standard::Mode::*;
 
 use image::Bitmap;

@@ -1,6 +1,7 @@
 //! Bitmap operations related to the QR standard.
 
 use super::*;
+use crate::{image::Bitmap, rdsm::carryless_divide};
 
 /// Lookup tables specific to the QR standard.
 mod tables;
