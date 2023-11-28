@@ -1,10 +1,4 @@
-mod image;
-mod qr_standard;
-mod rdsm;
-
-use qr_standard::Mode::*;
-
-use qr_standard::*;
+use qr::*;
 
 fn main() -> std::io::Result<()> {
     main_qr_generator()
