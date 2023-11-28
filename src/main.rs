@@ -145,6 +145,7 @@ fn main_qr_generator() -> std::io::Result<()> {
     std::fs::write(format!("{}.xbm", name), output)
 }
 
+// returns a description of inputs that will lead make_qr() to panic
 #[test]
 fn depanic() -> Result<(), String> {
     use QRInput::{self, *};
@@ -152,9 +153,15 @@ fn depanic() -> Result<(), String> {
     let check = |x: QRInput| std::panic::catch_unwind(|| qr_standard::make_qr(x, None, None, None));
     let make_string = |str: &str, i: usize| str.chars().cycle().take(i).collect::<String>();
 
-    let mut offenders = vec![];
-    for i in 0..100 {
-        for str in ["a", "A", "1", "A1", "a1", "aA"] {
+    let mut offenders: Vec<(String, usize)> = vec![];
+    if check(Auto("".to_string())).is_err() {
+        offenders.push(("empty string".to_string(), 0));
+    }
+    for i in 1..50 {
+        for str in [
+            "a", "A", "1", "A1", "a1", "aA", // normal
+            "🤔", "π", // wild
+        ] {
             let a = make_string(str, i);
             if check(Auto(a)).is_err() {
                 offenders.push((str.to_string(), i));
