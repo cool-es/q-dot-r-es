@@ -23,15 +23,15 @@ fn main_qr_generator() -> std::io::Result<()> {
                 match argument.as_str() {
                     "--numeric" | "-num" | "" => {
                         let number_string = args.next().expect("no data for numeric mode");
-                        mode_data.push((Numeric, number_string));
+                        mode_data.push((Mode::Numeric, number_string));
                     }
                     "--alphanum" | "-aln" => {
                         let alphanum_string = args.next().expect("no data for alphanumeric mode");
-                        mode_data.push((AlphaNum, alphanum_string));
+                        mode_data.push((Mode::AlphaNum, alphanum_string));
                     }
                     "--ascii" | "-asc" => {
                         let ascii_string = args.next().expect("no data for ASCII mode");
-                        mode_data.push((ASCII, ascii_string));
+                        mode_data.push((Mode::ASCII, ascii_string));
                     }
                     _ => {
                         if argument.starts_with('-') {
@@ -140,7 +140,8 @@ fn main_qr_generator() -> std::io::Result<()> {
     };
 
     let name = name.unwrap_or("out".to_string());
-    let output = make_qr(input, version_choice, level_choice, mask_choice).as_xbm(&name, true);
+    let output =
+        qr_standard::make_qr(input, version_choice, level_choice, mask_choice).as_xbm(&name, true);
     std::fs::write(format!("{}.xbm", name), output)
 }
 
@@ -148,7 +149,7 @@ fn main_qr_generator() -> std::io::Result<()> {
 fn depanic() -> Result<(), String> {
     use QRInput::{self, *};
 
-    let check = |x: QRInput| std::panic::catch_unwind(|| make_qr(x, None, None, None));
+    let check = |x: QRInput| std::panic::catch_unwind(|| qr_standard::make_qr(x, None, None, None));
     let make_string = |str: &str, i: usize| str.chars().cycle().take(i).collect::<String>();
 
     let mut offenders = vec![];
