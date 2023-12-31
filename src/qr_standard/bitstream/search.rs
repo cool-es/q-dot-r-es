@@ -229,7 +229,7 @@ pub fn optimize_mode(string: &String, class: u8) -> Vec<(Mode, String)> {
 
     if string.is_empty() {
         return vec![];
-    } else if string.len() == 1 {
+    } else if string.chars().count() == 1 {
         let mode = char_to_mode(string.bytes().next().unwrap() as char);
         return vec![(mode, string.to_string())];
     }
