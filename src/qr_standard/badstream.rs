@@ -209,8 +209,12 @@ pub fn make_qr(
 ) -> Bitmap {
     let level = level_choice.unwrap_or(2);
 
+    // is utf8 (unicode) encoding necessary?
     let utf8_encoding = match input {
+        // auto: check if string contains non-ascii chars
         QRInput::Auto(ref str) => !str.is_ascii(),
+
+        // manual: check if any ASCII segment contains non-ascii chars
         QRInput::Manual(ref vec) => vec.iter().any(|(m, s)| *m == ASCII && !s.is_ascii()),
     };
 
@@ -295,7 +299,6 @@ fn find_best_mode_optimization(str: String, level: u8) -> Vec<(Mode, String)> {
     let maybe_eci_header = if !str.is_ascii() { 8 } else { 0 };
 
     // the limiting sizes for each code class, in codewords
-    // = [274, 1468]
     let class_limits = {
         let dcw = DATA_CODEWORDS[level as usize];
         [dcw[10 - 1], dcw[27 - 1]]
