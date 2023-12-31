@@ -142,7 +142,12 @@ fn main_qr_generator() -> std::io::Result<()> {
     let name = name.unwrap_or("out".to_string());
     let output =
         qr_standard::make_qr(input, version_choice, level_choice, mask_choice).as_xbm(&name, true);
-    std::fs::write(format!("{}.xbm", name), output)
+
+    let write_status = std::fs::write(format!("{}.xbm", name), output);
+    if write_status.is_ok() {
+        println!("Wrote '{name}.xbm' successfully.")
+    }
+    write_status
 }
 
 // returns a description of inputs that will lead make_qr() to panic
