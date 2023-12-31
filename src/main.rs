@@ -1,14 +1,4 @@
-//! The *"Q-dot-R-es"* QR code generator.
-
-mod image;
-mod qr_standard;
-mod rdsm;
-
-use qr_standard::Mode::*;
-
-use image::Bitmap;
-use qr_standard::*;
-use rdsm::*;
+use qr::*;
 
 fn main() -> std::io::Result<()> {
     main_qr_generator()
@@ -33,15 +23,15 @@ fn main_qr_generator() -> std::io::Result<()> {
                 match argument.as_str() {
                     "--numeric" | "-num" | "" => {
                         let number_string = args.next().expect("no data for numeric mode");
-                        mode_data.push((Numeric, number_string));
+                        mode_data.push((Mode::Numeric, number_string));
                     }
                     "--alphanum" | "-aln" => {
                         let alphanum_string = args.next().expect("no data for alphanumeric mode");
-                        mode_data.push((AlphaNum, alphanum_string));
+                        mode_data.push((Mode::AlphaNum, alphanum_string));
                     }
                     "--ascii" | "-asc" => {
                         let ascii_string = args.next().expect("no data for ASCII mode");
-                        mode_data.push((ASCII, ascii_string));
+                        mode_data.push((Mode::ASCII, ascii_string));
                     }
                     _ => {
                         if argument.starts_with('-') {
@@ -150,6 +140,47 @@ fn main_qr_generator() -> std::io::Result<()> {
     };
 
     let name = name.unwrap_or("out".to_string());
-    let output = make_qr(input, version_choice, level_choice, mask_choice).as_xbm(&name, true);
-    std::fs::write(format!("{}.xbm", name), output)
+    let output =
+        qr_standard::make_qr(input, version_choice, level_choice, mask_choice).as_xbm(&name, true);
+
+    let write_status = std::fs::write(format!("{}.xbm", name), output);
+    if write_status.is_ok() {
+        println!("Wrote '{name}.xbm' successfully.")
+    }
+    write_status
+}
+
+// returns a description of inputs that will lead make_qr() to panic
+#[test]
+fn depanic() -> Result<(), String> {
+    use QRInput::{self, *};
+
+    let check = |x: QRInput| std::panic::catch_unwind(|| qr_standard::make_qr(x, None, None, None));
+    let make_string = |str: &str, i: usize| str.chars().cycle().take(i).collect::<String>();
+
+    let mut offenders: Vec<(String, usize)> = vec![];
+    if check(Auto("".to_string())).is_err() {
+        offenders.push(("empty string".to_string(), 0));
+    }
+    for i in 1..50 {
+        for str in [
+            "a", "A", "1", "A1", "a1", "aA", // normal
+            "🤔", "π", // wild
+        ] {
+            let a = make_string(str, i);
+            if check(Auto(a)).is_err() {
+                offenders.push((str.to_string(), i));
+            }
+        }
+    }
+
+    if offenders.is_empty() {
+        Ok(())
+    } else {
+        let str = offenders
+            .iter()
+            .map(|(str, i)| format!("('{}', {}) ", str, i))
+            .collect::<String>();
+        Err(str)
+    }
 }

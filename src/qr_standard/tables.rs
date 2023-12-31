@@ -1,5 +1,5 @@
 /// the centers of alignment patterns in both x and y dimensions
-pub(super) const AP_COORD_INDICES: [&[usize]; 40] = [
+pub const AP_COORD_INDICES: [&[usize]; 40] = [
     &[],
     &[6, 18],
     &[6, 22],
@@ -42,7 +42,7 @@ pub(super) const AP_COORD_INDICES: [&[usize]; 40] = [
     &[6, 30, 58, 86, 114, 142, 170],
 ];
 
-pub(crate) fn alignment_pattern_coords(version: u32) -> Vec<(usize, usize)> {
+pub fn alignment_pattern_coords(version: u32) -> Vec<(usize, usize)> {
     // this function is only called by new_blank_qr_code,
     // which has checked the version number already - no
     // need to do it again
@@ -62,7 +62,7 @@ pub(crate) fn alignment_pattern_coords(version: u32) -> Vec<(usize, usize)> {
 
 /// reverse-lookup to find the index for precomputed.rs > RDSM_GENERATOR_POLYNOMIALS
 #[inline]
-pub(crate) fn find_errc(input: usize) -> Option<usize> {
+pub fn find_errc(input: usize) -> Option<usize> {
     Some(
         (input
             - match input {
@@ -77,11 +77,10 @@ pub(crate) fn find_errc(input: usize) -> Option<usize> {
     )
 }
 
-pub(super) const ALPHANUM_SET: &str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
+pub const ALPHANUM_SET: &str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
 
-pub(crate) type VersionBlockInfo = (usize, usize, usize, Option<(usize, usize, usize)>);
+pub type VersionBlockInfo = (usize, usize, usize, Option<(usize, usize, usize)>);
 
-#[doc(hidden)]
 // generates up to 24 version block info points from 13 variables
 // total_codewords: the number of codewords that fit in a code
 // level_data: array of
@@ -284,7 +283,7 @@ const EC_BLOCK_TABLE: [[VersionBlockInfo; 4]; 40] = [
     ),
 ];
 
-pub(crate) fn get_block_info(version: u32, level: u8) -> VersionBlockInfo {
+pub fn get_block_info(version: u32, level: u8) -> VersionBlockInfo {
     assert!(
         (1..=40).contains(&version) && level < 4,
         "incorrect version request"
@@ -293,7 +292,7 @@ pub(crate) fn get_block_info(version: u32, level: u8) -> VersionBlockInfo {
 }
 
 /// available data codewords per level and version
-pub(crate) const DATA_CODEWORDS: [[usize; 40]; 4] = [
+pub const DATA_CODEWORDS: [[usize; 40]; 4] = [
     [
         19, 34, 55, 80, 108, 136, 156, 194, 232, 274, 324, 370, 428, 461, 523, 589, 647, 721, 795,
         861, 932, 1006, 1094, 1174, 1276, 1370, 1468, 1531, 1631, 1735, 1843, 1955, 2071, 2191,
@@ -318,10 +317,9 @@ pub(crate) const DATA_CODEWORDS: [[usize; 40]; 4] = [
 
 /// no. of bits in the char count indicator by size class (1.. - 10.. - 27..),
 /// and by mode (num-aln-asc-knj)
-pub(super) const CC_INDICATOR_BITS: [[usize; 4]; 3] =
-    [[10, 9, 8, 8], [12, 11, 16, 10], [14, 13, 16, 12]];
+pub const CC_INDICATOR_BITS: [[usize; 4]; 3] = [[10, 9, 8, 8], [12, 11, 16, 10], [14, 13, 16, 12]];
 
-pub(crate) fn cc_indicator_bit_size(class: u8, mode: super::Mode) -> usize {
+pub fn cc_indicator_bit_size(class: u8, mode: super::Mode) -> usize {
     use super::Mode::*;
     if class < 3 {
         CC_INDICATOR_BITS[class as usize][match mode {
@@ -335,7 +333,7 @@ pub(crate) fn cc_indicator_bit_size(class: u8, mode: super::Mode) -> usize {
 }
 
 #[inline]
-pub(crate) const fn version_to_class(version: u32) -> u8 {
+pub const fn version_to_class(version: u32) -> u8 {
     match version {
         // no. of bits in char count indicator per version
         1..=9 => 0,
@@ -346,50 +344,49 @@ pub(crate) const fn version_to_class(version: u32) -> u8 {
 }
 
 /// Constant identifiers for ECI modes.
-pub(crate) mod eci {
+pub mod eci {
     #![allow(dead_code)]
-    #![doc(hidden)]
 
-    pub(crate) const CODE_PAGE_437: u32 = 0;
-    pub(crate) const CODE_PAGE_437_2: u32 = 2;
+    pub const CODE_PAGE_437: u32 = 0;
+    pub const CODE_PAGE_437_2: u32 = 2;
 
-    pub(crate) const LATIN_1: u32 = 1;
-    pub(crate) const LATIN_1_2: u32 = 3;
-    pub(crate) const LATIN_2: u32 = 4;
-    pub(crate) const LATIN_3: u32 = 5;
-    pub(crate) const LATIN_4: u32 = 6;
-    pub(crate) const LATIN_5: u32 = 11;
-    pub(crate) const LATIN_6: u32 = 12;
-    pub(crate) const LATIN_7: u32 = 15;
-    pub(crate) const LATIN_8: u32 = 16;
-    pub(crate) const LATIN_9: u32 = 17;
-    pub(crate) const LATIN_10: u32 = 18;
-    pub(crate) const LATIN_ARABIC: u32 = 8;
-    pub(crate) const LATIN_CYRILLIC: u32 = 7;
-    pub(crate) const LATIN_GREEK: u32 = 9;
-    pub(crate) const LATIN_HEBREW: u32 = 10;
-    pub(crate) const LATIN_THAI: u32 = 13;
+    pub const LATIN_1: u32 = 1;
+    pub const LATIN_1_2: u32 = 3;
+    pub const LATIN_2: u32 = 4;
+    pub const LATIN_3: u32 = 5;
+    pub const LATIN_4: u32 = 6;
+    pub const LATIN_5: u32 = 11;
+    pub const LATIN_6: u32 = 12;
+    pub const LATIN_7: u32 = 15;
+    pub const LATIN_8: u32 = 16;
+    pub const LATIN_9: u32 = 17;
+    pub const LATIN_10: u32 = 18;
+    pub const LATIN_ARABIC: u32 = 8;
+    pub const LATIN_CYRILLIC: u32 = 7;
+    pub const LATIN_GREEK: u32 = 9;
+    pub const LATIN_HEBREW: u32 = 10;
+    pub const LATIN_THAI: u32 = 13;
 
-    pub(crate) const SHIFT_JIS: u32 = 20;
-    pub(crate) const BIG_5: u32 = 28;
-    pub(crate) const GBT_2312: u32 = 29;
-    pub(crate) const KS_X_1001: u32 = 30;
-    pub(crate) const GBK: u32 = 31;
-    pub(crate) const GB_18030: u32 = 32;
+    pub const SHIFT_JIS: u32 = 20;
+    pub const BIG_5: u32 = 28;
+    pub const GBT_2312: u32 = 29;
+    pub const KS_X_1001: u32 = 30;
+    pub const GBK: u32 = 31;
+    pub const GB_18030: u32 = 32;
 
-    pub(crate) const UTF8: u32 = 26;
-    pub(crate) const UTF16_BE: u32 = 25;
-    pub(crate) const UTF16_LE: u32 = 33;
-    pub(crate) const UTF32_BE: u32 = 34;
-    pub(crate) const UTF32_LE: u32 = 35;
+    pub const UTF8: u32 = 26;
+    pub const UTF16_BE: u32 = 25;
+    pub const UTF16_LE: u32 = 33;
+    pub const UTF32_BE: u32 = 34;
+    pub const UTF32_LE: u32 = 35;
 
-    pub(crate) const WINDOWS_1250: u32 = 21;
-    pub(crate) const WINDOWS_1251: u32 = 22;
-    pub(crate) const WINDOWS_1252: u32 = 23;
-    pub(crate) const WINDOWS_1256: u32 = 24;
+    pub const WINDOWS_1250: u32 = 21;
+    pub const WINDOWS_1251: u32 = 22;
+    pub const WINDOWS_1252: u32 = 23;
+    pub const WINDOWS_1256: u32 = 24;
 
-    pub(crate) const US_ASCII: u32 = 27;
+    pub const US_ASCII: u32 = 27;
 
-    pub(crate) const ISO_IEC_646_INV: u32 = 170;
-    pub(crate) const BINARY_DATA: u32 = 899;
+    pub const ISO_IEC_646_INV: u32 = 170;
+    pub const BINARY_DATA: u32 = 899;
 }

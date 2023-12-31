@@ -23,7 +23,6 @@ struct TaggedNode(
     Option<Mode>,
 );
 
-#[doc(hidden)]
 impl TaggedNode {
     fn pointer(&self) -> Option<Mode> {
         self.1
@@ -225,12 +224,12 @@ fn optimal_path(graph: &Graph) -> Vec<Mode> {
 }
 
 /// Optimize
-pub(crate) fn optimize_mode(string: &String, class: u8) -> Vec<(Mode, String)> {
+pub fn optimize_mode(string: &String, class: u8) -> Vec<(Mode, String)> {
     let char_to_mode = |x| char_status(x).unwrap_or(ASCII);
 
     if string.is_empty() {
         return vec![];
-    } else if string.len() == 1 {
+    } else if string.chars().count() == 1 {
         let mode = char_to_mode(string.bytes().next().unwrap() as char);
         return vec![(mode, string.to_string())];
     }
@@ -260,7 +259,6 @@ pub(crate) fn optimize_mode(string: &String, class: u8) -> Vec<(Mode, String)> {
 }
 
 impl Mode {
-    #[doc(hidden)]
     fn index(self) -> usize {
         match self {
             ASCII => 0,

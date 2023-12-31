@@ -24,7 +24,7 @@ and i was stuck choosing between 2 and 3, where either option would make it real
 /// like this is that it allows for more efficient
 /// data compression.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
-pub(crate) enum Mode {
+pub enum Mode {
     /// Base-10 digits: 0 to 9.
     ///
     /// A numeric [token character](Token::Character) contains at most 3 digits, which
@@ -52,12 +52,12 @@ pub(crate) enum Mode {
 
 impl Mode {
     /// The three ASCII subsets, ordered by inclusion.
-    pub(crate) const LIST: [Self; 3] = [ASCII, AlphaNum, Numeric];
+    pub const LIST: [Self; 3] = [ASCII, AlphaNum, Numeric];
 }
 
 // level 3
 #[derive(Clone)]
-pub(super) enum Token {
+pub enum Token {
     /// mode and character count indicators,
     /// baked into one.
     ModeAndCount(Mode, u16),
@@ -173,7 +173,7 @@ fn push_token_to_badstream(stream: &mut Badstream, token: Token, version: u32) {
 }
 
 /// Stitch a vector of labeled strings into a vector of `Token` characters.
-pub(super) fn make_token_stream(input: Vec<(Mode, String)>, eci: Option<u32>) -> Vec<Token> {
+pub fn make_token_stream(input: Vec<(Mode, String)>, eci: Option<u32>) -> Vec<Token> {
     let mut stream: Vec<Token> = Vec::new();
 
     if let Some(char_set) = eci {
@@ -192,7 +192,7 @@ pub(super) fn make_token_stream(input: Vec<(Mode, String)>, eci: Option<u32>) ->
 }
 
 /// Convert a vector of tokens into a single stream of bits.
-pub(super) fn tokens_to_badstream(stream: Vec<Token>, version: u32) -> Badstream {
+pub fn tokens_to_badstream(stream: Vec<Token>, version: u32) -> Badstream {
     let mut output: Badstream = Vec::new();
 
     for token in stream {
@@ -274,7 +274,7 @@ fn compute_bit_overhead(overhead: Overhead, version: u32) -> usize {
 /// standards document does not explain why. This function circumvents
 /// the issue by requiring that codes either fit with either exactly
 /// 0 bits to spare, or at least a full byte.
-pub(super) fn find_best_version(data: &Vec<Token>, level: u8) -> Result<u32, String> {
+pub fn find_best_version(data: &Vec<Token>, level: u8) -> Result<u32, String> {
     assert!(
         (0..=3).contains(&level),
         "invalid error correction level \"{}\" selected",

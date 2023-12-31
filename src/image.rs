@@ -1,6 +1,6 @@
 /// image format with gaps in its byte data: start of rows are byte aligned
 #[derive(Clone)]
-pub(crate) struct Bitmap {
+pub struct Bitmap {
     // width, height fields are private so that they can't be mutated
     width: usize,
     height: usize,
@@ -14,7 +14,7 @@ impl Bitmap {
     // the curly brackets here really mess with my syntax highlighting... but the code itself is correct
 
     /// `as_xbm()`, but with an added 8 pixel quiet-zone border on all sides
-    pub(crate) fn as_xbm(&self, name: &str, add_border: bool) -> String {
+    pub fn as_xbm(&self, name: &str, add_border: bool) -> String {
         assert!(
             name.is_ascii() && !name.contains(char::is_whitespace),
             "name must be ascii and cannot contain whitespace"
@@ -76,7 +76,7 @@ impl Bitmap {
             )
     }
 
-    pub(crate) fn new(width: usize, height: usize) -> Self {
+    pub fn new(width: usize, height: usize) -> Self {
         let bits: Vec<u8> =
             vec![0; xy_to_index(width - 1, height - 1, width, height).unwrap().0 + 1];
 
@@ -91,11 +91,11 @@ impl Bitmap {
         }
     }
 
-    pub(crate) fn dims(&self) -> (usize, usize) {
+    pub fn dims(&self) -> (usize, usize) {
         (self.width, self.height)
     }
 
-    pub(crate) fn set_bit(&mut self, x: usize, y: usize, bit: bool) -> bool {
+    pub fn set_bit(&mut self, x: usize, y: usize, bit: bool) -> bool {
         if let Some((n, i)) = xy_to_index(x, y, self.width, self.height) {
             if bit {
                 // set a 1 (bitwise 'or' w/ 1)
@@ -110,7 +110,7 @@ impl Bitmap {
         }
     }
 
-    pub(crate) fn get_bit(&self, x: usize, y: usize) -> Option<bool> {
+    pub fn get_bit(&self, x: usize, y: usize) -> Option<bool> {
         if let Some((n, i)) = xy_to_index(x, y, self.width, self.height) {
             Some(((self.bits[n] >> i) & 1) == 1)
         } else {
@@ -118,19 +118,15 @@ impl Bitmap {
         }
     }
 
-    pub(crate) fn debug_bits(&self) -> &Vec<u8> {
+    pub fn debug_bits(&self) -> &Vec<u8> {
         &self.bits
     }
 
-    pub(crate) fn debug_bits_mut(&mut self) -> &mut Vec<u8> {
+    pub fn debug_bits_mut(&mut self) -> &mut Vec<u8> {
         &mut self.bits
     }
 
-    pub(crate) fn debug_index_to_xy(
-        &self,
-        vec_index: usize,
-        bit_index: u8,
-    ) -> Option<(usize, usize)> {
+    pub fn debug_index_to_xy(&self, vec_index: usize, bit_index: u8) -> Option<(usize, usize)> {
         index_to_xy(vec_index, bit_index, self.width, self.height)
     }
 }
@@ -142,7 +138,7 @@ impl Bitmap {
 /// assumes data is saved in a way where the rows all start with
 /// a new byte, which leaves empty space in the last byte of every row
 /// if the width isn't a multiple of 8.
-pub(super) fn xy_to_index(x: usize, y: usize, w: usize, h: usize) -> Option<(usize, u8)> {
+pub fn xy_to_index(x: usize, y: usize, w: usize, h: usize) -> Option<(usize, u8)> {
     if x > w || y > h {
         return None;
     }
@@ -156,12 +152,7 @@ pub(super) fn xy_to_index(x: usize, y: usize, w: usize, h: usize) -> Option<(usi
     Some((n, i))
 }
 
-pub(super) fn index_to_xy(
-    vec_index: usize,
-    bit_index: u8,
-    w: usize,
-    h: usize,
-) -> Option<(usize, usize)> {
+pub fn index_to_xy(vec_index: usize, bit_index: u8, w: usize, h: usize) -> Option<(usize, usize)> {
     let row_bytes = w.div_ceil(8);
 
     let x = (vec_index % row_bytes) * 8 + (7 - bit_index) as usize;

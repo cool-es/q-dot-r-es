@@ -1,25 +1,22 @@
-use crate::*;
+use crate::rdsm::QR_EXP_LOG_TABLE;
 // functions from the wikiversity "reed-solomon codes for coders" article
 
 /// An element in the finite field GF(2^8).
-pub(crate) type Element = u8;
+pub type Element = u8;
 /// A polynomial over GF(2).
-pub(crate) type BigElement = u32;
+pub type BigElement = u32;
 
 /// The QR code data generator/divisor polynomial, `1 0001 1101`.
 #[allow(dead_code)]
-pub(crate) const QR_CODEWORD_GEN: BigElement = 0x11D;
+pub const QR_CODEWORD_GEN: BigElement = 0x11D;
 /// The QR code format generator/divisor polynomial, `101 0011 0111`.
-pub(crate) const QR_FORMAT_GEN: BigElement = 0x537;
+pub const QR_FORMAT_GEN: BigElement = 0x537;
 
 // exp table for the `table_*` functions
-#[doc(hidden)]
-pub(super) const EXPVALUES: usize = 255;
+pub const EXPVALUES: usize = 255;
 // log table for the `table_*` functions
-#[doc(hidden)]
-pub(super) const LOGVALUES: usize = EXPVALUES;
-#[doc(hidden)]
-pub(crate) type ExpLogLUTs = ([Element; EXPVALUES], [usize; LOGVALUES]);
+pub const LOGVALUES: usize = EXPVALUES;
+pub type ExpLogLUTs = ([Element; EXPVALUES], [usize; LOGVALUES]);
 
 /*
 The format code should produce a remainder of zero
@@ -35,7 +32,7 @@ This process is demonstrated for the format information
 in the example code (000111101011001) below.
 */
 /// The remainder of the input divided by [QR_FORMAT_GEN], assuming it's <2¹⁵.
-pub(crate) fn qr_fcode_remainder(fcode: u32) -> u32 {
+pub fn qr_fcode_remainder(fcode: u32) -> u32 {
     // 0b10100110111
     let mut output = fcode;
 
@@ -58,7 +55,7 @@ pub(crate) fn qr_fcode_remainder(fcode: u32) -> u32 {
 // this works since all numbers in a galois field are their own additive inverse,
 // and since (remainder of (k + remainder of k)) ==(remainder of k + remainder of k).
 /// Generate a QR code's 15-bit format code.
-pub(crate) fn qr_generate_fcode(fmt: u8) -> Option<u16> {
+pub fn qr_generate_fcode(fmt: u8) -> Option<u16> {
     if fmt >= 32 {
         return None;
     }
@@ -67,9 +64,8 @@ pub(crate) fn qr_generate_fcode(fmt: u8) -> Option<u16> {
     Some(((fmt as u16) << 10) | (qr_fcode_remainder((fmt as u32) << 10)) as u16)
 }
 
-#[doc(hidden)]
 #[inline]
-pub(crate) fn bit_length(n: BigElement) -> u32 {
+pub fn bit_length(n: BigElement) -> u32 {
     if let Some(x) = n.checked_ilog2() {
         x + 1
     } else {
@@ -79,7 +75,7 @@ pub(crate) fn bit_length(n: BigElement) -> u32 {
 
 /// Carryless division over GF(2)\[X\]. Only called by
 /// `qr_generate_vcode`.
-pub(crate) fn carryless_divide(dividend: BigElement, divisor: BigElement) -> BigElement {
+pub fn carryless_divide(dividend: BigElement, divisor: BigElement) -> BigElement {
     if bit_length(dividend) < bit_length(divisor) {
         return dividend;
     }
@@ -101,12 +97,12 @@ pub(crate) fn carryless_divide(dividend: BigElement, divisor: BigElement) -> Big
 
 /// Exponential function within GF(2⁸).
 #[inline]
-pub(crate) fn exp(n: usize) -> Element {
+pub fn exp(n: usize) -> Element {
     QR_EXP_LOG_TABLE.0[n % 255]
 }
 
 /// Logarithm function within GF(2⁸).
-pub(crate) fn log(e: Element) -> usize {
+pub fn log(e: Element) -> usize {
     if e == 0 {
         panic!()
     } else {
@@ -115,7 +111,7 @@ pub(crate) fn log(e: Element) -> usize {
 }
 
 /// Multiplication in GF(2⁸). Uses look-up tables.
-pub(crate) fn table_multiply(x: Element, y: Element) -> Element {
+pub fn table_multiply(x: Element, y: Element) -> Element {
     if x == 0 || y == 0 {
         return 0;
     }
@@ -124,7 +120,7 @@ pub(crate) fn table_multiply(x: Element, y: Element) -> Element {
 }
 
 /// Division in GF(2⁸). Uses look-up tables.
-pub(crate) fn table_divide(x: Element, y: Element) -> Element {
+pub fn table_divide(x: Element, y: Element) -> Element {
     if y == 0 {
         panic!()
     } else if x == 0 {
@@ -135,6 +131,6 @@ pub(crate) fn table_divide(x: Element, y: Element) -> Element {
 }
 
 /// `pow` in GF(2⁸), where the other argument is an integer. Uses look-up tables.
-pub(crate) fn table_pow(x: Element, power: u32) -> Element {
+pub fn table_pow(x: Element, power: u32) -> Element {
     exp(log(x) * power as usize)
 }
