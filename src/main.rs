@@ -155,7 +155,8 @@ fn main_qr_generator() -> std::io::Result<()> {
 fn depanic() -> Result<(), String> {
     use QRInput::{self, *};
 
-    let check = |x: QRInput| std::panic::catch_unwind(|| qr_standard::make_qr(x, None, None, None));
+    let check =
+        |x: QRInput| std::panic::catch_unwind(|| qr_standard::make_qr(x, None, None, Some(0)));
     let make_string = |str: &str, i: usize| str.chars().cycle().take(i).collect::<String>();
 
     let mut offenders: Vec<(String, usize)> = vec![];
