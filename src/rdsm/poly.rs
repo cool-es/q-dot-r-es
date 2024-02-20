@@ -1,7 +1,7 @@
-use super::{galois::*, precomputed};
+use super::{galois, precomputed};
 
 /// A polynomial over a Galois field, ordered from highest power to lowest.
-pub type Polynomial = Vec<Element>;
+pub type Polynomial = Vec<galois::Element>;
 
 // "polynomials" section starts below
 // polynomials are written in descending order:
@@ -47,7 +47,7 @@ pub fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynom
                 // out of bounds
                 break;
             }
-            sum ^= table_multiply(poly1[i], poly2[j]);
+            sum ^= galois::table_multiply(poly1[i], poly2[j]);
         }
         output[horiz_step] = sum;
     }
@@ -61,7 +61,7 @@ pub fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynom
                 // out of bounds
                 break;
             }
-            sum ^= table_multiply(poly1[i], poly2[j]);
+            sum ^= galois::table_multiply(poly1[i], poly2[j]);
         }
         output[vert_step + deg1] = sum;
     }
@@ -90,7 +90,7 @@ pub fn make_rdsm_generator_polynomial(ec_symbols: u32) -> Polynomial {
     for i in 0..ec_symbols {
         // this value is the polynomial x + a^i ... does this actually line up
         // with the qr code standard? is a == 0000_0010 ?
-        let multiplier: Polynomial = vec![1, table_pow(2, i)];
+        let multiplier: Polynomial = vec![1, galois::table_pow(2, i)];
         output = es_polynomial_multiply(&output, &multiplier);
     }
     output
@@ -120,10 +120,10 @@ pub fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) -> Poly
         if output[shift] == 0 {
             continue;
         }
-        let multiplier = table_divide(output[shift], divisor[0]);
+        let multiplier = galois::table_divide(output[shift], divisor[0]);
 
         for index in 0..divisor.len() {
-            output[index + shift] ^= table_multiply(divisor[index], multiplier);
+            output[index + shift] ^= galois::table_multiply(divisor[index], multiplier);
         }
     }
 
