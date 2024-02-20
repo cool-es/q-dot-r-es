@@ -7,8 +7,7 @@ use crate::{image::Bitmap, rdsm::carryless_divide};
 mod tables;
 pub use tables::*;
 /// High-level encoding of characters.
-mod bitstream;
-pub use bitstream::*;
+pub mod bitstream;
 /// Low-level encoding of binary streams.
 pub mod badstream;
 
