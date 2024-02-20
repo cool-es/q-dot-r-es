@@ -8,6 +8,3 @@ pub mod galois;
 pub mod poly;
 /// Precomputed look-up tables.
 pub mod precomputed;
-
-pub use precomputed::*;
-// use precomputed::PC_EXP_LOG_TABLE;
