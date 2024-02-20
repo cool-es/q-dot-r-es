@@ -1,6 +1,6 @@
 //! Bitmap operations related to the QR standard.
 
-use crate::{image, rdsm};
+use crate::{image, rdsm::galois};
 
 /// Low-level encoding of binary streams.
 pub mod badstream;
@@ -110,10 +110,8 @@ fn qr_mask_xor(input: &mut image::Bitmap, mask: u8) {
 }
 
 mod penalties {
-    use crate::image::Bitmap;
-
     // Calculate the total penalty.
-    pub fn total_penalty(input: &Bitmap) -> u32 {
+    pub fn total_penalty(input: &crate::image::Bitmap) -> u32 {
         let width = input.dims().0;
         let ones = input.debug_bits().iter().map(|x| x.count_ones()).sum();
 
@@ -359,7 +357,7 @@ pub fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u16> {
         return None;
     }
 
-    crate::rdsm::qr_generate_fcode((correction_level << 3) | mask_pattern)
+    galois::qr_generate_fcode((correction_level << 3) | mask_pattern)
 }
 
 pub fn set_fcode(input: &mut image::Bitmap, version: u32, fcode: u16) {
@@ -556,7 +554,7 @@ fn new_blank_qr_code(version: u32) -> image::Bitmap {
 fn qr_generate_vcode(version: u32) -> u32 {
     // version code generator for (18,6) BCH code:
     // 0x1F25 = 0b1111100100101
-    ((version << 12) | rdsm::carryless_divide(version << 12, 0x1F25)) as u32
+    ((version << 12) | galois::carryless_divide(version << 12, 0x1F25)) as u32
 }
 
 // in the style of format_info_coords. again:
