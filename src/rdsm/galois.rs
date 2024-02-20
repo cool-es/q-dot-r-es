@@ -6,9 +6,6 @@ pub type Element = u8;
 /// A polynomial over GF(2).
 pub type BigElement = u32;
 
-/// The QR code data generator/divisor polynomial, `1 0001 1101`.
-#[allow(dead_code)]
-pub const QR_CODEWORD_GEN: BigElement = 0x11D;
 /// The QR code format generator/divisor polynomial, `101 0011 0111`.
 pub const QR_FORMAT_GEN: BigElement = 0x537;
 
