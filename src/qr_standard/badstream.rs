@@ -1,25 +1,25 @@
-use super::{bitstream, *};
-use crate::{
-    qr_standard::Mode::{self, *},
-    rdsm::{encode_message, Element, Polynomial},
+use super::{
+    bitstream::{self, search, Mode},
+    image, tables,
 };
+use crate::rdsm;
 
 pub type Badstream = Vec<bool>;
 
-pub fn badstream_to_polynomial(input: &Badstream) -> Polynomial {
-    let mut output: Polynomial = Vec::new();
+pub fn badstream_to_polynomial(input: &Badstream) -> rdsm::Polynomial {
+    let mut output: rdsm::Polynomial = Vec::new();
 
     let mut pushbyte: u8 = 0;
     for (i, &bit) in input.iter().enumerate() {
         if i % 8 == 0 && i != 0 {
-            output.push(pushbyte as Element);
+            output.push(pushbyte as rdsm::Element);
             pushbyte = 0;
         }
         pushbyte <<= 1;
         pushbyte |= u8::from(bit);
     }
     if pushbyte != 0 {
-        output.push(pushbyte as Element);
+        output.push(pushbyte as rdsm::Element);
     }
     output
 }
@@ -74,13 +74,13 @@ pub fn push_bits(bits: &str, stream: &mut Badstream) {
     }
 }
 
-pub fn write_badstream_to_bitmap(stream: &Badstream, bitmap: &mut Bitmap) {
+pub fn write_badstream_to_bitmap(stream: &Badstream, bitmap: &mut image::Bitmap) {
     let version = bitmap.qr_version().expect("invalid bitmap size");
     let max = bitmap.dims().0 - 1;
     let (mut x, mut y) = (max, max);
     for (a, &i) in stream.iter().enumerate() {
         bitmap.set_bit(x, y, i);
-        if let Some((x2, y2)) = next_data_bit(x, y, version) {
+        if let Some((x2, y2)) = super::next_data_bit(x, y, version) {
             (x, y) = (x2, y2);
         } else {
             assert!(
@@ -96,9 +96,9 @@ pub fn write_badstream_to_bitmap(stream: &Badstream, bitmap: &mut Bitmap) {
 }
 
 pub fn split_to_blocks_and_encode(
-    poly: &Polynomial,
+    poly: &rdsm::Polynomial,
     info: tables::VersionBlockInfo,
-) -> Vec<Polynomial> {
+) -> Vec<rdsm::Polynomial> {
     // number of blocks of this type, codewords per block, data codewords per block
     // note that the number of error correcting codewords is the same for all blocks!
     let (bc, cw, dcw, optional) = info;
@@ -113,9 +113,9 @@ pub fn split_to_blocks_and_encode(
         info
     );
 
-    let mut unencoded: Vec<Polynomial> = Vec::new();
+    let mut unencoded: Vec<rdsm::Polynomial> = Vec::new();
 
-    let (first, second): (&[Element], &[Element]) = if optional.is_some() {
+    let (first, second): (&[rdsm::Element], &[rdsm::Element]) = if optional.is_some() {
         poly.split_at(bc * dcw)
     } else {
         (poly.as_slice(), &[])
@@ -133,7 +133,7 @@ pub fn split_to_blocks_and_encode(
     let mut output = Vec::new();
 
     for i in unencoded {
-        output.push(encode_message(&i, (cw - dcw) as u32));
+        output.push(rdsm::encode_message(&i, (cw - dcw) as u32));
     }
 
     output
@@ -166,7 +166,7 @@ pub fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstre
     // error_output only serves to display byte data
     // in case the size-check assert below fails
     let mut output: Vec<bool> = Vec::new();
-    let mut error_output: Vec<Element> = Vec::new();
+    let mut error_output: Vec<rdsm::Element> = Vec::new();
 
     // enter data codewords
     for i in 0..max_data_codewords {
@@ -209,7 +209,7 @@ pub fn make_qr(
     version_choice: Option<u32>,
     level_choice: Option<u8>,
     mask_choice: Option<u8>,
-) -> Bitmap {
+) -> image::Bitmap {
     let level = level_choice.unwrap_or(2);
 
     // is utf8 (unicode) encoding necessary?
@@ -218,7 +218,7 @@ pub fn make_qr(
         QRInput::Auto(ref str) => !str.is_ascii(),
 
         // manual: check if any ASCII segment contains non-ascii chars
-        QRInput::Manual(ref vec) => vec.iter().any(|(m, s)| *m == ASCII && !s.is_ascii()),
+        QRInput::Manual(ref vec) => vec.iter().any(|(m, s)| *m == Mode::ASCII && !s.is_ascii()),
     };
 
     let input = match input {
@@ -239,7 +239,7 @@ pub fn make_qr(
 
     let version = if let Some(chosen_ver) = version_choice {
         assert!(
-            !bad_version(chosen_ver),
+            !super::bad_version(chosen_ver),
             "invalid version {} chosen",
             chosen_ver
         );
@@ -262,7 +262,7 @@ pub fn make_qr(
         level,
     );
 
-    let mut bitmap = Bitmap::new_blank_qr(version);
+    let mut bitmap = image::Bitmap::new_blank_qr(version);
 
     write_badstream_to_bitmap(&shuffled_stream, &mut bitmap);
     if let Some(mask) = mask_choice {
@@ -274,18 +274,18 @@ pub fn make_qr(
     bitmap
 }
 
-fn apply_mask(bitmap: &mut Bitmap, version: u32, level: u8, mask: u8) {
-    set_fcode(
+fn apply_mask(bitmap: &mut image::Bitmap, version: u32, level: u8, mask: u8) {
+    super::set_fcode(
         bitmap,
         version,
-        data_to_fcode([0b01, 0b00, 0b11, 0b10][level as usize], mask)
+        super::data_to_fcode([0b01, 0b00, 0b11, 0b10][level as usize], mask)
             .expect("could not generate format code"),
     );
     bitmap.qr_mask_xor(mask);
 }
 
-pub fn apply_best_mask(bitmap: &mut Bitmap, version: u32, level: u8) {
-    let mut best = Bitmap::new(1, 1);
+pub fn apply_best_mask(bitmap: &mut image::Bitmap, version: u32, level: u8) {
+    let mut best = image::Bitmap::new(1, 1);
     let mut penalty = u32::MAX;
     for mask in 0..=7 {
         let mut clone = bitmap.clone();
@@ -308,8 +308,6 @@ pub fn apply_best_mask(bitmap: &mut Bitmap, version: u32, level: u8) {
 /// mode switching is optimal), it's necessary to do this
 /// step before the optimal QR version can be decided on.
 fn find_best_mode_optimization(str: String, level: u8) -> Vec<(Mode, String)> {
-    use super::bitstream::search::optimize_mode;
-
     let maybe_eci_header = if !str.is_ascii() { 8 } else { 0 };
 
     // the limiting sizes for each code class, in codewords
@@ -321,7 +319,7 @@ fn find_best_mode_optimization(str: String, level: u8) -> Vec<(Mode, String)> {
     // check if the code fits in the first class, (version 1..)
     // then the second class (version 10..)
     for class in 0..2 {
-        let marked_string = optimize_mode(&str, class as u8);
+        let marked_string = search::optimize_mode(&str, class as u8);
 
         // calculate the total message size, in bits
         let cost = marked_string
@@ -341,7 +339,7 @@ fn find_best_mode_optimization(str: String, level: u8) -> Vec<(Mode, String)> {
 
     // code must be third class (version 27..),
     // so no calculation is necessary
-    optimize_mode(&str, 2)
+    search::optimize_mode(&str, 2)
 }
 
 // verified accurate
@@ -350,8 +348,8 @@ fn find_best_mode_optimization(str: String, level: u8) -> Vec<(Mode, String)> {
 fn bit_cost(count: usize, class: usize, mode: Mode) -> usize {
     let cc_bits = tables::CC_INDICATOR_BITS[class];
     4 + match mode {
-        Numeric => 4 + cc_bits[0] + ((10 * count + 1) as f32 / 3.0).round() as usize,
-        AlphaNum => 4 + cc_bits[1] + 11 * (count / 2) + 6 * (count % 2),
-        ASCII => 4 + cc_bits[2] + 8 * count,
+        Mode::Numeric => 4 + cc_bits[0] + ((10 * count + 1) as f32 / 3.0).round() as usize,
+        Mode::AlphaNum => 4 + cc_bits[1] + 11 * (count / 2) + 6 * (count % 2),
+        Mode::ASCII => 4 + cc_bits[2] + 8 * count,
     }
 }
