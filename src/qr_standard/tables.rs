@@ -319,8 +319,8 @@ pub const DATA_CODEWORDS: [[usize; 40]; 4] = [
 /// and by mode (num-aln-asc-knj)
 pub const CC_INDICATOR_BITS: [[usize; 4]; 3] = [[10, 9, 8, 8], [12, 11, 16, 10], [14, 13, 16, 12]];
 
-pub fn cc_indicator_bit_size(class: u8, mode: super::Mode) -> usize {
-    use super::Mode::*;
+pub fn cc_indicator_bit_size(class: u8, mode: super::bitstream::Mode) -> usize {
+    use super::bitstream::Mode::*;
     if class < 3 {
         CC_INDICATOR_BITS[class as usize][match mode {
             Numeric => 0,

@@ -1,7 +1,6 @@
 //! Bitmap operations related to the QR standard.
 
-use super::*;
-use crate::{image::Bitmap, rdsm::carryless_divide};
+use crate::{image, rdsm};
 
 /// Low-level encoding of binary streams.
 pub mod badstream;
@@ -74,7 +73,7 @@ impl image::Bitmap {
     }
 }
 
-fn qr_mask_xor(input: &mut Bitmap, mask: u8) {
+fn qr_mask_xor(input: &mut image::Bitmap, mask: u8) {
     let maybe_version = {
         if input.dims().0 != input.dims().1 {
             None
@@ -363,7 +362,7 @@ pub fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u16> {
     crate::rdsm::qr_generate_fcode((correction_level << 3) | mask_pattern)
 }
 
-pub fn set_fcode(input: &mut Bitmap, version: u32, fcode: u16) {
+pub fn set_fcode(input: &mut image::Bitmap, version: u32, fcode: u16) {
     let mask = 0b0101_0100_0001_0010u16;
 
     for bit in 0..=14 {
@@ -500,9 +499,9 @@ pub fn coord_status(x: usize, y: usize, version: u32) -> Option<u8> {
     })
 }
 
-fn new_blank_qr_code(version: u32) -> Bitmap {
+fn new_blank_qr_code(version: u32) -> image::Bitmap {
     let max = version_to_max_index(version).expect("invalid version");
-    let mut output = Bitmap::new(max + 1, max + 1);
+    let mut output = image::Bitmap::new(max + 1, max + 1);
     let mut set = |x, y| output.set_bit(x, y, true);
 
     //  draw alignment patters
@@ -557,7 +556,7 @@ fn new_blank_qr_code(version: u32) -> Bitmap {
 fn qr_generate_vcode(version: u32) -> u32 {
     // version code generator for (18,6) BCH code:
     // 0x1F25 = 0b1111100100101
-    ((version << 12) | carryless_divide(version << 12, 0x1F25)) as u32
+    ((version << 12) | rdsm::carryless_divide(version << 12, 0x1F25)) as u32
 }
 
 // in the style of format_info_coords. again:
@@ -584,7 +583,7 @@ fn version_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize
 }
 
 // in the style of set_fcode
-pub fn set_vcode(input: &mut Bitmap, version: u32, vcode: u32) {
+pub fn set_vcode(input: &mut image::Bitmap, version: u32, vcode: u32) {
     for bit in 0..=17 {
         let ((x1, y1), (x2, y2)) = version_info_coords(version, bit).expect("bad version");
         let value = vcode & (1 << bit) != 0;
