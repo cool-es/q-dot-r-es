@@ -1,4 +1,4 @@
-use crate::rdsm::precomputed;
+use crate::rdsm::lookup;
 // functions from the wikiversity "reed-solomon codes for coders" article
 
 /// An element in the finite field GF(2^8).
@@ -98,7 +98,7 @@ pub fn carryless_divide(dividend: BigElement, divisor: BigElement) -> BigElement
 /// Exponential function within GF(2⁸).
 #[inline]
 pub fn exp(n: usize) -> Element {
-    precomputed::QR_EXP_LOG_TABLE.0[n % 255]
+    lookup::QR_EXP_LOG_TABLE.0[n % 255]
 }
 
 /// Logarithm function within GF(2⁸).
@@ -106,7 +106,7 @@ pub fn log(e: Element) -> usize {
     if e == 0 {
         panic!()
     } else {
-        precomputed::QR_EXP_LOG_TABLE.1[((e - 1) % 255) as usize]
+        lookup::QR_EXP_LOG_TABLE.1[((e - 1) % 255) as usize]
     }
 }
 

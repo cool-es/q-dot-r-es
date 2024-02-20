@@ -7,4 +7,4 @@ pub mod galois;
 /// Operations on the polynomial ring GF(2⁸)\[X\].
 pub mod poly;
 /// Precomputed look-up tables.
-pub mod precomputed;
+pub mod lookup;
