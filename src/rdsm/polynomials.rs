@@ -157,7 +157,7 @@ def rs_encode_msg(msg_in, nsym):
 pub fn encode_message(message: &Polynomial, ec_symbols: u32) -> Polynomial {
     // will only generate codes "manually" if they are not qr standard
     let generator_polynomial: Polynomial =
-        if let Some(index) = crate::qr_standard::find_errc(ec_symbols as usize) {
+        if let Some(index) = crate::qr_standard::tables::find_errc(ec_symbols as usize) {
             RDSM_GENERATOR_POLYNOMIALS[index].to_vec()
         } else {
             make_rdsm_generator_polynomial(ec_symbols)

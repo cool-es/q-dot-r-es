@@ -149,7 +149,7 @@ fn edge_weight(to_mode: Mode, same_subset: bool, class: u8) -> Cost {
     (if !same_subset {
         // we multiply by 6 to get rid of decimals
         // the 4 is the size of the mode indicator
-        6 * (4 + crate::qr_standard::cc_indicator_bit_size(class, to_mode)) as Cost
+        6 * (4 + tables::cc_indicator_bit_size(class, to_mode)) as Cost
     } else {
         0
     }) + match to_mode {

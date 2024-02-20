@@ -113,7 +113,7 @@ fn string_to_alphanum(input: &str) -> Vec<Token> {
     for i in input
         .chars()
         .map(|x| {
-            ALPHANUM_SET
+            tables::ALPHANUM_SET
                 .find(x)
                 .map(|x| x as u16)
                 .expect("invalid alphanumeric input!")
@@ -161,7 +161,8 @@ fn push_token_to_badstream(stream: &mut badstream::Badstream, token: Token, vers
                 stream,
             );
 
-            let width: usize = cc_indicator_bit_size(version_to_class(version), mode);
+            let width: usize =
+                tables::cc_indicator_bit_size(tables::version_to_class(version), mode);
             let string = format!("{:016b}", count);
             push_bits(&string[(16 - width)..], stream);
         }
@@ -258,7 +259,7 @@ fn bit_overhead_template(data: &Vec<Token>) -> Overhead {
 }
 
 fn compute_bit_overhead(overhead: Overhead, version: u32) -> usize {
-    let table = CC_INDICATOR_BITS[version_to_class(version) as usize];
+    let table = tables::CC_INDICATOR_BITS[tables::version_to_class(version) as usize];
     let (mut sum, indicators) = overhead;
     for m in 0..=3 {
         sum += table[m] * indicators[m];
@@ -283,7 +284,7 @@ pub fn find_best_version(data: &Vec<Token>, level: u8) -> Result<u32, String> {
         "invalid error correction level \"{}\" selected",
         level
     );
-    let table = DATA_CODEWORDS[level as usize];
+    let table = tables::DATA_CODEWORDS[level as usize];
     let overhead = bit_overhead_template(data);
 
     for version in 1..=40 {
@@ -310,7 +311,7 @@ fn char_status(x: char) -> Option<Mode> {
     Some(if x.is_ascii_digit() {
         // ascii, alphanumeric and numeric
         Numeric
-    } else if ALPHANUM_SET.contains(x) {
+    } else if tables::ALPHANUM_SET.contains(x) {
         // ascii and alphanumeric
         AlphaNum
     } else if x.is_ascii() {

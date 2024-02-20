@@ -95,7 +95,10 @@ pub fn write_badstream_to_bitmap(stream: &Badstream, bitmap: &mut Bitmap) {
     }
 }
 
-pub fn split_to_blocks_and_encode(poly: &Polynomial, info: VersionBlockInfo) -> Vec<Polynomial> {
+pub fn split_to_blocks_and_encode(
+    poly: &Polynomial,
+    info: tables::VersionBlockInfo,
+) -> Vec<Polynomial> {
     // number of blocks of this type, codewords per block, data codewords per block
     // note that the number of error correcting codewords is the same for all blocks!
     let (bc, cw, dcw, optional) = info;
@@ -137,7 +140,7 @@ pub fn split_to_blocks_and_encode(poly: &Polynomial, info: VersionBlockInfo) -> 
 }
 
 pub fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstream {
-    let block_info = get_block_info(version, level);
+    let block_info = tables::get_block_info(version, level);
     let (block_count, codewords, data_codewords, optional) = block_info;
     let ec_codewords = codewords - data_codewords;
     let (max_data_codewords, total_data_codewords) =
@@ -223,8 +226,14 @@ pub fn make_qr(
         QRInput::Manual(vec) => vec,
     };
 
-    let tokens =
-        bitstream::make_token_stream(input, if utf8_encoding { Some(eci::UTF8) } else { None });
+    let tokens = bitstream::make_token_stream(
+        input,
+        if utf8_encoding {
+            Some(tables::eci::UTF8)
+        } else {
+            None
+        },
+    );
 
     let best_ver = bitstream::find_best_version(&tokens, level).expect("make_qr()");
 
@@ -305,7 +314,7 @@ fn find_best_mode_optimization(str: String, level: u8) -> Vec<(Mode, String)> {
 
     // the limiting sizes for each code class, in codewords
     let class_limits = {
-        let dcw = DATA_CODEWORDS[level as usize];
+        let dcw = tables::DATA_CODEWORDS[level as usize];
         [dcw[10 - 1], dcw[27 - 1]]
     };
 
@@ -339,7 +348,7 @@ fn find_best_mode_optimization(str: String, level: u8) -> Vec<(Mode, String)> {
 // returns the number of bits it takes to print `count` characters
 // in a given mode and size class of qr code
 fn bit_cost(count: usize, class: usize, mode: Mode) -> usize {
-    let cc_bits = CC_INDICATOR_BITS[class];
+    let cc_bits = tables::CC_INDICATOR_BITS[class];
     4 + match mode {
         Numeric => 4 + cc_bits[0] + ((10 * count + 1) as f32 / 3.0).round() as usize,
         AlphaNum => 4 + cc_bits[1] + 11 * (count / 2) + 6 * (count % 2),
