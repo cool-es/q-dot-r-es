@@ -5,7 +5,7 @@
 /// Operations on the finite field GF(2⁸).
 pub mod galois;
 /// Operations on the polynomial ring GF(2⁸)\[X\].
-pub mod polynomials;
+pub mod poly;
 /// Precomputed look-up tables.
 pub mod precomputed;
 
