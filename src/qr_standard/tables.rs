@@ -60,7 +60,7 @@ pub fn alignment_pattern_coords(version: u32) -> Vec<(usize, usize)> {
     output
 }
 
-/// reverse-lookup to find the index for precomputed.rs > RDSM_GENERATOR_POLYNOMIALS
+/// reverse-lookup to find the index for lookup.rs > RDSM_GENERATOR_POLYNOMIALS
 #[inline]
 pub fn find_errc(input: usize) -> Option<usize> {
     Some(

@@ -55,7 +55,7 @@ Making a QR code involves:
 * Reed-Solomon error correction math – [**`rdsm.rs`**](src/rdsm.rs)
    * Finite field arithmetic in GF(2⁸) – [**`galois.rs`**](src/rdsm/galois.rs)
    * Polynomial rings over GF(2⁸) – [**`polynomials.rs`**](src/rdsm/polynomials.rs)
-   * Precomputed tables – [**`precomputed.rs`**](src/rdsm/precomputed.rs) (note that the functions to generate the tables can be found in the `everything` branch)
+   * Precomputed tables – [**`lookup.rs`**](src/rdsm/lookup.rs)
 * Technical aspects of the QR standard – [**`qr_standard.rs`**](src/qr_standard.rs)
    * Reference tables – [**`tables.rs`**](src/qr_standard/tables.rs)
    * Binary bit stream handling – [**`badstream.rs`**](src/qr_standard/badstream.rs)
