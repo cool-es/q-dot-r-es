@@ -117,6 +117,8 @@ impl CharNodes {
 
     /// The type of the node with the lowest cost.
     fn cheapest_mode(&self) -> Mode {
+        use Mode::{AlphaNum, Numeric, ASCII};
+
         let mut cheapest_mode = ASCII;
         let mut lowest_cost = self.get(ASCII).unwrap();
         for category in [AlphaNum, Numeric] {
@@ -154,11 +156,11 @@ fn edge_weight(to_mode: Mode, same_subset: bool, class: u8) -> Cost {
         0
     }) + match to_mode {
         // 6 * 8
-        ASCII => 48,
+        Mode::ASCII => 48,
         // 6 * 11/2
-        AlphaNum => 33,
+        Mode::AlphaNum => 33,
         // 6 * 10/3
-        Numeric => 20,
+        Mode::Numeric => 20,
     }
 }
 
@@ -225,7 +227,7 @@ fn optimal_path(graph: &Graph) -> Vec<Mode> {
 
 /// Optimize
 pub fn optimize_mode(string: &String, class: u8) -> Vec<(Mode, String)> {
-    let char_to_mode = |x| char_status(x).unwrap_or(ASCII);
+    let char_to_mode = |x| char_status(x).unwrap_or(Mode::ASCII);
 
     if string.is_empty() {
         return vec![];
@@ -261,9 +263,9 @@ pub fn optimize_mode(string: &String, class: u8) -> Vec<(Mode, String)> {
 impl Mode {
     fn index(self) -> usize {
         match self {
-            ASCII => 0,
-            AlphaNum => 1,
-            Numeric => 2,
+            Self::ASCII => 0,
+            Self::AlphaNum => 1,
+            Self::Numeric => 2,
         }
     }
 }
