@@ -12,11 +12,8 @@ pub const QR_CODEWORD_GEN: BigElement = 0x11D;
 /// The QR code format generator/divisor polynomial, `101 0011 0111`.
 pub const QR_FORMAT_GEN: BigElement = 0x537;
 
-// exp table for the `table_*` functions
-pub const EXPVALUES: usize = 255;
-// log table for the `table_*` functions
-pub const LOGVALUES: usize = EXPVALUES;
-pub type ExpLogLUTs = ([Element; EXPVALUES], [usize; LOGVALUES]);
+/// Exponential/logarithmic table for the `table_` functions.
+pub type ExpLogLUTs = ([Element; 255], [usize; 255]);
 
 /*
 The format code should produce a remainder of zero

@@ -3,11 +3,6 @@ use super::{galois, lookup};
 /// A polynomial over a Galois field, ordered from highest power to lowest.
 pub type Polynomial = Vec<galois::Element>;
 
-// "polynomials" section starts below
-// polynomials are written in descending order:
-// [a, b, c, d] = ax^3 + bx^2 + cx + d
-// (i personally don't think that's a good decision, but)
-
 /// Add two polynomials.
 pub fn polynomial_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
     let mut output: Polynomial = Vec::new();
@@ -25,9 +20,6 @@ pub fn polynomial_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
 
     output
 }
-
-// here's something i came up with...
-// it was simpler in my head.
 
 /// An original polynomial multiplication algorithm.
 pub fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
@@ -65,24 +57,15 @@ pub fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynom
         }
         output[vert_step + deg1] = sum;
     }
-
     output
 }
 
-// wow! this sucks!
-/*
-    def rs_generator_poly(nsym):
-        '''Generate an irreducible generator polynomial (necessary to encode a message into Reed-Solomon)'''
-        g = [1]
-        for i in range(0, nsym):
-            g = gf_poly_mul(g, [1, gf_pow(2, i)])
-        return g
-*/
 /// Generate a Reed-Solomon generator polynomial.
 ///
 /// This function is called by [encode_message] in fall-back
 /// cases, but not when generating QR codes. `ec_symbols`
 /// is the number of error-correcting symbols needed.
+#[cold]
 pub fn make_rdsm_generator_polynomial(ec_symbols: u32) -> Polynomial {
     // from what i can tell, the end result here is
     // (x + 1)(x + a)(x + a^2)...(x + a^ec_symbols)
@@ -133,20 +116,6 @@ pub fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) -> Poly
     // output starts with a bunch of 0s
     output[lead..].to_vec()
 }
-
-// it works!!! i'm doing encodation!!!!!
-/*
-def rs_encode_msg(msg_in, nsym):
-    '''Reed-Solomon main encoding function'''
-    gen = rs_generator_poly(nsym)
-
-    # Pad the message, then divide it by the irreducible generator polynomial
-    _, remainder = gf_poly_div(msg_in + [0] * (len(gen)-1), gen)
-    # The remainder is our RS code! Just append it to our original message to get our full codeword (this represents a polynomial of max 256 terms)
-    msg_out = msg_in + remainder
-    # Return the codeword
-    return msg_out
-*/
 
 /// The main Reed-Solomon encoding function.
 ///
