@@ -5,13 +5,18 @@
 // possible to integrate them later on - every function of interest must either
 // return type T, or write to a &mut T it receives as input!
 
-use qr::*;
+use qr::{
+    qr_standard::{self, badstream},
+    Mode,
+};
 
 fn main() -> std::io::Result<()> {
     main_qr_generator()
 }
 
 fn main_qr_generator() -> std::io::Result<()> {
+    use badstream::QRInput;
+
     let mut input_choice: Option<QRInput> = None;
     let mut level_choice = Option::<u8>::None;
     let mut mask_choice = Option::<u8>::None;
@@ -160,7 +165,7 @@ fn main_qr_generator() -> std::io::Result<()> {
 // returns a description of inputs that will lead make_qr() to panic
 #[test]
 fn depanic() -> Result<(), String> {
-    use QRInput::{self, *};
+    use badstream::QRInput::{self, *};
 
     let check = |x: QRInput| {
         std::panic::catch_unwind(|| qr_standard::badstream::make_qr(x, None, None, Some(0)))
