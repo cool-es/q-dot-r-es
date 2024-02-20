@@ -3,13 +3,12 @@
 use super::*;
 use crate::{image::Bitmap, rdsm::carryless_divide};
 
-/// Lookup tables specific to the QR standard.
-mod tables;
-pub use tables::*;
-/// High-level encoding of characters.
-pub mod bitstream;
 /// Low-level encoding of binary streams.
 pub mod badstream;
+/// High-level encoding of characters.
+pub mod bitstream;
+/// Lookup tables specific to the QR standard.
+pub mod tables;
 
 /// Return `false` only for a valid QR code version (`1..=40`).
 #[inline]
@@ -440,7 +439,7 @@ fn coord_is_alignment_pattern(x: usize, y: usize, version: u32) -> bool {
         panic!("x = {}, y = {}", x, y)
     }
 
-    let indices = AP_COORD_INDICES[version as usize - 1];
+    let indices = tables::AP_COORD_INDICES[version as usize - 1];
     for (h, &hc) in indices.iter().enumerate() {
         if x.abs_diff(hc) < 3 {
             for (v, &vc) in indices.iter().enumerate() {
@@ -507,7 +506,7 @@ fn new_blank_qr_code(version: u32) -> Bitmap {
     let mut set = |x, y| output.set_bit(x, y, true);
 
     //  draw alignment patters
-    let alignment_coords = alignment_pattern_coords(version);
+    let alignment_coords = tables::alignment_pattern_coords(version);
     for (x, y) in alignment_coords {
         set(x, y);
         for i in 0..=3 {
