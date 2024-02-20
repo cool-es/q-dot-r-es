@@ -9,7 +9,6 @@ pub mod polynomials;
 /// Precomputed look-up tables.
 pub mod precomputed;
 
-pub use galois::*;
 pub use polynomials::*;
 pub use precomputed::*;
 // use precomputed::PC_EXP_LOG_TABLE;

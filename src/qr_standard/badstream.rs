@@ -2,7 +2,7 @@ use super::{
     bitstream::{self, search, Mode},
     image, tables,
 };
-use crate::rdsm;
+use crate::rdsm::{self, galois};
 
 pub type Badstream = Vec<bool>;
 
@@ -12,14 +12,14 @@ pub fn badstream_to_polynomial(input: &Badstream) -> rdsm::Polynomial {
     let mut pushbyte: u8 = 0;
     for (i, &bit) in input.iter().enumerate() {
         if i % 8 == 0 && i != 0 {
-            output.push(pushbyte as rdsm::Element);
+            output.push(pushbyte as galois::Element);
             pushbyte = 0;
         }
         pushbyte <<= 1;
         pushbyte |= u8::from(bit);
     }
     if pushbyte != 0 {
-        output.push(pushbyte as rdsm::Element);
+        output.push(pushbyte as galois::Element);
     }
     output
 }
@@ -115,7 +115,7 @@ pub fn split_to_blocks_and_encode(
 
     let mut unencoded: Vec<rdsm::Polynomial> = Vec::new();
 
-    let (first, second): (&[rdsm::Element], &[rdsm::Element]) = if optional.is_some() {
+    let (first, second): (&[galois::Element], &[galois::Element]) = if optional.is_some() {
         poly.split_at(bc * dcw)
     } else {
         (poly.as_slice(), &[])
@@ -166,7 +166,7 @@ pub fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstre
     // error_output only serves to display byte data
     // in case the size-check assert below fails
     let mut output: Vec<bool> = Vec::new();
-    let mut error_output: Vec<rdsm::Element> = Vec::new();
+    let mut error_output: Vec<galois::Element> = Vec::new();
 
     // enter data codewords
     for i in 0..max_data_codewords {

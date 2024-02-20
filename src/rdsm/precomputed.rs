@@ -1,4 +1,4 @@
-use super::*;
+use super::galois::{Element, ExpLogLUTs};
 
 /// The non-zero elements of GF(2⁸). Lookup table for [exp] and [log].
 pub const QR_EXP_LOG_TABLE: ExpLogLUTs = (
