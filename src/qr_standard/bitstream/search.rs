@@ -57,7 +57,7 @@ impl CharNodes {
         }
     }
 
-    /// A mutual reference to a certain node.
+    /// A mutable reference to a certain node.
     fn get_mut(&mut self, category: Mode) -> Option<&mut TaggedNode> {
         if !self.has(category) {
             None
