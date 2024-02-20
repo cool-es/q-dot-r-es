@@ -5,6 +5,10 @@
 // possible to integrate them later on - every function of interest must either
 // return type T, or write to a &mut T it receives as input!
 
+// strategy: rewrite functions to take an additional Option<&mut T> input,
+// where T is some sort of documentation type akin to a string or vector.
+// no documentation input - business as usual, otherwise log operation data
+
 use qr::qr_standard;
 
 fn main() -> std::io::Result<()> {
