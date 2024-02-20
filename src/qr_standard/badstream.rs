@@ -4,7 +4,9 @@ use super::{
 };
 use crate::rdsm::{galois, poly};
 
-pub type Badstream = Vec<bool>;
+// a bitstream with one bit per u8
+// bit is 'true' iff the u8 != 0
+pub type Badstream = Vec<u8>;
 
 pub fn badstream_to_polynomial(input: &Badstream) -> poly::Polynomial {
     let mut output: poly::Polynomial = Vec::new();
@@ -43,7 +45,7 @@ pub fn pad_to(codeword_length: usize, stream: &mut Badstream) {
 
     // pad to next codeword boundary with zeros
     if stream.len() % 8 != 0 {
-        stream.resize(stream.len().next_multiple_of(8), false);
+        stream.resize(stream.len().next_multiple_of(8), 0);
     }
 
     // for i in 0..(codeword_length
@@ -52,7 +54,7 @@ pub fn pad_to(codeword_length: usize, stream: &mut Badstream) {
     for i in 0..(codeword_length - (stream.len() / 8)) {
         let a = [0xEC, 0x11][i % 2];
         for k in (0..=7).rev() {
-            stream.push((a & (1 << k)) != 0);
+            stream.push(a & (1 << k));
         }
     }
 }
@@ -60,15 +62,15 @@ pub fn pad_to(codeword_length: usize, stream: &mut Badstream) {
 /// pushes a byte without any alignment checks
 pub fn push_byte(byte: u8, stream: &mut Badstream) {
     for k in (0..=7).rev() {
-        stream.push((byte & (1 << k)) != 0);
+        stream.push(byte & (1 << k));
     }
 }
 
 pub fn push_bits(bits: &str, stream: &mut Badstream) {
     for number in bits.chars() {
         stream.push(match number {
-            '0' => false,
-            '1' => true,
+            '0' => 0,
+            '1' => 1,
             _ => panic!(),
         });
     }
@@ -79,7 +81,7 @@ pub fn write_badstream_to_bitmap(stream: &Badstream, bitmap: &mut image::Bitmap)
     let max = bitmap.dims().0 - 1;
     let (mut x, mut y) = (max, max);
     for (a, &i) in stream.iter().enumerate() {
-        bitmap.set_bit(x, y, i);
+        bitmap.set_bit(x, y, i != 0);
         if let Some((x2, y2)) = super::next_data_bit(x, y, version) {
             (x, y) = (x2, y2);
         } else {
@@ -165,7 +167,7 @@ pub fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstre
 
     // error_output only serves to display byte data
     // in case the size-check assert below fails
-    let mut output: Vec<bool> = Vec::new();
+    let mut output: Badstream = Vec::new();
     let mut error_output: Vec<galois::Element> = Vec::new();
 
     // enter data codewords
