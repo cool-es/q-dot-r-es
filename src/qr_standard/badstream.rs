@@ -1,4 +1,4 @@
-use super::*;
+use super::{bitstream, *};
 use crate::{
     qr_standard::Mode::{self, *},
     rdsm::{encode_message, Element, Polynomial},
@@ -223,9 +223,10 @@ pub fn make_qr(
         QRInput::Manual(vec) => vec,
     };
 
-    let tokens = make_token_stream(input, if utf8_encoding { Some(eci::UTF8) } else { None });
+    let tokens =
+        bitstream::make_token_stream(input, if utf8_encoding { Some(eci::UTF8) } else { None });
 
-    let best_ver = find_best_version(&tokens, level).expect("make_qr()");
+    let best_ver = bitstream::find_best_version(&tokens, level).expect("make_qr()");
 
     let version = if let Some(chosen_ver) = version_choice {
         assert!(
@@ -246,7 +247,11 @@ pub fn make_qr(
         best_ver
     };
 
-    let shuffled_stream = full_block_encode(&tokens_to_badstream(tokens, version), version, level);
+    let shuffled_stream = full_block_encode(
+        &bitstream::tokens_to_badstream(tokens, version),
+        version,
+        level,
+    );
 
     let mut bitmap = Bitmap::new_blank_qr(version);
 
