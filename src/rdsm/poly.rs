@@ -1,4 +1,4 @@
-use super::{galois::*, RDSM_GENERATOR_POLYNOMIALS};
+use super::{galois::*, precomputed};
 
 /// A polynomial over a Galois field, ordered from highest power to lowest.
 pub type Polynomial = Vec<Element>;
@@ -158,7 +158,7 @@ pub fn encode_message(message: &Polynomial, ec_symbols: u32) -> Polynomial {
     // will only generate codes "manually" if they are not qr standard
     let generator_polynomial: Polynomial =
         if let Some(index) = crate::qr_standard::tables::find_errc(ec_symbols as usize) {
-            RDSM_GENERATOR_POLYNOMIALS[index].to_vec()
+            precomputed::RDSM_GENERATOR_POLYNOMIALS[index].to_vec()
         } else {
             make_rdsm_generator_polynomial(ec_symbols)
         };
