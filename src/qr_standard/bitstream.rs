@@ -1,3 +1,4 @@
+use super::badstream;
 use super::*;
 use Mode::*;
 use Token::*;
@@ -130,7 +131,9 @@ fn string_to_alphanum(input: &str) -> Vec<Token> {
 }
 
 /// Convert a `Token` character into its equivalent bit sequence.
-fn push_token_to_badstream(stream: &mut Badstream, token: Token, version: u32) {
+fn push_token_to_badstream(stream: &mut badstream::Badstream, token: Token, version: u32) {
+    use badstream::push_bits;
+
     match token {
         EciChange(mode) => {
             let string = match mode {
@@ -192,8 +195,8 @@ pub fn make_token_stream(input: Vec<(Mode, String)>, eci: Option<u32>) -> Vec<To
 }
 
 /// Convert a vector of tokens into a single stream of bits.
-pub fn tokens_to_badstream(stream: Vec<Token>, version: u32) -> Badstream {
-    let mut output: Badstream = Vec::new();
+pub fn tokens_to_badstream(stream: Vec<Token>, version: u32) -> badstream::Badstream {
+    let mut output: badstream::Badstream = Vec::new();
 
     for token in stream {
         push_token_to_badstream(&mut output, token, version);

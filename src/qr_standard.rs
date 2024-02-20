@@ -10,8 +10,7 @@ pub use tables::*;
 mod bitstream;
 pub use bitstream::*;
 /// Low-level encoding of binary streams.
-mod badstream;
-pub use badstream::*;
+pub mod badstream;
 
 /// Return `false` only for a valid QR code version (`1..=40`).
 #[inline]

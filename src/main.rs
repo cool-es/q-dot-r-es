@@ -140,8 +140,8 @@ fn main_qr_generator() -> std::io::Result<()> {
     };
 
     let name = name.unwrap_or("out".to_string());
-    let output =
-        qr_standard::make_qr(input, version_choice, level_choice, mask_choice).as_xbm(&name, true);
+    let output = qr_standard::badstream::make_qr(input, version_choice, level_choice, mask_choice)
+        .as_xbm(&name, true);
 
     let write_status = std::fs::write(format!("{}.xbm", name), output);
     if write_status.is_ok() {
@@ -155,8 +155,9 @@ fn main_qr_generator() -> std::io::Result<()> {
 fn depanic() -> Result<(), String> {
     use QRInput::{self, *};
 
-    let check =
-        |x: QRInput| std::panic::catch_unwind(|| qr_standard::make_qr(x, None, None, Some(0)));
+    let check = |x: QRInput| {
+        std::panic::catch_unwind(|| qr_standard::badstream::make_qr(x, None, None, Some(0)))
+    };
     let make_string = |str: &str, i: usize| str.chars().cycle().take(i).collect::<String>();
 
     let mut offenders: Vec<(String, usize)> = vec![];

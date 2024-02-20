@@ -4,4 +4,4 @@ pub mod image;
 pub mod qr_standard;
 pub mod rdsm;
 
-pub use qr_standard::{Mode, QRInput};
+pub use qr_standard::{badstream::QRInput, Mode};
