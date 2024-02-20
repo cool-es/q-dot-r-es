@@ -54,7 +54,7 @@ They are readable by free graphics software such as GIMP, though the ones output
 Making a QR code involves:
 * Reed-Solomon error correction math – [**`rdsm.rs`**](src/rdsm.rs)
    * Finite field arithmetic in GF(2⁸) – [**`galois.rs`**](src/rdsm/galois.rs)
-   * Polynomial rings over GF(2⁸) – [**`polynomials.rs`**](src/rdsm/polynomials.rs)
+   * Polynomial rings over GF(2⁸) – [**`poly.rs`**](src/rdsm/poly.rs)
    * Precomputed tables – [**`lookup.rs`**](src/rdsm/lookup.rs)
 * Technical aspects of the QR standard – [**`qr_standard.rs`**](src/qr_standard.rs)
    * Reference tables – [**`tables.rs`**](src/qr_standard/tables.rs)
