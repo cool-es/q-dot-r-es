@@ -1,3 +1,10 @@
+// rewrite: make process more stepwise, to be integrated into a JS applet.
+// basically, if function f is worth showing off, it must be independent;
+// if g() := f(calculation in g), g must be rewritten to := calculation in g.
+// also, this library (qr) should not rely on mutable statics, but it must be
+// possible to integrate them later on - every function of interest must either
+// return type T, or write to a &mut T it receives as input!
+
 use qr::*;
 
 fn main() -> std::io::Result<()> {
