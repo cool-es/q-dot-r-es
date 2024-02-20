@@ -1,14 +1,11 @@
-use qr::{
-    qr_standard::{self, badstream},
-    Mode,
-};
+use qr::qr_standard;
 
 fn main() -> std::io::Result<()> {
     main_qr_generator()
 }
 
 fn main_qr_generator() -> std::io::Result<()> {
-    use badstream::QRInput;
+    use qr_standard::{badstream::QRInput, bitstream::Mode};
 
     let mut input_choice: Option<QRInput> = None;
     let mut level_choice = Option::<u8>::None;
@@ -158,7 +155,7 @@ fn main_qr_generator() -> std::io::Result<()> {
 // returns a description of inputs that will lead make_qr() to panic
 #[test]
 fn depanic() -> Result<(), String> {
-    use badstream::QRInput::{self, *};
+    use qr_standard::badstream::QRInput;
 
     let check = |x: QRInput| {
         std::panic::catch_unwind(|| qr_standard::badstream::make_qr(x, None, None, Some(0)))
@@ -166,7 +163,7 @@ fn depanic() -> Result<(), String> {
     let make_string = |str: &str, i: usize| str.chars().cycle().take(i).collect::<String>();
 
     let mut offenders: Vec<(String, usize)> = vec![];
-    if check(Auto("".to_string())).is_err() {
+    if check(QRInput::Auto("".to_string())).is_err() {
         offenders.push(("empty string".to_string(), 0));
     }
     for i in 1..50 {
@@ -175,7 +172,7 @@ fn depanic() -> Result<(), String> {
             "🤔", "π", // wild
         ] {
             let a = make_string(str, i);
-            if check(Auto(a)).is_err() {
+            if check(QRInput::Auto(a)).is_err() {
                 offenders.push((str.to_string(), i));
             }
         }
