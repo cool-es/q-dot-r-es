@@ -2,12 +2,12 @@ use super::{
     bitstream::{self, search, Mode},
     image, tables,
 };
-use crate::rdsm::{self, galois};
+use crate::rdsm::{galois, polynomials};
 
 pub type Badstream = Vec<bool>;
 
-pub fn badstream_to_polynomial(input: &Badstream) -> rdsm::Polynomial {
-    let mut output: rdsm::Polynomial = Vec::new();
+pub fn badstream_to_polynomial(input: &Badstream) -> polynomials::Polynomial {
+    let mut output: polynomials::Polynomial = Vec::new();
 
     let mut pushbyte: u8 = 0;
     for (i, &bit) in input.iter().enumerate() {
@@ -96,9 +96,9 @@ pub fn write_badstream_to_bitmap(stream: &Badstream, bitmap: &mut image::Bitmap)
 }
 
 pub fn split_to_blocks_and_encode(
-    poly: &rdsm::Polynomial,
+    poly: &polynomials::Polynomial,
     info: tables::VersionBlockInfo,
-) -> Vec<rdsm::Polynomial> {
+) -> Vec<polynomials::Polynomial> {
     // number of blocks of this type, codewords per block, data codewords per block
     // note that the number of error correcting codewords is the same for all blocks!
     let (bc, cw, dcw, optional) = info;
@@ -113,7 +113,7 @@ pub fn split_to_blocks_and_encode(
         info
     );
 
-    let mut unencoded: Vec<rdsm::Polynomial> = Vec::new();
+    let mut unencoded: Vec<polynomials::Polynomial> = Vec::new();
 
     let (first, second): (&[galois::Element], &[galois::Element]) = if optional.is_some() {
         poly.split_at(bc * dcw)
@@ -133,7 +133,7 @@ pub fn split_to_blocks_and_encode(
     let mut output = Vec::new();
 
     for i in unencoded {
-        output.push(rdsm::encode_message(&i, (cw - dcw) as u32));
+        output.push(polynomials::encode_message(&i, (cw - dcw) as u32));
     }
 
     output
