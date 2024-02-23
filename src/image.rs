@@ -111,10 +111,9 @@ impl Bitmap {
     }
 
     pub fn get_bit(&self, x: usize, y: usize) -> Option<bool> {
-        if let Some((n, i)) = xy_to_index(x, y, self.width, self.height) {
-            Some(((self.bits[n] >> i) & 1) == 1)
-        } else {
-            None
+        match xy_to_index(x, y, self.width, self.height) {
+            Some((n, i)) => Some(((self.bits[n] >> i) & 1) == 1),
+            None => None,
         }
     }
 

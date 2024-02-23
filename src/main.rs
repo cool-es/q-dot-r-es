@@ -136,19 +136,20 @@ fn main_qr_generator() -> std::io::Result<()> {
         assert!((0..=7).contains(&m), "mask must be one of 0, ..., 7");
     }
 
-    let input = if let Some(i) = input_choice {
-        i
-    } else {
-        if mode_data.is_empty() {
-            // if no manual mode data has been read from the arguments,
-            // we get unprocessed data from stdin instead
-            let mut input_string = String::new();
-            std::io::stdin().read_line(&mut input_string)?;
-            // stdin input ends on a newline, remove it
-            input_string.pop();
-            QRInput::Auto(input_string)
-        } else {
-            QRInput::Manual(mode_data)
+    let input = match input_choice {
+        Some(i) => i,
+        None => {
+            if mode_data.is_empty() {
+                // if no manual mode data has been read from the arguments,
+                // we get unprocessed data from stdin instead
+                let mut input_string = String::new();
+                std::io::stdin().read_line(&mut input_string)?;
+                // stdin input ends on a newline, remove it
+                input_string.pop();
+                QRInput::Auto(input_string)
+            } else {
+                QRInput::Manual(mode_data)
+            }
         }
     };
 

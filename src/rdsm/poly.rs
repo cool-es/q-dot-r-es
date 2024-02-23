@@ -91,10 +91,9 @@ fn leading_zeros(poly: &Polynomial) -> usize {
 /// The remainder left after polynomial division.
 pub fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) -> Polynomial {
     assert!(divisor[0] != 0, "divisor has a leading 0");
-    let diff = if let Some(d) = dividend.len().checked_sub(divisor.len()) {
-        d
-    } else {
-        return dividend.clone();
+    let diff = match dividend.len().checked_sub(divisor.len()) {
+        Some(d) => d,
+        None => return dividend.clone(),
     };
     let mut output = dividend.clone();
     // rightwards index shift in output (equivalent to multiplying divisor by x^(diff-shift))
@@ -126,10 +125,9 @@ pub fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) -> Poly
 pub fn encode_message(message: &Polynomial, ec_symbols: u32) -> Polynomial {
     // will only generate codes "manually" if they are not qr standard
     let generator_polynomial: Polynomial =
-        if let Some(index) = crate::qr_standard::tables::find_errc(ec_symbols as usize) {
-            lookup::RDSM_GENERATOR_POLYNOMIALS[index].to_vec()
-        } else {
-            make_rdsm_generator_polynomial(ec_symbols)
+        match crate::qr_standard::tables::find_errc(ec_symbols as usize) {
+            Some(index) => lookup::RDSM_GENERATOR_POLYNOMIALS[index].to_vec(),
+            None => make_rdsm_generator_polynomial(ec_symbols),
         };
 
     let mut message_padded = message.clone();
