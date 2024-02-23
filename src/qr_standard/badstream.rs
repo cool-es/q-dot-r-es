@@ -145,15 +145,13 @@ pub fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstre
     let block_info = tables::get_block_info(version, level);
     let (block_count, codewords, data_codewords, optional) = block_info;
     let ec_codewords = codewords - data_codewords;
-    let (max_data_codewords, total_data_codewords) =
-        if let Some((block_count_2, _, data_codewords_2)) = optional {
-            (
-                data_codewords_2,
-                block_count * data_codewords + block_count_2 * data_codewords_2,
-            )
-        } else {
-            (data_codewords, block_count * data_codewords)
-        };
+    let (max_data_codewords, total_data_codewords) = match optional {
+        Some((block_count_2, _, data_codewords_2)) => (
+            data_codewords_2,
+            block_count * data_codewords + block_count_2 * data_codewords_2,
+        ),
+        None => (data_codewords, block_count * data_codewords),
+    };
 
     let padded_stream = {
         let mut stream_copy = stream.clone();
@@ -239,23 +237,24 @@ pub fn make_qr(
 
     let best_ver = bitstream::find_best_version(&tokens, level).expect("make_qr()");
 
-    let version = if let Some(chosen_ver) = version_choice {
-        assert!(
-            !super::bad_version(chosen_ver),
-            "invalid version {} chosen",
+    let version = match version_choice {
+        Some(chosen_ver) => {
+            assert!(
+                !super::bad_version(chosen_ver),
+                "invalid version {} chosen",
+                chosen_ver
+            );
+            assert!(
+                best_ver <= chosen_ver,
+                "QR version {}-{} can't fit the data - best option is {}-{}",
+                chosen_ver,
+                b"LMQH"[level as usize] as char,
+                best_ver,
+                b"LMQH"[level as usize] as char,
+            );
             chosen_ver
-        );
-        assert!(
-            best_ver <= chosen_ver,
-            "QR version {}-{} can't fit the data - best option is {}-{}",
-            chosen_ver,
-            b"LMQH"[level as usize] as char,
-            best_ver,
-            b"LMQH"[level as usize] as char,
-        );
-        chosen_ver
-    } else {
-        best_ver
+        }
+        None => best_ver,
     };
 
     let shuffled_stream = full_block_encode(

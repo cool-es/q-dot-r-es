@@ -60,10 +60,9 @@ pub fn qr_generate_fcode(fmt: u8) -> Option<u16> {
 
 #[inline]
 pub fn bit_length(n: BigElement) -> u32 {
-    if let Some(x) = n.checked_ilog2() {
-        x + 1
-    } else {
-        0
+    match n.checked_ilog2() {
+        Some(x) => x + 1,
+        None => 0,
     }
 }
 
