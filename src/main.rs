@@ -5,9 +5,34 @@
 // possible to integrate them later on - every function of interest must either
 // return type T, or write to a &mut T it receives as input!
 
-// strategy: rewrite functions to take an additional Option<&mut T> input,
-// where T is some sort of documentation type akin to a string or vector.
-// no documentation input - business as usual, otherwise log operation data
+// // strategy: rewrite functions to take an additional Option<&mut T> input,
+// // where T is some sort of documentation type akin to a string or vector.
+// // no documentation input - business as usual, otherwise log operation data
+// i don't know about this... for this qr encoder to not be adapted to this
+// niche use case, its constituent functions would simply need to give out
+// enough information "by nature" that it can be parsed afterward.
+
+// stuff that needs to be exposed to documentation:
+// • search - token optimization route
+// • search - optimization node weights/costs
+// • token bit code
+// • token/padding/errc locations in bitstream
+// • token/padding/errc locations in final qr symbol
+// • contents and meaning of format code
+// • non-masked qr symbol
+// • mask penalties
+// • (maybe) penalty-receiving areas
+
+// stuff that needs to be controllable by the end user:
+// • input string
+// • mask
+// • error c. level
+// • token choice (granular)
+// • anything else that doesn't make the qr code unscannable
+// all of this needs to be controllable mid-process,
+// in a sort of "surgical" style... the user needs to
+// be able to a/b test different aspects instantly,
+// like "what happens if i switch out this encoding here"
 
 use qr::qr_standard;
 
