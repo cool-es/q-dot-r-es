@@ -82,17 +82,20 @@ pub fn write_badstream_to_bitmap(stream: &Badstream, bitmap: &mut image::Bitmap)
     let (mut x, mut y) = (max, max);
     for (a, &i) in stream.iter().enumerate() {
         bitmap.set_bit(x, y, i != 0);
-        if let Some((x2, y2)) = super::next_data_bit(x, y, version) {
-            (x, y) = (x2, y2);
-        } else {
-            assert!(
-                a + 1 == stream.len(),
-                "write_badstream_to_bitmap(): bitstream is {} bits but image only fits {} (difference: {} bits)",
-                stream.len(),
-                a + 1,
-                stream.len() as i32 - (a + 1) as i32,
-            );
-            break;
+        match super::next_data_bit(x, y, version) {
+            Some((x2, y2)) => {
+                (x, y) = (x2, y2);
+            }
+            None => {
+                assert!(
+                        a + 1 == stream.len(),
+                        "write_badstream_to_bitmap(): bitstream is {} bits but image only fits {} (difference: {} bits)",
+                        stream.len(),
+                        a + 1,
+                        stream.len() as i32 - (a + 1) as i32,
+                    );
+                break;
+            }
         }
     }
 }
@@ -266,10 +269,13 @@ pub fn make_qr(
     let mut bitmap = image::Bitmap::new_blank_qr(version);
 
     write_badstream_to_bitmap(&shuffled_stream, &mut bitmap);
-    if let Some(mask) = mask_choice {
-        apply_mask(&mut bitmap, version, level, mask);
-    } else {
-        apply_best_mask(&mut bitmap, version, level);
+    match mask_choice {
+        Some(mask) => {
+            apply_mask(&mut bitmap, version, level, mask);
+        }
+        None => {
+            apply_best_mask(&mut bitmap, version, level);
+        }
     }
 
     bitmap

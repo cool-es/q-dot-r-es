@@ -176,10 +176,11 @@ fn create_graph(mode_vec: &Vec<Mode>, class: u8) -> Graph {
     );
 
     for mode in Mode::LIST {
-        if let Some(node) = current_nodes.get_mut(mode) {
-            *node = TaggedNode(edge_weight(mode, false, class), None);
-        } else {
-            break;
+        match current_nodes.get_mut(mode) {
+            Some(node) => {
+                *node = TaggedNode(edge_weight(mode, false, class), None);
+            }
+            None => break,
         }
     }
 
@@ -214,11 +215,12 @@ fn optimal_path(graph: &Graph) -> Vec<Mode> {
     output.push_front(current_mode);
 
     while let Some(&character) = graph_iter.next_back() {
-        if let Some(mode) = character.get(current_mode).unwrap().pointer() {
-            current_mode = mode;
-            output.push_front(current_mode);
-        } else {
-            break;
+        match character.get(current_mode).unwrap().pointer() {
+            Some(mode) => {
+                current_mode = mode;
+                output.push_front(current_mode);
+            }
+            None => break,
         }
     }
 
@@ -231,7 +233,8 @@ pub fn optimize_mode(string: &String, class: u8) -> Vec<(Mode, String)> {
 
     if string.is_empty() {
         return vec![];
-    } else if string.chars().count() == 1 {
+    }
+    if string.chars().count() == 1 {
         let mode = char_to_mode(string.bytes().next().unwrap() as char);
         return vec![(mode, string.to_string())];
     }
