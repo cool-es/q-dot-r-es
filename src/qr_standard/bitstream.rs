@@ -82,7 +82,7 @@ fn string_to_ascii(input: &str) -> Vec<Token> {
 
     let mut output: Vec<Token> = vec![ModeAndCount(Mode::ASCII, input.len() as u16)];
     for i in input.bytes() {
-        output.push(Character(8, u16::from(i as u8)));
+        output.push(Character(8, u16::from(i)));
     }
     output
 }
@@ -272,13 +272,13 @@ fn compute_bit_overhead(overhead: Overhead, version: u32) -> usize {
 ///
 /// There are two major caveats that make this process more complex:
 /// * The size of the character count indicators, which are encoded
-/// in the bit sequence, get larger with higher versions (refer to
-/// [cc_indicator_bit_size]).
+///   in the bit sequence, get larger with higher versions (refer to
+///   [cc_indicator_bit_size]).
 /// * Empirically, a QR code with less than a full codeword/byte of
-/// padding to spare (e.g., 5 bits) will not be scannable. The QR
-/// standards document does not explain why. This function circumvents
-/// the issue by requiring that codes either fit with either exactly
-/// 0 bits to spare, or at least a full byte.
+///   padding to spare (e.g., 5 bits) will not be scannable. The QR
+///   standards document does not explain why. This function circumvents
+///   the issue by requiring that codes either fit with either exactly
+///   0 bits to spare, or at least a full byte.
 pub fn find_best_version(data: &Vec<Token>, level: u8) -> Result<u32, String> {
     assert!(
         (0..=3).contains(&level),

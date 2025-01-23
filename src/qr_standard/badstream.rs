@@ -18,7 +18,7 @@ pub fn badstream_to_polynomial(input: &Badstream) -> poly::Polynomial {
             pushbyte = 0;
         }
         pushbyte <<= 1;
-        pushbyte |= u8::from(bit);
+        pushbyte |= bit;
     }
     if pushbyte != 0 {
         output.push(pushbyte as galois::Element);
@@ -175,7 +175,7 @@ pub fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstre
     for i in 0..max_data_codewords {
         for block in &encoded_poly_vec {
             if i < block.len() - ec_codewords {
-                push_byte(block[i] as u8, &mut output);
+                push_byte(block[i], &mut output);
                 error_output.push(block[i]);
             }
         }
@@ -194,7 +194,7 @@ pub fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstre
     for i in 0..ec_codewords {
         for block in &encoded_poly_vec {
             let offset = block.len() - ec_codewords;
-            push_byte(block[offset + i] as u8, &mut output);
+            push_byte(block[offset + i], &mut output);
         }
     }
     output

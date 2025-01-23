@@ -112,10 +112,7 @@ impl Bitmap {
     }
 
     pub fn get_bit(&self, x: usize, y: usize) -> Option<bool> {
-        match xy_to_index(x, y, self.width, self.height) {
-            Some((n, i)) => Some(((self.bits[n] >> i) & 1) == 1),
-            None => None,
-        }
+        xy_to_index(x, y, self.width, self.height).map(|(n, i)| ((self.bits[n] >> i) & 1) == 1)
     }
 
     pub fn debug_bits(&self) -> &Vec<u8> {
