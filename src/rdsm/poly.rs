@@ -1,12 +1,7 @@
-use super::{galois::*, RDSM_GENERATOR_POLYNOMIALS};
+use super::{galois, lookup};
 
 /// A polynomial over a Galois field, ordered from highest power to lowest.
-pub type Polynomial = Vec<Element>;
-
-// "polynomials" section starts below
-// polynomials are written in descending order:
-// [a, b, c, d] = ax^3 + bx^2 + cx + d
-// (i personally don't think that's a good decision, but)
+pub type Polynomial = Vec<galois::Element>;
 
 /// Add two polynomials.
 pub fn polynomial_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
@@ -26,9 +21,6 @@ pub fn polynomial_add(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
     output
 }
 
-// here's something i came up with...
-// it was simpler in my head.
-
 /// An original polynomial multiplication algorithm.
 pub fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynomial {
     let mut output: Polynomial = Vec::new();
@@ -47,7 +39,7 @@ pub fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynom
                 // out of bounds
                 break;
             }
-            sum ^= table_multiply(poly1[i], poly2[j]);
+            sum ^= galois::table_multiply(poly1[i], poly2[j]);
         }
         output[horiz_step] = sum;
     }
@@ -61,28 +53,19 @@ pub fn es_polynomial_multiply(poly1: &Polynomial, poly2: &Polynomial) -> Polynom
                 // out of bounds
                 break;
             }
-            sum ^= table_multiply(poly1[i], poly2[j]);
+            sum ^= galois::table_multiply(poly1[i], poly2[j]);
         }
         output[vert_step + deg1] = sum;
     }
-
     output
 }
 
-// wow! this sucks!
-/*
-    def rs_generator_poly(nsym):
-        '''Generate an irreducible generator polynomial (necessary to encode a message into Reed-Solomon)'''
-        g = [1]
-        for i in range(0, nsym):
-            g = gf_poly_mul(g, [1, gf_pow(2, i)])
-        return g
-*/
 /// Generate a Reed-Solomon generator polynomial.
 ///
 /// This function is called by [encode_message] in fall-back
 /// cases, but not when generating QR codes. `ec_symbols`
 /// is the number of error-correcting symbols needed.
+#[cold]
 pub fn make_rdsm_generator_polynomial(ec_symbols: u32) -> Polynomial {
     // from what i can tell, the end result here is
     // (x + 1)(x + a)(x + a^2)...(x + a^ec_symbols)
@@ -90,7 +73,7 @@ pub fn make_rdsm_generator_polynomial(ec_symbols: u32) -> Polynomial {
     for i in 0..ec_symbols {
         // this value is the polynomial x + a^i ... does this actually line up
         // with the qr code standard? is a == 0000_0010 ?
-        let multiplier: Polynomial = vec![1, table_pow(2, i)];
+        let multiplier: Polynomial = vec![1, galois::table_pow(2, i)];
         output = es_polynomial_multiply(&output, &multiplier);
     }
     output
@@ -108,10 +91,9 @@ fn leading_zeros(poly: &Polynomial) -> usize {
 /// The remainder left after polynomial division.
 pub fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) -> Polynomial {
     assert!(divisor[0] != 0, "divisor has a leading 0");
-    let diff = if let Some(d) = dividend.len().checked_sub(divisor.len()) {
-        d
-    } else {
-        return dividend.clone();
+    let diff = match dividend.len().checked_sub(divisor.len()) {
+        Some(d) => d,
+        None => return dividend.clone(),
     };
     let mut output = dividend.clone();
     // rightwards index shift in output (equivalent to multiplying divisor by x^(diff-shift))
@@ -120,10 +102,10 @@ pub fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) -> Poly
         if output[shift] == 0 {
             continue;
         }
-        let multiplier = table_divide(output[shift], divisor[0]);
+        let multiplier = galois::table_divide(output[shift], divisor[0]);
 
         for index in 0..divisor.len() {
-            output[index + shift] ^= table_multiply(divisor[index], multiplier);
+            output[index + shift] ^= galois::table_multiply(divisor[index], multiplier);
         }
     }
 
@@ -134,20 +116,6 @@ pub fn polynomial_remainder(dividend: &Polynomial, divisor: &Polynomial) -> Poly
     output[lead..].to_vec()
 }
 
-// it works!!! i'm doing encodation!!!!!
-/*
-def rs_encode_msg(msg_in, nsym):
-    '''Reed-Solomon main encoding function'''
-    gen = rs_generator_poly(nsym)
-
-    # Pad the message, then divide it by the irreducible generator polynomial
-    _, remainder = gf_poly_div(msg_in + [0] * (len(gen)-1), gen)
-    # The remainder is our RS code! Just append it to our original message to get our full codeword (this represents a polynomial of max 256 terms)
-    msg_out = msg_in + remainder
-    # Return the codeword
-    return msg_out
-*/
-
 /// The main Reed-Solomon encoding function.
 ///
 /// Appends a polynomial remainder to the end of the message. If the number
@@ -157,10 +125,9 @@ def rs_encode_msg(msg_in, nsym):
 pub fn encode_message(message: &Polynomial, ec_symbols: u32) -> Polynomial {
     // will only generate codes "manually" if they are not qr standard
     let generator_polynomial: Polynomial =
-        if let Some(index) = crate::qr_standard::find_errc(ec_symbols as usize) {
-            RDSM_GENERATOR_POLYNOMIALS[index].to_vec()
-        } else {
-            make_rdsm_generator_polynomial(ec_symbols)
+        match crate::qr_standard::tables::find_errc(ec_symbols as usize) {
+            Some(index) => lookup::RDSM_GENERATOR_POLYNOMIALS[index].to_vec(),
+            None => make_rdsm_generator_polynomial(ec_symbols),
         };
 
     let mut message_padded = message.clone();

@@ -1,6 +1,4 @@
-use super::*;
-use Mode::*;
-use Token::*;
+use super::{badstream, tables};
 
 /// The algorithm for size-optimal mode switching.
 pub mod search;
@@ -52,7 +50,7 @@ pub enum Mode {
 
 impl Mode {
     /// The three ASCII subsets, ordered by inclusion.
-    pub const LIST: [Self; 3] = [ASCII, AlphaNum, Numeric];
+    pub const LIST: [Self; 3] = [Self::ASCII, Self::AlphaNum, Self::Numeric];
 }
 
 // level 3
@@ -80,15 +78,19 @@ pub enum Token {
 }
 
 fn string_to_ascii(input: &str) -> Vec<Token> {
-    let mut output: Vec<Token> = vec![ModeAndCount(ASCII, input.len() as u16)];
+    use Token::{Character, ModeAndCount};
+
+    let mut output: Vec<Token> = vec![ModeAndCount(Mode::ASCII, input.len() as u16)];
     for i in input.bytes() {
-        output.push(Character(8, u16::from(i as u8)));
+        output.push(Character(8, u16::from(i)));
     }
     output
 }
 
 fn string_to_numeric(input: &str) -> Vec<Token> {
-    let mut output: Vec<Token> = vec![ModeAndCount(Numeric, input.len() as u16)];
+    use Token::{Character, ModeAndCount};
+
+    let mut output: Vec<Token> = vec![ModeAndCount(Mode::Numeric, input.len() as u16)];
 
     for i in input
         .chars()
@@ -108,11 +110,11 @@ fn string_to_numeric(input: &str) -> Vec<Token> {
 }
 
 fn string_to_alphanum(input: &str) -> Vec<Token> {
-    let mut output: Vec<Token> = vec![ModeAndCount(AlphaNum, input.len() as u16)];
+    let mut output: Vec<Token> = vec![Token::ModeAndCount(Mode::AlphaNum, input.len() as u16)];
     for i in input
         .chars()
         .map(|x| {
-            ALPHANUM_SET
+            tables::ALPHANUM_SET
                 .find(x)
                 .map(|x| x as u16)
                 .expect("invalid alphanumeric input!")
@@ -121,18 +123,20 @@ fn string_to_alphanum(input: &str) -> Vec<Token> {
         .chunks(2)
     {
         if i.len() == 2 {
-            output.push(Character(11, i[0] * 45 + i[1]));
+            output.push(Token::Character(11, i[0] * 45 + i[1]));
         } else {
-            output.push(Character(6, i[0]));
+            output.push(Token::Character(6, i[0]));
         }
     }
     output
 }
 
 /// Convert a `Token` character into its equivalent bit sequence.
-fn push_token_to_badstream(stream: &mut Badstream, token: Token, version: u32) {
+fn push_token_to_badstream(stream: &mut badstream::Badstream, token: Token, version: u32) {
+    use badstream::push_bits;
+
     match token {
-        EciChange(mode) => {
+        Token::EciChange(mode) => {
             let string = match mode {
                 // 0bbb bbbb
                 0..=0x7F => format!("0{:07b}", mode),
@@ -148,25 +152,26 @@ fn push_token_to_badstream(stream: &mut Badstream, token: Token, version: u32) {
             push_bits("0111", stream);
             push_bits(&string, stream);
         }
-        ModeAndCount(mode, count) => {
+        Token::ModeAndCount(mode, count) => {
             push_bits(
                 match mode {
-                    Numeric => "0001",
-                    AlphaNum => "0010",
-                    ASCII => "0100",
+                    Mode::Numeric => "0001",
+                    Mode::AlphaNum => "0010",
+                    Mode::ASCII => "0100",
                 },
                 stream,
             );
 
-            let width: usize = cc_indicator_bit_size(version_to_class(version), mode);
+            let width: usize =
+                tables::cc_indicator_bit_size(tables::version_to_class(version), mode);
             let string = format!("{:016b}", count);
             push_bits(&string[(16 - width)..], stream);
         }
-        Character(width, address) => {
+        Token::Character(width, address) => {
             let string = format!("{:016b}", address);
             push_bits(&string[(16 - width)..], stream);
         }
-        Terminator => {
+        Token::Terminator => {
             push_bits("0000", stream);
         }
     }
@@ -177,23 +182,23 @@ pub fn make_token_stream(input: Vec<(Mode, String)>, eci: Option<u32>) -> Vec<To
     let mut stream: Vec<Token> = Vec::new();
 
     if let Some(char_set) = eci {
-        stream.push(EciChange(char_set));
+        stream.push(Token::EciChange(char_set));
     }
     for (mode, data) in input {
         stream.extend(match mode {
-            Numeric => string_to_numeric(&data),
-            AlphaNum => string_to_alphanum(&data),
-            ASCII => string_to_ascii(&data),
+            Mode::Numeric => string_to_numeric(&data),
+            Mode::AlphaNum => string_to_alphanum(&data),
+            Mode::ASCII => string_to_ascii(&data),
         });
     }
-    stream.push(Terminator);
+    stream.push(Token::Terminator);
 
     stream
 }
 
 /// Convert a vector of tokens into a single stream of bits.
-pub fn tokens_to_badstream(stream: Vec<Token>, version: u32) -> Badstream {
-    let mut output: Badstream = Vec::new();
+pub fn tokens_to_badstream(stream: Vec<Token>, version: u32) -> badstream::Badstream {
+    let mut output: badstream::Badstream = Vec::new();
 
     for token in stream {
         push_token_to_badstream(&mut output, token, version);
@@ -231,7 +236,7 @@ fn bit_overhead_template(data: &Vec<Token>) -> Overhead {
 
     for i in data {
         match i {
-            EciChange(mode) => {
+            Token::EciChange(mode) => {
                 bit_sum += match mode {
                     0..=0x7F => 4 + 8,
                     0x80..=0x3FFF => 4 + 16,
@@ -239,23 +244,23 @@ fn bit_overhead_template(data: &Vec<Token>) -> Overhead {
                     _ => panic!(),
                 };
             }
-            ModeAndCount(mode, _) => {
+            Token::ModeAndCount(mode, _) => {
                 bit_sum += 4;
                 count_indicators[match mode {
-                    Numeric => 0,
-                    AlphaNum => 1,
-                    ASCII => 2,
+                    Mode::Numeric => 0,
+                    Mode::AlphaNum => 1,
+                    Mode::ASCII => 2,
                 }] += 1;
             }
-            Character(length, _) => bit_sum += *length,
-            Terminator => bit_sum += 4,
+            Token::Character(length, _) => bit_sum += *length,
+            Token::Terminator => bit_sum += 4,
         }
     }
     (bit_sum, count_indicators)
 }
 
 fn compute_bit_overhead(overhead: Overhead, version: u32) -> usize {
-    let table = CC_INDICATOR_BITS[version_to_class(version) as usize];
+    let table = tables::CC_INDICATOR_BITS[tables::version_to_class(version) as usize];
     let (mut sum, indicators) = overhead;
     for m in 0..=3 {
         sum += table[m] * indicators[m];
@@ -267,20 +272,20 @@ fn compute_bit_overhead(overhead: Overhead, version: u32) -> usize {
 ///
 /// There are two major caveats that make this process more complex:
 /// * The size of the character count indicators, which are encoded
-/// in the bit sequence, get larger with higher versions (refer to
-/// [cc_indicator_bit_size]).
+///   in the bit sequence, get larger with higher versions (refer to
+///   [cc_indicator_bit_size]).
 /// * Empirically, a QR code with less than a full codeword/byte of
-/// padding to spare (e.g., 5 bits) will not be scannable. The QR
-/// standards document does not explain why. This function circumvents
-/// the issue by requiring that codes either fit with either exactly
-/// 0 bits to spare, or at least a full byte.
+///   padding to spare (e.g., 5 bits) will not be scannable. The QR
+///   standards document does not explain why. This function circumvents
+///   the issue by requiring that codes either fit with either exactly
+///   0 bits to spare, or at least a full byte.
 pub fn find_best_version(data: &Vec<Token>, level: u8) -> Result<u32, String> {
     assert!(
         (0..=3).contains(&level),
         "invalid error correction level \"{}\" selected",
         level
     );
-    let table = DATA_CODEWORDS[level as usize];
+    let table = tables::DATA_CODEWORDS[level as usize];
     let overhead = bit_overhead_template(data);
 
     for version in 1..=40 {
@@ -306,13 +311,13 @@ pub fn find_best_version(data: &Vec<Token>, level: u8) -> Result<u32, String> {
 fn char_status(x: char) -> Option<Mode> {
     Some(if x.is_ascii_digit() {
         // ascii, alphanumeric and numeric
-        Numeric
-    } else if ALPHANUM_SET.contains(x) {
+        Mode::Numeric
+    } else if tables::ALPHANUM_SET.contains(x) {
         // ascii and alphanumeric
-        AlphaNum
+        Mode::AlphaNum
     } else if x.is_ascii() {
         // only ascii
-        ASCII
+        Mode::ASCII
     } else {
         return None;
     })

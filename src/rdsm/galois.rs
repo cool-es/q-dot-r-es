@@ -1,4 +1,4 @@
-use crate::rdsm::QR_EXP_LOG_TABLE;
+use crate::rdsm::lookup;
 // functions from the wikiversity "reed-solomon codes for coders" article
 
 /// An element in the finite field GF(2^8).
@@ -6,17 +6,11 @@ pub type Element = u8;
 /// A polynomial over GF(2).
 pub type BigElement = u32;
 
-/// The QR code data generator/divisor polynomial, `1 0001 1101`.
-#[allow(dead_code)]
-pub const QR_CODEWORD_GEN: BigElement = 0x11D;
 /// The QR code format generator/divisor polynomial, `101 0011 0111`.
 pub const QR_FORMAT_GEN: BigElement = 0x537;
 
-// exp table for the `table_*` functions
-pub const EXPVALUES: usize = 255;
-// log table for the `table_*` functions
-pub const LOGVALUES: usize = EXPVALUES;
-pub type ExpLogLUTs = ([Element; EXPVALUES], [usize; LOGVALUES]);
+/// Exponential/logarithmic table for the `table_` functions.
+pub type ExpLogLUTs = ([Element; 255], [usize; 255]);
 
 /*
 The format code should produce a remainder of zero
@@ -66,10 +60,9 @@ pub fn qr_generate_fcode(fmt: u8) -> Option<u16> {
 
 #[inline]
 pub fn bit_length(n: BigElement) -> u32 {
-    if let Some(x) = n.checked_ilog2() {
-        x + 1
-    } else {
-        0
+    match n.checked_ilog2() {
+        Some(x) => x + 1,
+        None => 0,
     }
 }
 
@@ -98,7 +91,7 @@ pub fn carryless_divide(dividend: BigElement, divisor: BigElement) -> BigElement
 /// Exponential function within GF(2⁸).
 #[inline]
 pub fn exp(n: usize) -> Element {
-    QR_EXP_LOG_TABLE.0[n % 255]
+    lookup::QR_EXP_LOG_TABLE.0[n % 255]
 }
 
 /// Logarithm function within GF(2⁸).
@@ -106,7 +99,7 @@ pub fn log(e: Element) -> usize {
     if e == 0 {
         panic!()
     } else {
-        QR_EXP_LOG_TABLE.1[((e - 1) % 255) as usize]
+        lookup::QR_EXP_LOG_TABLE.1[((e - 1) % 255) as usize]
     }
 }
 

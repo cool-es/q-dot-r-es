@@ -1,17 +1,13 @@
 //! Bitmap operations related to the QR standard.
 
-use super::*;
-use crate::{image::Bitmap, rdsm::carryless_divide};
+use crate::{image, rdsm::galois};
 
-/// Lookup tables specific to the QR standard.
-mod tables;
-pub use tables::*;
-/// High-level encoding of characters.
-mod bitstream;
-pub use bitstream::*;
 /// Low-level encoding of binary streams.
-mod badstream;
-pub use badstream::*;
+pub mod badstream;
+/// High-level encoding of characters.
+pub mod bitstream;
+/// Lookup tables specific to the QR standard.
+pub mod tables;
 
 /// Return `false` only for a valid QR code version (`1..=40`).
 #[inline]
@@ -77,7 +73,7 @@ impl image::Bitmap {
     }
 }
 
-fn qr_mask_xor(input: &mut Bitmap, mask: u8) {
+fn qr_mask_xor(input: &mut image::Bitmap, mask: u8) {
     let maybe_version = {
         if input.dims().0 != input.dims().1 {
             None
@@ -114,10 +110,8 @@ fn qr_mask_xor(input: &mut Bitmap, mask: u8) {
 }
 
 mod penalties {
-    use crate::image::Bitmap;
-
     // Calculate the total penalty.
-    pub fn total_penalty(input: &Bitmap) -> u32 {
+    pub fn total_penalty(input: &crate::image::Bitmap) -> u32 {
         let width = input.dims().0;
         let ones = input.debug_bits().iter().map(|x| x.count_ones()).sum();
 
@@ -363,10 +357,10 @@ pub fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u16> {
         return None;
     }
 
-    crate::rdsm::qr_generate_fcode((correction_level << 3) | mask_pattern)
+    galois::qr_generate_fcode((correction_level << 3) | mask_pattern)
 }
 
-pub fn set_fcode(input: &mut Bitmap, version: u32, fcode: u16) {
+pub fn set_fcode(input: &mut image::Bitmap, version: u32, fcode: u16) {
     let mask = 0b0101_0100_0001_0010u16;
 
     for bit in 0..=14 {
@@ -442,7 +436,7 @@ fn coord_is_alignment_pattern(x: usize, y: usize, version: u32) -> bool {
         panic!("x = {}, y = {}", x, y)
     }
 
-    let indices = AP_COORD_INDICES[version as usize - 1];
+    let indices = tables::AP_COORD_INDICES[version as usize - 1];
     for (h, &hc) in indices.iter().enumerate() {
         if x.abs_diff(hc) < 3 {
             for (v, &vc) in indices.iter().enumerate() {
@@ -503,13 +497,13 @@ pub fn coord_status(x: usize, y: usize, version: u32) -> Option<u8> {
     })
 }
 
-fn new_blank_qr_code(version: u32) -> Bitmap {
+fn new_blank_qr_code(version: u32) -> image::Bitmap {
     let max = version_to_max_index(version).expect("invalid version");
-    let mut output = Bitmap::new(max + 1, max + 1);
+    let mut output = image::Bitmap::new(max + 1, max + 1);
     let mut set = |x, y| output.set_bit(x, y, true);
 
     //  draw alignment patters
-    let alignment_coords = alignment_pattern_coords(version);
+    let alignment_coords = tables::alignment_pattern_coords(version);
     for (x, y) in alignment_coords {
         set(x, y);
         for i in 0..=3 {
@@ -560,7 +554,7 @@ fn new_blank_qr_code(version: u32) -> Bitmap {
 fn qr_generate_vcode(version: u32) -> u32 {
     // version code generator for (18,6) BCH code:
     // 0x1F25 = 0b1111100100101
-    ((version << 12) | carryless_divide(version << 12, 0x1F25)) as u32
+    ((version << 12) | galois::carryless_divide(version << 12, 0x1F25)) as u32
 }
 
 // in the style of format_info_coords. again:
@@ -587,7 +581,7 @@ fn version_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize
 }
 
 // in the style of set_fcode
-pub fn set_vcode(input: &mut Bitmap, version: u32, vcode: u32) {
+pub fn set_vcode(input: &mut image::Bitmap, version: u32, vcode: u32) {
     for bit in 0..=17 {
         let ((x1, y1), (x2, y2)) = version_info_coords(version, bit).expect("bad version");
         let value = vcode & (1 << bit) != 0;

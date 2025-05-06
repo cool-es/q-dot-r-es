@@ -96,26 +96,23 @@ impl Bitmap {
     }
 
     pub fn set_bit(&mut self, x: usize, y: usize, bit: bool) -> bool {
-        if let Some((n, i)) = xy_to_index(x, y, self.width, self.height) {
-            if bit {
-                // set a 1 (bitwise 'or' w/ 1)
-                self.bits[n] |= 1 << i;
-            } else {
-                //set a 0 (bitwise 'and' w/ 0)
-                self.bits[n] &= !(1 << i);
+        match xy_to_index(x, y, self.width, self.height) {
+            Some((n, i)) => {
+                if bit {
+                    // set a 1 (bitwise 'or' w/ 1)
+                    self.bits[n] |= 1 << i;
+                } else {
+                    //set a 0 (bitwise 'and' w/ 0)
+                    self.bits[n] &= !(1 << i);
+                }
+                true
             }
-            true
-        } else {
-            false
+            None => false,
         }
     }
 
     pub fn get_bit(&self, x: usize, y: usize) -> Option<bool> {
-        if let Some((n, i)) = xy_to_index(x, y, self.width, self.height) {
-            Some(((self.bits[n] >> i) & 1) == 1)
-        } else {
-            None
-        }
+        xy_to_index(x, y, self.width, self.height).map(|(n, i)| ((self.bits[n] >> i) & 1) == 1)
     }
 
     pub fn debug_bits(&self) -> &Vec<u8> {

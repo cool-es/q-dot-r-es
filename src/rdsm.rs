@@ -4,12 +4,7 @@
 
 /// Operations on the finite field GF(2⁸).
 pub mod galois;
-/// Operations on the polynomial ring GF(2⁸)\[X\].
-pub mod polynomials;
 /// Precomputed look-up tables.
-pub mod precomputed;
-
-pub use galois::*;
-pub use polynomials::*;
-pub use precomputed::*;
-// use precomputed::PC_EXP_LOG_TABLE;
+pub mod lookup;
+/// Operations on the polynomial ring GF(2⁸)\[X\].
+pub mod poly;

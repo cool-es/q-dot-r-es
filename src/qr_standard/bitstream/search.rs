@@ -7,7 +7,7 @@
 //
 // any message of length n has at most
 // 6n-6 edges (alternating between aln-asc).
-use super::*;
+use super::{Mode, char_status, tables};
 
 /// The cheapest known way to reach a character.
 type Cost = u32;
@@ -57,7 +57,7 @@ impl CharNodes {
         }
     }
 
-    /// A mutual reference to a certain node.
+    /// A mutable reference to a certain node.
     fn get_mut(&mut self, category: Mode) -> Option<&mut TaggedNode> {
         if !self.has(category) {
             None
@@ -117,6 +117,8 @@ impl CharNodes {
 
     /// The type of the node with the lowest cost.
     fn cheapest_mode(&self) -> Mode {
+        use Mode::{AlphaNum, Numeric, ASCII};
+
         let mut cheapest_mode = ASCII;
         let mut lowest_cost = self.get(ASCII).unwrap();
         for category in [AlphaNum, Numeric] {
@@ -149,16 +151,16 @@ fn edge_weight(to_mode: Mode, same_subset: bool, class: u8) -> Cost {
     (if !same_subset {
         // we multiply by 6 to get rid of decimals
         // the 4 is the size of the mode indicator
-        6 * (4 + crate::qr_standard::cc_indicator_bit_size(class, to_mode)) as Cost
+        6 * (4 + tables::cc_indicator_bit_size(class, to_mode)) as Cost
     } else {
         0
     }) + match to_mode {
         // 6 * 8
-        ASCII => 48,
+        Mode::ASCII => 48,
         // 6 * 11/2
-        AlphaNum => 33,
+        Mode::AlphaNum => 33,
         // 6 * 10/3
-        Numeric => 20,
+        Mode::Numeric => 20,
     }
 }
 
@@ -174,10 +176,11 @@ fn create_graph(mode_vec: &Vec<Mode>, class: u8) -> Graph {
     );
 
     for mode in Mode::LIST {
-        if let Some(node) = current_nodes.get_mut(mode) {
-            *node = TaggedNode(edge_weight(mode, false, class), None);
-        } else {
-            break;
+        match current_nodes.get_mut(mode) {
+            Some(node) => {
+                *node = TaggedNode(edge_weight(mode, false, class), None);
+            }
+            None => break,
         }
     }
 
@@ -212,11 +215,12 @@ fn optimal_path(graph: &Graph) -> Vec<Mode> {
     output.push_front(current_mode);
 
     while let Some(&character) = graph_iter.next_back() {
-        if let Some(mode) = character.get(current_mode).unwrap().pointer() {
-            current_mode = mode;
-            output.push_front(current_mode);
-        } else {
-            break;
+        match character.get(current_mode).unwrap().pointer() {
+            Some(mode) => {
+                current_mode = mode;
+                output.push_front(current_mode);
+            }
+            None => break,
         }
     }
 
@@ -225,11 +229,12 @@ fn optimal_path(graph: &Graph) -> Vec<Mode> {
 
 /// Optimize
 pub fn optimize_mode(string: &String, class: u8) -> Vec<(Mode, String)> {
-    let char_to_mode = |x| char_status(x).unwrap_or(ASCII);
+    let char_to_mode = |x| char_status(x).unwrap_or(Mode::ASCII);
 
     if string.is_empty() {
         return vec![];
-    } else if string.chars().count() == 1 {
+    }
+    if string.chars().count() == 1 {
         let mode = char_to_mode(string.bytes().next().unwrap() as char);
         return vec![(mode, string.to_string())];
     }
@@ -261,9 +266,9 @@ pub fn optimize_mode(string: &String, class: u8) -> Vec<(Mode, String)> {
 impl Mode {
     fn index(self) -> usize {
         match self {
-            ASCII => 0,
-            AlphaNum => 1,
-            Numeric => 2,
+            Self::ASCII => 0,
+            Self::AlphaNum => 1,
+            Self::Numeric => 2,
         }
     }
 }

@@ -1,10 +1,12 @@
-use qr::*;
+use qr::qr_standard;
 
 fn main() -> std::io::Result<()> {
     main_qr_generator()
 }
 
 fn main_qr_generator() -> std::io::Result<()> {
+    use qr_standard::{badstream::QRInput, bitstream::Mode};
+
     let mut input_choice: Option<QRInput> = None;
     let mut level_choice = Option::<u8>::None;
     let mut mask_choice = Option::<u8>::None;
@@ -123,25 +125,26 @@ fn main_qr_generator() -> std::io::Result<()> {
         assert!((0..=7).contains(&m), "mask must be one of 0, ..., 7");
     }
 
-    let input = if let Some(i) = input_choice {
-        i
-    } else {
-        if mode_data.is_empty() {
-            // if no manual mode data has been read from the arguments,
-            // we get unprocessed data from stdin instead
-            let mut input_string = String::new();
-            std::io::stdin().read_line(&mut input_string)?;
-            // stdin input ends on a newline, remove it
-            input_string.pop();
-            QRInput::Auto(input_string)
-        } else {
-            QRInput::Manual(mode_data)
+    let input = match input_choice {
+        Some(i) => i,
+        None => {
+            if mode_data.is_empty() {
+                // if no manual mode data has been read from the arguments,
+                // we get unprocessed data from stdin instead
+                let mut input_string = String::new();
+                std::io::stdin().read_line(&mut input_string)?;
+                // stdin input ends on a newline, remove it
+                input_string.pop();
+                QRInput::Auto(input_string)
+            } else {
+                QRInput::Manual(mode_data)
+            }
         }
     };
 
     let name = name.unwrap_or("out".to_string());
-    let output =
-        qr_standard::make_qr(input, version_choice, level_choice, mask_choice).as_xbm(&name, true);
+    let output = qr_standard::badstream::make_qr(input, version_choice, level_choice, mask_choice)
+        .as_xbm(&name, true);
 
     let write_status = std::fs::write(format!("{}.xbm", name), output);
     if write_status.is_ok() {
@@ -153,13 +156,15 @@ fn main_qr_generator() -> std::io::Result<()> {
 // returns a description of inputs that will lead make_qr() to panic
 #[test]
 fn depanic() -> Result<(), String> {
-    use QRInput::{self, *};
+    use qr_standard::badstream::QRInput;
 
-    let check = |x: QRInput| std::panic::catch_unwind(|| qr_standard::make_qr(x, None, None, None));
+    let check = |x: QRInput| {
+        std::panic::catch_unwind(|| qr_standard::badstream::make_qr(x, None, None, Some(0)))
+    };
     let make_string = |str: &str, i: usize| str.chars().cycle().take(i).collect::<String>();
 
     let mut offenders: Vec<(String, usize)> = vec![];
-    if check(Auto("".to_string())).is_err() {
+    if check(QRInput::Auto("".to_string())).is_err() {
         offenders.push(("empty string".to_string(), 0));
     }
     for i in 1..50 {
@@ -168,7 +173,7 @@ fn depanic() -> Result<(), String> {
             "🤔", "π", // wild
         ] {
             let a = make_string(str, i);
-            if check(Auto(a)).is_err() {
+            if check(QRInput::Auto(a)).is_err() {
                 offenders.push((str.to_string(), i));
             }
         }
