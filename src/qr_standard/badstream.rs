@@ -296,6 +296,7 @@ pub fn apply_best_mask(bitmap: &mut Bitmap, version: u32, level: u8) {
 fn find_best_mode_optimization(str: String, level: u8) -> Vec<(Mode, String)> {
     use super::bitstream::search::optimize_mode;
 
+    // calculated once to not waste processing time
     let maybe_eci_header = if !str.is_ascii() { 8 } else { 0 };
 
     // the limiting sizes for each code class, in codewords
