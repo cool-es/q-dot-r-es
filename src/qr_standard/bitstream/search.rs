@@ -7,7 +7,7 @@
 //
 // any message of length n has at most
 // 6n-6 edges (alternating between aln-asc).
-use super::{Mode, char_status, tables};
+use super::{char_status, tables, Mode};
 
 /// The cheapest known way to reach a character.
 type Cost = u32;
