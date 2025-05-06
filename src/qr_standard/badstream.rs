@@ -326,7 +326,7 @@ fn find_best_mode_optimization(str: String, level: u8) -> Vec<(Mode, String)> {
 
     // check if the code fits in the first class, (version 1..)
     // then the second class (version 10..)
-    for class in 0..2 {
+    for (class, limit) in class_limits.iter().enumerate() {
         let marked_string = search::optimize_mode(&str, class as u8);
 
         // calculate the total message size, in bits
@@ -338,7 +338,7 @@ fn find_best_mode_optimization(str: String, level: u8) -> Vec<(Mode, String)> {
 
         // if the message fits the limit with at least one codeword,
         // or exactly 0 bits, to spare, then return it
-        if let Some(diff) = (8 * class_limits[class]).checked_sub(cost) {
+        if let Some(diff) = (8 * limit).checked_sub(cost) {
             if diff > 7 || diff == 0 {
                 return marked_string;
             }

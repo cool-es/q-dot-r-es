@@ -165,7 +165,7 @@ fn edge_weight(to_mode: Mode, same_subset: bool, class: u8) -> Cost {
 }
 
 /// Create a graph of nodes, along with their respective costs and pointers.
-fn create_graph(mode_vec: &Vec<Mode>, class: u8) -> Graph {
+fn create_graph(mode_vec: &[Mode], class: u8) -> Graph {
     let mut mode_iter = mode_vec.iter();
 
     // first character is a special case - the "same subset" parameter
@@ -239,7 +239,7 @@ pub fn optimize_mode(string: &String, class: u8) -> Vec<(Mode, String)> {
         return vec![(mode, string.to_string())];
     }
 
-    let mode_vec = string.chars().map(char_to_mode).collect();
+    let mode_vec = string.chars().map(char_to_mode).collect::<Vec<_>>();
 
     let good_vec = optimal_path(&create_graph(&mode_vec, class));
 
