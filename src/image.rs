@@ -136,7 +136,7 @@ impl Bitmap {
 /// a new byte, which leaves empty space in the last byte of every row
 /// if the width isn't a multiple of 8.
 pub fn xy_to_index(x: usize, y: usize, w: usize, h: usize) -> Option<(usize, u8)> {
-    if x > w || y > h {
+    if x >= w || y >= h {
         return None;
     }
 
