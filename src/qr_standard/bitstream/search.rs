@@ -31,7 +31,7 @@ impl TaggedNode {
 
 impl Default for TaggedNode {
     fn default() -> Self {
-        TaggedNode(u32::MAX, None)
+        TaggedNode(Cost::MAX, None)
     }
 }
 
