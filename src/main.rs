@@ -1,4 +1,4 @@
-use qr::qr_standard;
+use qr::{interface, qr_standard};
 
 fn main() -> std::io::Result<()> {
     main_qr_generator()
@@ -18,8 +18,17 @@ fn main_qr_generator() -> std::io::Result<()> {
 
     let mut args = std::env::args();
 
+    let mut first_loop = true;
     args.next();
     while let Some(argument) = args.next() {
+        // hack to allow for printing help text without suppressing it elsewhere
+        if first_loop && ["-h", "--help"].contains(&argument.as_str()) {
+            println!("{}", interface::HELPTEXT);
+            return Ok(());
+        } else {
+            first_loop = false
+        }
+
         if manual && ["--manual"].contains(&argument.as_str()) {
             'goop: while let Some(argument) = args.next() {
                 match argument.as_str() {
@@ -114,6 +123,7 @@ fn main_qr_generator() -> std::io::Result<()> {
             }
 
             "--manual" => {}
+            "--help" | "-h" => panic!("{} can't be used after other arguments", argument),
             _ => panic!("{} - incorrect argument", argument),
         }
     }
