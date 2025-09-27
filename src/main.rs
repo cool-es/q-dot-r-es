@@ -1,4 +1,4 @@
-use qr::{interface, qr_standard};
+use qr::qr_standard;
 
 fn main() -> std::io::Result<()> {
     {
@@ -199,4 +199,8 @@ fn depanic() -> Result<(), String> {
             .collect::<String>();
         Err(str)
     }
+}
+
+mod interface{
+    pub const HELPTEXT: &str = "TODO: help text here";
 }

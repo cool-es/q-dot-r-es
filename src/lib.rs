@@ -3,4 +3,3 @@
 pub mod image;
 pub mod qr_standard;
 pub mod rdsm;
-pub mod interface;
