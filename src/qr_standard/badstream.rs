@@ -20,9 +20,7 @@ pub fn badstream_to_polynomial(input: &Badstream) -> poly::Polynomial {
         pushbyte <<= 1;
         pushbyte |= bit;
     }
-    if pushbyte != 0 {
-        output.push(pushbyte as galois::Element);
-    }
+    output.push(pushbyte as galois::Element);
     output
 }
 
