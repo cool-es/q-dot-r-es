@@ -201,6 +201,24 @@ fn depanic() -> Result<(), String> {
     }
 }
 
-mod interface{
-    pub const HELPTEXT: &str = "TODO: help text here";
+mod interface {
+    pub const HELPTEXT: &str = "Q-dot-R-es version 0.5.0
+by esmeralda (cool-es)
+
+    automatic:  qr -i \"Hello!\"
+    manual:     qr -i --manual -asc \"Hello! \" -aln \"HELLO. \" -num \"07734\"
+    (automatic mode is optimized to switch to the best compression scheme 
+    automatically, but it can be manually controlled as a curiosity)
+
+    settings:
+        error correction level: -l (l|m|q|h)    (default: q)
+        version (size): -v (1, 2, ..., 40)      (default: smallest possible)
+        masking pattern: -m (0, 1, ..., 7)      (default: lowest penalty score)
+        name: -n (string)                       (default: \"out\")
+
+    note:
+        aliases --input, --ascii, --alphanum, --numeric, 
+            --level, --version, --mask,--name are also available
+        images are exported in low resolution and .xbm format only
+            (can be converted using GIMP and similar software)";
 }
