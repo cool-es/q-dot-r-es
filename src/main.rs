@@ -220,7 +220,7 @@ by esmeralda (cool-es)
 
     note:
         aliases --input, --ascii, --alphanum, --numeric, 
-            --level, --version, --mask,--name are also available
         images are exported in low resolution and .xbm format only
             (can be converted using GIMP and similar software)";
+            --level, --version, --mask, --name are also available
 }
