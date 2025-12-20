@@ -8,6 +8,32 @@ pub struct Bitmap {
 }
 
 impl Bitmap {
+    // rescaling with naive nearest-neighbor implementation
+    pub fn scale(&self, target_width: usize, border: bool) -> Bitmap {
+        let mut output = Bitmap::new(target_width, target_width);
+        let factor = self.width as f32 / target_width as f32;
+        for i in 0..target_width {
+            // horizontal step
+            let fi = (i as f32 * factor).trunc() as usize;
+            if border && (fi < 8 || (self.width - fi) < 8) {
+                continue;
+            }
+            for j in 0..target_width {
+                // vertical step
+                let fj = (j as f32 * factor).trunc() as usize;
+                if border && (fj < 8 || (self.height - fj) < 8) {
+                    continue;
+                }
+                let bit = self.get_bit(fi, fj).expect("scaling");
+
+                if bit {
+                    output.set_bit(i, j, bit);
+                }
+            }
+        }
+        output
+    }
+
     // same as previous function but with (incomplete) error handling
     // the code here isn't great but it's passable
 
