@@ -79,10 +79,58 @@ impl Bitmap {
         output
     }
 
-    // same as previous function but with (incomplete) error handling
-    // the code here isn't great but it's passable
+    /// Exports the bitmap as an uncompressed black-and-white BMP file.
+    pub fn as_bmp(&self) -> Vec<u8> {
+        // row bytes in final pixel array
+        // necessary for padding!
+        let bmp_byte_width = self.width.div_ceil(32) * 4;
 
-    // the curly brackets here really mess with my syntax highlighting... but the code itself is correct
+        // number of pixel-data bytes
+        let imagesize = self.height * bmp_byte_width;
+        // image size + data offset
+        let filesize = imagesize + 0x3e;
+
+        const BMP_TEMPLATE: [u8; 62] = [
+            0x42, 0x4d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3e, 0x00, 0x00, 0x00,
+            0x28, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00,
+            0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x13, 0x0b, 0x00, 0x00,
+            0x13, 0x0b, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0xff, 0xff,
+            0xff, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        let mut output = Vec::with_capacity(filesize);
+        output.extend(BMP_TEMPLATE);
+
+        // fill in data
+        for [data, byte_offset] in [
+            [filesize, 0x02],
+            [self.width, 0x12],
+            [self.height, 0x16],
+            [imagesize, 0x22],
+        ] {
+            output[byte_offset..byte_offset + 4].copy_from_slice(&(data as u32).to_le_bytes());
+        }
+
+        // fill image data space with zero bytes
+        let mut bmp_data = vec![0x00; imagesize];
+
+        // padding procedure; move data from internal format
+        let i_f_data = &self.bits;
+        let i_f_byte_width = i_f_data.len() / self.height;
+
+        // move internal-format data into bmp. bmp stores lines
+        // bottom to top, so the internal-format data is reversed
+        for (bmp_row, i_f_row) in bmp_data
+            .chunks_exact_mut(bmp_byte_width)
+            .zip(i_f_data.chunks_exact(i_f_byte_width).rev())
+        {
+            // copy data into the beginning of every row
+            bmp_row[..i_f_byte_width].copy_from_slice(i_f_row);
+        }
+
+        output.extend(&bmp_data);
+        output
+    }
 
     /// `as_xbm()`, but with an added 8 pixel quiet-zone border on all sides
     pub fn as_xbm(&self, name: &str) -> String {
