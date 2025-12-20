@@ -235,7 +235,7 @@ by esmeralda (cool-es)
         version (size): -v (1, 2, ..., 40)      (default: smallest possible)
         masking pattern: -m (0, 1, ..., 7)      (default: lowest penalty score)
         name: -n (string)                       (default: \"out\")
-        rescaling: -s (integer)                 (default: 512 [pixels wide])
+        rescaling: -s (integer)                 (default: 512 pixels wide)
 
     note:
         aliases --input, --ascii, --alphanum, --numeric, 
@@ -244,6 +244,8 @@ by esmeralda (cool-es)
             (can be converted using GIMP and similar software)
         setting the rescaling to 0 renders the code at its original size,
             which is between 17 and 193 pixels wide. however, n:1 integer
-            scaling (i.e., pixel accurate) is not implemented. rescaling
-            to over 5000 pixels is ignored, because that's too big";
+            scaling (i.e., pixel accurate) is not implemented. also,
+            rescaling to over 5000 pixels is ignored, because that's too big
+        the kanji compression mode is not supported; kanji will be rendered
+            as unicode instead, using (generally) the ASCII character mode";
 }
