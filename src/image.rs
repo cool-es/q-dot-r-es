@@ -28,10 +28,9 @@ impl Bitmap {
                     if self.border && (fj < 8 || (self.height - fj) < 8) {
                         continue;
                     }
-                    let bit = self.get_bit(fi, fj).expect("scaling");
 
-                    if bit {
-                        output.set_bit(i, j, bit);
+                    if self.get_bit(fi, fj).expect("scaling") {
+                        output.set_bit(i, j, true);
                     }
                 }
             }
@@ -50,10 +49,8 @@ impl Bitmap {
         let mut output = Bitmap::new(self.width + 16, self.height + 16);
         for i in 0..self.width {
             for j in 0..self.height {
-                let bit = self.get_bit(i, j).expect("border");
-
-                if bit {
-                    output.set_bit(i + 8, j + 8, bit);
+                if self.get_bit(i, j).expect("border") {
+                    output.set_bit(i + 8, j + 8, true);
                 }
             }
         }
