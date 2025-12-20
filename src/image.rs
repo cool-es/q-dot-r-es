@@ -13,8 +13,38 @@ pub struct Bitmap {
 impl Bitmap {
     // rescaling with naive nearest-neighbor implementation
     pub fn scale(self, target_width: Option<usize>) -> Bitmap {
+        // define this code snippet as a function due to re-use
+        fn bitmap_subfunction(input: Bitmap, target_width: usize) -> Bitmap {
+            let mut output = Bitmap::new(target_width, target_width);
+            let factor = input.width as f32 / target_width as f32;
+            for i in 0..target_width {
+                // horizontal step
+                let fi = (i as f32 * factor).trunc() as usize;
+                if input.border && (fi < 8 || (input.width - fi) < 8) {
+                    continue;
+                }
+                for j in 0..target_width {
+                    // vertical step
+                    let fj = (j as f32 * factor).trunc() as usize;
+                    if input.border && (fj < 8 || (input.height - fj) < 8) {
+                        continue;
+                    }
+
+                    if input.get_bit(fi, fj).expect("scaling") {
+                        output.set_bit(i, j, true);
+                    }
+                }
+            }
+            output
+        }
+
+        // start parsing input
         if let Some(target_width) = target_width {
-            if target_width < self.width {
+            // check if input is ok
+            if target_width == 0 {
+                // no scaling to be applied
+                return self;
+            } else if target_width < self.width {
                 // downscaling is not allowed!
                 eprintln!("Not rescaled: requested width is smaller than the QR code");
                 return self;
@@ -24,30 +54,11 @@ impl Bitmap {
                 return self;
             }
 
-            let mut output = Bitmap::new(target_width, target_width);
-            let factor = self.width as f32 / target_width as f32;
-            for i in 0..target_width {
-                // horizontal step
-                let fi = (i as f32 * factor).trunc() as usize;
-                if self.border && (fi < 8 || (self.width - fi) < 8) {
-                    continue;
-                }
-                for j in 0..target_width {
-                    // vertical step
-                    let fj = (j as f32 * factor).trunc() as usize;
-                    if self.border && (fj < 8 || (self.height - fj) < 8) {
-                        continue;
-                    }
-
-                    if self.get_bit(fi, fj).expect("scaling") {
-                        output.set_bit(i, j, true);
-                    }
-                }
-            }
-            output
+            // input is fine, rescale
+            bitmap_subfunction(self, target_width)
         } else {
-            // no scaling requested, return bitmap as before
-            self
+            // no input; apply default scaling (512 px)
+            bitmap_subfunction(self, 512)
         }
     }
 

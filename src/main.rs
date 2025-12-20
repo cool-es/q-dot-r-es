@@ -124,16 +124,12 @@ fn main() -> std::io::Result<()> {
                 }
                 "--scale" | "-s" => {
                     if scale_choice.is_none() {
-                        let scale_input = args
-                            .next()
-                            .expect("no scale submitted")
-                            .parse::<usize>()
-                            .expect("can't parse scaling width");
-
-                        scale_choice = match scale_input {
-                            0 => None,
-                            _ => Some(scale_input),
-                        };
+                        scale_choice = Some(
+                            args.next()
+                                .expect("no scale submitted")
+                                .parse::<usize>()
+                                .expect("can't parse scaling width"),
+                        );
                     } else {
                         panic!("can't specify scale twice")
                     }
@@ -173,7 +169,7 @@ fn main() -> std::io::Result<()> {
         let output =
             qr_standard::badstream::make_qr(input, version_choice, level_choice, mask_choice)
                 .add_border()
-                .scale(scale_choice.or(Some(512)))
+                .scale(scale_choice)
                 .as_xbm(&name);
 
         let write_status = std::fs::write(format!("{}.xbm", name), output);
