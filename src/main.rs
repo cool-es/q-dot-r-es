@@ -9,6 +9,8 @@ fn main() -> std::io::Result<()> {
         let mut mask_choice = Option::<u8>::None;
         let mut name = Option::<String>::None;
 
+        let mut scale_choice = Option::<usize>::None;
+
         let mut manual: bool = true;
         let mut mode_data = Vec::new();
         let mut version_choice = Option::<u32>::None;
@@ -120,6 +122,22 @@ fn main() -> std::io::Result<()> {
                         panic!("can't specify mask twice")
                     }
                 }
+                "--scale" | "-s" => {
+                    if scale_choice.is_none() {
+                        let scale_input = args
+                            .next()
+                            .expect("no scale submitted")
+                            .parse::<usize>()
+                            .expect("can't parse scaling width");
+
+                        scale_choice = match scale_input {
+                            0 => None,
+                            _ => Some(scale_input),
+                        };
+                    } else {
+                        panic!("can't specify scale twice")
+                    }
+                }
 
                 "--manual" => {}
                 "--help" | "-h" => panic!("{} can't be used after other arguments", argument),
@@ -155,7 +173,7 @@ fn main() -> std::io::Result<()> {
         let output =
             qr_standard::badstream::make_qr(input, version_choice, level_choice, mask_choice)
                 .add_border()
-                .scale(Some(512))
+                .scale(scale_choice.or(Some(512)))
                 .as_xbm(&name);
 
         let write_status = std::fs::write(format!("{}.xbm", name), output);
@@ -217,10 +235,14 @@ by esmeralda (cool-es)
         version (size): -v (1, 2, ..., 40)      (default: smallest possible)
         masking pattern: -m (0, 1, ..., 7)      (default: lowest penalty score)
         name: -n (string)                       (default: \"out\")
+        rescaling: -s (integer)                 (default: 512 [pixels wide])
 
     note:
         aliases --input, --ascii, --alphanum, --numeric, 
-        images are exported in low resolution and .xbm format only
-            (can be converted using GIMP and similar software)";
-            --level, --version, --mask, --name are also available
+            --level, --version, --mask, --name, --scale are also available
+        images are exported in low(-ish) resolution and .xbm format only
+            (can be converted using GIMP and similar software)
+        setting the rescaling to 0 renders the code at its original size,
+            which is between 17 and 193 pixels wide. however, n:1 integer
+            scaling (i.e., pixel accurate) is not implemented";
 }
