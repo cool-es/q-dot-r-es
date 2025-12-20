@@ -34,6 +34,21 @@ impl Bitmap {
         output
     }
 
+    // add 8-pixel "quiet zone" border to bitmap. not fast (yet), but sensible
+    pub fn add_border(&self) -> Bitmap {
+        let mut output = Bitmap::new(self.width + 16, self.height + 16);
+        for i in 0..self.width {
+            for j in 0..self.height {
+                let bit = self.get_bit(i, j).expect("border");
+
+                if bit {
+                    output.set_bit(i + 8, j + 8, bit);
+                }
+            }
+        }
+        output
+    }
+
     // same as previous function but with (incomplete) error handling
     // the code here isn't great but it's passable
 
