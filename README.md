@@ -49,7 +49,7 @@ static unsigned char hello_bits[] = {
     0x00, 0x00, 0x00, 0x00, 0x00,
 };
 ```
-They are readable by free graphics software such as GIMP, though the ones output by this program are very small in size (less than 200 pixels wide) and will need to be rescaled.
+They are readable by free graphics software such as GIMP.
 ## Code
 Making a QR code involves:
 * Reed-Solomon error correction math – [**`rdsm.rs`**](src/rdsm.rs)
