@@ -14,6 +14,16 @@ impl Bitmap {
     // rescaling with naive nearest-neighbor implementation
     pub fn scale(self, target_width: Option<usize>) -> Bitmap {
         if let Some(target_width) = target_width {
+            if target_width < self.width {
+                // downscaling is not allowed!
+                eprintln!("Not rescaled: requested width is smaller than the QR code");
+                return self;
+            } else if target_width > 5000 {
+                // too big
+                eprintln!("Not rescaled: requested width is too large (>5000 px)");
+                return self;
+            }
+
             let mut output = Bitmap::new(target_width, target_width);
             let factor = self.width as f32 / target_width as f32;
             for i in 0..target_width {

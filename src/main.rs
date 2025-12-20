@@ -244,5 +244,6 @@ by esmeralda (cool-es)
             (can be converted using GIMP and similar software)
         setting the rescaling to 0 renders the code at its original size,
             which is between 17 and 193 pixels wide. however, n:1 integer
-            scaling (i.e., pixel accurate) is not implemented";
+            scaling (i.e., pixel accurate) is not implemented. rescaling
+            to over 5000 pixels is ignored, because that's too big";
 }
