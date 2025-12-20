@@ -5,23 +5,26 @@ pub struct Bitmap {
     width: usize,
     height: usize,
     bits: Vec<u8>,
+
+    // whether the qr code has a designated "quiet zone"
+    border: bool,
 }
 
 impl Bitmap {
     // rescaling with naive nearest-neighbor implementation
-    pub fn scale(&self, target_width: usize, border: bool) -> Bitmap {
+    pub fn scale(&self, target_width: usize) -> Bitmap {
         let mut output = Bitmap::new(target_width, target_width);
         let factor = self.width as f32 / target_width as f32;
         for i in 0..target_width {
             // horizontal step
             let fi = (i as f32 * factor).trunc() as usize;
-            if border && (fi < 8 || (self.width - fi) < 8) {
+            if self.border && (fi < 8 || (self.width - fi) < 8) {
                 continue;
             }
             for j in 0..target_width {
                 // vertical step
                 let fj = (j as f32 * factor).trunc() as usize;
-                if border && (fj < 8 || (self.height - fj) < 8) {
+                if self.border && (fj < 8 || (self.height - fj) < 8) {
                     continue;
                 }
                 let bit = self.get_bit(fi, fj).expect("scaling");
@@ -35,7 +38,10 @@ impl Bitmap {
     }
 
     // add 8-pixel "quiet zone" border to bitmap. not fast (yet), but sensible
-    pub fn add_border(&self) -> Bitmap {
+    pub fn add_border(self) -> Bitmap {
+        if self.border {
+            return self;
+        }
         let mut output = Bitmap::new(self.width + 16, self.height + 16);
         for i in 0..self.width {
             for j in 0..self.height {
@@ -46,6 +52,7 @@ impl Bitmap {
                 }
             }
         }
+        output.border = true;
         output
     }
 
@@ -55,39 +62,15 @@ impl Bitmap {
     // the curly brackets here really mess with my syntax highlighting... but the code itself is correct
 
     /// `as_xbm()`, but with an added 8 pixel quiet-zone border on all sides
-    pub fn as_xbm(&self, name: &str, add_border: bool) -> String {
+    pub fn as_xbm(&self, name: &str) -> String {
         assert!(
             name.is_ascii() && !name.contains(char::is_whitespace),
             "name must be ascii and cannot contain whitespace"
         );
         // handle data separately
         let mut data = String::new();
-        if add_border {
-            for _i in 0..(self.width + 16).next_multiple_of(8) {
-                // 8 rows on top
-                data.push_str("0x00,");
-            }
-        }
         for n in 0..self.bits.len() {
-            if add_border && n % self.width.div_ceil(8) == 0 {
-                if n == 0 {
-                    // 8 columns to the left
-                    data.push_str("0x00,");
-                } else {
-                    // 8 columns to the right,
-                    // then 8 to the left
-                    data.push_str("0x00,0x00,");
-                }
-            }
             data.push_str(format!("0x{:02x},", self.bits[n].reverse_bits()).as_str());
-        }
-        if add_border {
-            // 8 columns to the right
-            data.push_str("0x00,");
-            for _i in 0..(self.width + 16).next_multiple_of(8) {
-                // 8 rows at the bottom
-                data.push_str("0x00,");
-            }
         }
         // remove the last comma
         data.pop();
@@ -104,14 +87,12 @@ impl Bitmap {
             nicedata.push('\n');
         }
 
-        let extra = if add_border { 16 } else { 0 };
-
         format!(
                 "#define {}_width {}\n#define {}_height {}\nstatic unsigned char {}_bits[] = {{\n{}}};\n",
                 name,
-                self.width + extra,
+                self.width,
                 name,
-                self.height + extra,
+                self.height,
                 name,
                 nicedata,
             )
@@ -129,6 +110,7 @@ impl Bitmap {
             width,
             height,
             bits,
+            border: false,
         }
     }
 
