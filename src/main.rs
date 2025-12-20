@@ -155,7 +155,7 @@ fn main() -> std::io::Result<()> {
         let output =
             qr_standard::badstream::make_qr(input, version_choice, level_choice, mask_choice)
                 .add_border()
-                .scale(512)
+                .scale(Some(512))
                 .as_xbm(&name);
 
         let write_status = std::fs::write(format!("{}.xbm", name), output);

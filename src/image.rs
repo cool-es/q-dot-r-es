@@ -12,29 +12,34 @@ pub struct Bitmap {
 
 impl Bitmap {
     // rescaling with naive nearest-neighbor implementation
-    pub fn scale(&self, target_width: usize) -> Bitmap {
-        let mut output = Bitmap::new(target_width, target_width);
-        let factor = self.width as f32 / target_width as f32;
-        for i in 0..target_width {
-            // horizontal step
-            let fi = (i as f32 * factor).trunc() as usize;
-            if self.border && (fi < 8 || (self.width - fi) < 8) {
-                continue;
-            }
-            for j in 0..target_width {
-                // vertical step
-                let fj = (j as f32 * factor).trunc() as usize;
-                if self.border && (fj < 8 || (self.height - fj) < 8) {
+    pub fn scale(self, target_width: Option<usize>) -> Bitmap {
+        if let Some(target_width) = target_width {
+            let mut output = Bitmap::new(target_width, target_width);
+            let factor = self.width as f32 / target_width as f32;
+            for i in 0..target_width {
+                // horizontal step
+                let fi = (i as f32 * factor).trunc() as usize;
+                if self.border && (fi < 8 || (self.width - fi) < 8) {
                     continue;
                 }
-                let bit = self.get_bit(fi, fj).expect("scaling");
+                for j in 0..target_width {
+                    // vertical step
+                    let fj = (j as f32 * factor).trunc() as usize;
+                    if self.border && (fj < 8 || (self.height - fj) < 8) {
+                        continue;
+                    }
+                    let bit = self.get_bit(fi, fj).expect("scaling");
 
-                if bit {
-                    output.set_bit(i, j, bit);
+                    if bit {
+                        output.set_bit(i, j, bit);
+                    }
                 }
             }
+            output
+        } else {
+            // no scaling requested, return bitmap as before
+            self
         }
-        output
     }
 
     // add 8-pixel "quiet zone" border to bitmap. not fast (yet), but sensible
