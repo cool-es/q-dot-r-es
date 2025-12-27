@@ -14,6 +14,7 @@ fn main() -> std::io::Result<()> {
         let mut manual: bool = true;
         let mut mode_data = Vec::new();
         let mut version_choice = Option::<u32>::None;
+        let mut xbm_choice = false;
 
         let mut args = std::env::args();
         // let args_list = std::env::args().collect::<Vec<String>>();
@@ -134,6 +135,13 @@ fn main() -> std::io::Result<()> {
                         panic!("can't specify scale twice")
                     }
                 }
+                "--xbm" => {
+                    if !xbm_choice {
+                        xbm_choice = true;
+                    } else {
+                        panic!("can't specify XBM output twice")
+                    }
+                }
 
                 "--manual" => {}
                 "--help" | "-h" => panic!("{} can't be used after other arguments", argument),
@@ -166,15 +174,20 @@ fn main() -> std::io::Result<()> {
         };
 
         let name = name.unwrap_or("out".to_string());
-        let output =
-            qr_standard::badstream::make_qr(input, version_choice, level_choice, mask_choice)
-                .add_border()
-                .scale(scale_choice)
-                .as_xbm(&name);
 
-        let write_status = std::fs::write(format!("{}.xbm", name), output);
+        let qrc = qr_standard::badstream::make_qr(input, version_choice, level_choice, mask_choice)
+            .add_border()
+            .scale(scale_choice);
+
+        let (output, ext) = if xbm_choice {
+            (qrc.as_xbm(&name).into_bytes(), "xbm")
+        } else {
+            (qrc.as_bmp(), "bmp")
+        };
+
+        let write_status = std::fs::write(format!("{}.{ext}", name), output);
         if write_status.is_ok() {
-            println!("Wrote '{name}.xbm' successfully.")
+            println!("Wrote '{name}.{ext}' successfully.")
         }
         write_status
     }
@@ -232,16 +245,17 @@ by esmeralda (cool-es)
         masking pattern: -m (0, 1, ..., 7)      (default: lowest penalty score)
         name: -n (string)                       (default: \"out\")
         rescaling: -s (integer)                 (default: 512 pixels wide)
+        XBM format output: --xbm                (default: BMP output)
 
     note:
         aliases --input, --ascii, --alphanum, --numeric, 
             --level, --version, --mask, --name, --scale are also available
-        images are exported in low(-ish) resolution and .xbm format only
-            (can be converted using GIMP and similar software)
         setting the rescaling to 0 renders the code at its original size,
             which is between 17 and 193 pixels wide. however, n:1 integer
             scaling (i.e., pixel accurate) is not implemented. also,
             rescaling to over 5000 pixels is ignored, because that's too big
         the kanji compression mode is not supported; kanji will be rendered
-            as unicode instead, using (generally) the ASCII character mode";
+            as unicode instead, using (generally) the ASCII character mode
+        this program offers legacy XBM file output as an alternative to BMP.
+            these files can be converted using GIMP, ImageMagick, etc";
 }
