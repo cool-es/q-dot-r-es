@@ -15,6 +15,7 @@ fn main() -> std::io::Result<()> {
         let mut mode_data = Vec::new();
         let mut version_choice = Option::<u32>::None;
         let mut xbm_choice = false;
+        let mut stdin_choice = false;
 
         let mut args = std::env::args();
         // let args_list = std::env::args().collect::<Vec<String>>();
@@ -142,6 +143,13 @@ fn main() -> std::io::Result<()> {
                         panic!("can't specify XBM output twice")
                     }
                 }
+                "--" => {
+                    if !stdin_choice {
+                        stdin_choice = true;
+                    } else {
+                        panic!("can't specify stdin output twice")
+                    }
+                }
 
                 "--manual" => {}
                 "--help" | "-h" => panic!("{} can't be used after other arguments", argument),
@@ -156,24 +164,32 @@ fn main() -> std::io::Result<()> {
             assert!((0..=7).contains(&m), "mask must be one of 0, ..., 7");
         }
 
+        let mut example = false;
         let input = match input_choice {
             Some(i) => i,
             None => {
                 if mode_data.is_empty() {
-                    // if no manual mode data has been read from the arguments,
-                    // we get unprocessed data from stdin instead
-                    let mut input_string = String::new();
-                    std::io::stdin().read_line(&mut input_string)?;
-                    // stdin input ends on a newline, remove it
-                    input_string.pop();
-                    QRInput::Auto(input_string)
+                    if stdin_choice {
+                        // if no manual mode data has been read from the arguments,
+                        // we get unprocessed data from stdin instead
+                        let mut input_string = String::new();
+                        std::io::stdin().read_line(&mut input_string)?;
+                        // stdin input ends on a newline, remove it
+                        input_string.pop();
+                        QRInput::Auto(input_string)
+                    } else {
+                        example = true;
+                        // print help text and create an example message
+                        println!("{}", interface::HELPTEXT);
+                        QRInput::Auto(interface::EXAMPLE_MESSAGE.to_string())
+                    }
                 } else {
                     QRInput::Manual(mode_data)
                 }
             }
         };
 
-        let name = name.unwrap_or("out".to_string());
+        let name = name.unwrap_or(if example { "hello" } else { "out" }.to_string());
 
         let qrc = qr_standard::badstream::make_qr(input, version_choice, level_choice, mask_choice)
             .add_border()
@@ -231,6 +247,9 @@ fn depanic() -> Result<(), String> {
 }
 
 mod interface {
+    pub const EXAMPLE_MESSAGE: &str = "Hello, world! Have fun! \u{1f499}
+    \u{2013} esmeralda (cool-es)";
+
     pub const HELPTEXT: &str = "Q-dot-R-es version 0.5.0
 by esmeralda (cool-es)
 
@@ -246,6 +265,7 @@ by esmeralda (cool-es)
         name: -n (string)                       (default: \"out\")
         rescaling: -s (integer)                 (default: 512 pixels wide)
         XBM format output: --xbm                (default: BMP output)
+        read from stdin on empty input: --      (default: example message)
 
     note:
         aliases --input, --ascii, --alphanum, --numeric, 
