@@ -178,7 +178,7 @@ fn main() -> std::io::Result<()> {
                         example = true;
                         // print help text and create an example message
                         println!("{}", interface::HELPTEXT);
-                        QRInput::Auto(interface::EXAMPLE_MESSAGE.to_string())
+                        QRInput::Auto(interface::example_message())
                     }
                 } else {
                     QRInput::Manual(mode_data)
@@ -244,6 +244,23 @@ fn depanic() -> Result<(), String> {
 }
 
 mod interface {
+    pub fn example_message() -> String {
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let mut output = EXAMPLE_MESSAGE.to_string();
+        if let Ok(epoch_secs) = SystemTime::now().duration_since(UNIX_EPOCH) {
+            let day_secs = epoch_secs.as_secs() % 86400;
+            let hour = day_secs / 3600;
+            let minute = (day_secs % 3600) / 60;
+            let second = day_secs % 60;
+            output.push_str(&format!(
+                "\n({:02}:{:02}:{:02} UTC)",
+                hour, minute, second
+            ));
+        }
+        output
+    }
+
     pub const EXAMPLE_MESSAGE: &str = "Hello, world! Have fun! \u{1f499}
     \u{2013} esmeralda (cool-es)";
 
