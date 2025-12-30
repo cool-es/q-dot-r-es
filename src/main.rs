@@ -249,13 +249,15 @@ mod interface {
 
         let mut output = EXAMPLE_MESSAGE.to_string();
         if let Ok(epoch_secs) = SystemTime::now().duration_since(UNIX_EPOCH) {
-            let day_secs = epoch_secs.as_secs() % 86400;
+            let secs = epoch_secs.as_secs();
+            let day_secs = secs % 86400;
             let hour = day_secs / 3600;
             let minute = (day_secs % 3600) / 60;
             let second = day_secs % 60;
+            let beats = ((secs + 3600) % 86400) as f32 / 86.4;
             output.push_str(&format!(
-                "\n({:02}:{:02}:{:02} UTC)",
-                hour, minute, second
+                "\n{:02}:{:02}:{:02} UTC @{:03.02} BMT",
+                hour, minute, second, beats
             ));
         }
         output
