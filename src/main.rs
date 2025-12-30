@@ -5,21 +5,18 @@ fn main() -> std::io::Result<()> {
         use qr_standard::{badstream::QRInput, bitstream::Mode};
 
         let mut input_choice: Option<QRInput> = None;
-        let mut level_choice = Option::<u8>::None;
-        let mut mask_choice = Option::<u8>::None;
-        let mut name = Option::<String>::None;
-
-        let mut scale_choice = Option::<usize>::None;
-
-        let mut manual: bool = true;
-        let mut mode_data = Vec::new();
-        let mut version_choice = Option::<u32>::None;
-        let mut xbm_choice = false;
+        let mut level_choice: Option<u8> = None;
+        let mut mask_choice: Option<u8> = None;
+        let mut name_choice: Option<String> = None;
+        let mut scale_choice: Option<usize> = None;
+        let mut version_choice: Option<u32> = None;
         let mut stdin_choice = false;
+        let mut xbm_choice = false;
+
+        let mut mode_data = Vec::new();
+        let mut manual = true;
 
         let mut args = std::env::args();
-        // let args_list = std::env::args().collect::<Vec<String>>();
-
         let mut first_loop = true;
         args.next();
         while let Some(argument) = args.next() {
@@ -74,8 +71,8 @@ fn main() -> std::io::Result<()> {
                 }
 
                 "--name" | "-n" => {
-                    if name.is_none() {
-                        name = Some(args.next().expect("no name submitted"));
+                    if name_choice.is_none() {
+                        name_choice = Some(args.next().expect("no name submitted"));
                     } else {
                         panic!("can't specify name twice")
                     }
@@ -189,7 +186,7 @@ fn main() -> std::io::Result<()> {
             }
         };
 
-        let name = name.unwrap_or(if example { "hello" } else { "out" }.to_string());
+        let name = name_choice.unwrap_or(if example { "hello" } else { "out" }.to_string());
 
         let qrc = qr_standard::badstream::make_qr(input, version_choice, level_choice, mask_choice)
             .add_border()
