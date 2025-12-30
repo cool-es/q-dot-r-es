@@ -1,8 +1,16 @@
-# *Q dot R es* – a QR generator in standard Rust ✨
-*Q dot R es*, henceforth referred to by `qr`, is a QR code generator I wrote singlehandedly as a challenge for myself to improve at Rust. It's not intended to be an example of a fast, polished, or efficient QR generator. That being said, though, it does work reliably.
+# *Q dot R es* – a QR code generator in standard Rust
+*Q dot R es*, henceforth referred to by `qr`, is a QR code generator I have worked on as a challenge for myself to improve at Rust. It's not intended to be an example of a fast, polished, or efficient QR generator. That being said, though, it does work reliably.
+
+Notably, ***`qr` only uses the standard library*** – the bit operations, error-correction algebra, filesize calculations and so on were all written by me.
+
+The clunky name is a pun on *QR*, *.rs* (Rust) and *es* (Esmeralda).
 
 ## Input
-`qr` accepts input both as arguments and from `stdin`. The following commands should all result in the same code. 
+`qr` accepts input both as arguments and from `stdin`. The following commands should all result in the same code.
+
+If you're running the program from the project directory using Cargo directly, replace `qr` with `cargo run --` in the examples below.
+
+
 * Manually choosing ASCII encoding:
 ```
 qr --manual --ascii "Hello!"
@@ -17,7 +25,7 @@ echo "Hello!" | qr --
 ```
 For help, run `qr --help`. Just running `qr` on its own prints the same text and generates an example QR code.
 ### Unicode support
-As of version 0.3, `qr` supports arbitrary Unicode characters as well. Any non-ASCII characters in the input (in either the manual ASCII mode or the automatic encoding mode) will add a UTF-8 marker to the QR code and divide UTF-8 characters into their constituent bytes.
+`qr` supports arbitrary Unicode characters. Any non-ASCII characters in the input (in either the manual ASCII mode or the automatic encoding mode) will add a "read as UTF-8" marker to the QR code's data and divide the characters into their constituent UTF-8 bytes. (QR codes support many other character encodings too, but I haven't implemented them.)
 
 As such, entering non-ASCII characters will increase the message size slightly, but the ASCII characters within the message will still be handled as normal.
 ```
