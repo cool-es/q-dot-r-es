@@ -253,9 +253,9 @@ mod interface {
             let hour = (secs % 86400) / 3600;
             let minute = (secs % 3600) / 60;
             let second = secs % 60;
-            let beats = ((secs + 3600) % 86400) as f32 / 86.4;
+            let beats = (((secs + 3600) % 86400) as f32 / 86.4).floor() as u64;
             output.push_str(&format!(
-                "\n{:02}:{:02}:{:02} UTC @{:03.02} BMT",
+                "\n{:02}:{:02}:{:02} UTC @{:03}",
                 hour, minute, second, beats
             ));
         }
