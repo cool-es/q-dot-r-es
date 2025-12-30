@@ -13,9 +13,9 @@ qr -i "Hello!"
 ```
 * Piping text into the program (again choosing encoding automatically):
 ```
-echo "Hello!" | qr
+echo "Hello!" | qr --
 ```
-There is no CLI documentation at the moment. If you'd like to see what other arguments are available, please read through the `main_qr_generator` argument parsing code in [**`main.rs`**](src/main.rs).
+For help, run `qr --help`. Just running `qr` on its own prints the same text and generates an example QR code.
 ### Unicode support
 As of version 0.3, `qr` supports arbitrary Unicode characters as well. Any non-ASCII characters in the input (in either the manual ASCII mode or the automatic encoding mode) will add a UTF-8 marker to the QR code and divide UTF-8 characters into their constituent bytes.
 
@@ -26,7 +26,11 @@ qr -i "I don't know… 😗🎶"
 echo "😳💦 Are you sure?" | qr
 ```
 ## Output
-`qr` outputs XBM bitmaps, which is an uncompressed monochrome format consisting of plaintext hex data wrapped in C code:
+By default, `qr` outputs BMP files, scaled to 512×512 pixels. They are uncompressed (no run-length encoding) and use a monochrome palette.
+
+The scaling can be changed with the `--scale` (alias `-s`) parameter, given a width in pixels or `0` for no rescaling (which creates an icon-sized bitmap under 200 pixels wide).
+
+When passed the `--xbm` parameter, it instead outputs XBM bitmaps, which is a format consisting of plaintext hex data wrapped in C code:
 ```c
 #define hello_width 37
 #define hello_height 37
