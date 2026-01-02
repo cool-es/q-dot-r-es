@@ -247,12 +247,15 @@ mod interface {
     pub fn example_message() -> String {
         use std::time::{SystemTime, UNIX_EPOCH};
 
+        // add a timestamp to the example string
         let mut output = EXAMPLE_MESSAGE.to_string();
         if let Ok(epoch_secs) = SystemTime::now().duration_since(UNIX_EPOCH) {
             let secs = epoch_secs.as_millis();
             let hour = (secs % 86400_000) / 3600_000;
             let minute = (secs % 3600_000) / 60_000;
             let second = (secs % 60_000) / 1_000;
+
+            // swatch internet time, adjusted to UTC+1
             let beats = ((secs + 3600_000) % 86400_000) / 86_400;
             output.push_str(&format!(
                 "\n{:02}:{:02}:{:02} UTC @{:03}",
