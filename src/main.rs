@@ -249,11 +249,11 @@ mod interface {
 
         let mut output = EXAMPLE_MESSAGE.to_string();
         if let Ok(epoch_secs) = SystemTime::now().duration_since(UNIX_EPOCH) {
-            let secs = epoch_secs.as_secs();
-            let hour = (secs % 86400) / 3600;
-            let minute = (secs % 3600) / 60;
-            let second = secs % 60;
-            let beats = (((secs + 3600) % 86400) as f32 / 86.4).floor() as u64;
+            let secs = epoch_secs.as_millis();
+            let hour = (secs % 86400_000) / 3600_000;
+            let minute = (secs % 3600_000) / 60_000;
+            let second = (secs % 60_000) / 1_000;
+            let beats = ((secs + 3600_000) % 86400_000) / 86_400;
             output.push_str(&format!(
                 "\n{:02}:{:02}:{:02} UTC @{:03}",
                 hour, minute, second, beats
