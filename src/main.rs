@@ -268,7 +268,7 @@ mod interface {
     pub const EXAMPLE_MESSAGE: &str = "Hello, world! Have fun! \u{1f499}
     \u{2013} esmeralda (cool-es)";
 
-    pub const HELPTEXT: &str = "Q-dot-R-es version 0.5.0
+    pub const HELPTEXT: &str = "Q-dot-R-es version 0.6.1
 by esmeralda (cool-es)
 
     automatic:  qr -i \"Hello!\"
