@@ -10,8 +10,10 @@ type NativeInt = i32;
 #[cfg(not(target_arch = "wasm32"))]
 type NativeInt = usize;
 
-// #[cfg(target_arch = "wasm32")]
+#[cfg(target_arch = "wasm32")]
 mod info {
+    use crate::demo::NativeInt;
+
     struct Info {
         bitmap: Vec<u8>,
         mask: u8,
@@ -22,28 +24,57 @@ mod info {
         mask: u8::MAX,
     };
 
-    static mut BITMAP: Vec<u8> = Vec::new();
-
     #[allow(static_mut_refs)]
-    fn with_info_state<F, R>(func: F) -> R
+    fn process_info<F, K>(f: F) -> K
     where
-        F: FnOnce(&mut Info) -> R,
+        F: FnOnce(&mut Info) -> K,
     {
-        unsafe { func(&mut INFO_STATE) }
+        unsafe { f(&mut INFO_STATE) }
+    }
+
+    fn ptr_and_len(ptr: bool, items: &Vec<u8>) -> NativeInt {
+        if ptr {
+            items.as_ptr() as NativeInt
+        } else {
+            items.len() as NativeInt
+        }
     }
 
     pub mod ops {
-        use super::*;
+        use crate::demo::NativeInt;
 
-        pub fn mask(mask: u8) {
-            with_info_state(|x| x.mask = mask);
+        pub fn mask(mask: Option<u8>) -> u8 {
+            if let Some(mask) = mask {
+                // set new value
+                process_info(|x| {
+                    let old = *x.mask;
+                    x.mask = mask;
+                    old
+                })
+            } else {
+                // return existing value
+                process_info(|x| *x.mask)
+            }
+        }
+
+        pub fn reset_all() {
+            process_info(|x| {
+                *x = Info {
+                    bitmap: Vec::new(),
+                    mask: u8::MAX,
+                }
+            })
+        }
+
+        pub fn bitmap(k: bool) -> NativeInt {
+            process_info(|x| ptr_and_len(k, &x.bitmap))
         }
     }
 }
 
-// #[cfg(not(target_arch = "wasm32"))]
-#[cfg(false)]
+#[cfg(not(target_arch = "wasm32"))]
 mod info {
+    use crate::demo::NativeInt;
     use std::cell::RefCell;
 
     thread_local! {
@@ -55,6 +86,9 @@ mod info {
     }
 
     pub mod ops {
+        use super::*;
+        use crate::demo::NativeInt;
+
         pub fn set_mask(mask: u8) {
             MASK.with(|m| *m.borrow_mut() = Some(mask));
         }
@@ -76,4 +110,4 @@ mod info {
     // etc...
 }
 
-pub use info::ops;
+use info::*;
