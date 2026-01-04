@@ -292,7 +292,16 @@ fn apply_mask(bitmap: &mut image::Bitmap, version: u32, level: u8, mask: u8) {
 pub fn apply_best_mask(bitmap: &mut image::Bitmap, version: u32, level: u8) {
     let mut best = image::Bitmap::new(1, 1);
     let mut penalty = u32::MAX;
-    for mask in 0..=7 {
+
+    let masks = if version < 8 {
+        // width is below 49 px
+        [0, 1, 2, 3, 4, 5, 6, 7].iter()
+    } else {
+        // speedup: masks 0, 1, 2, 4 generally score higher penalties
+        [3, 5, 6, 7].iter()
+    };
+
+    for &mask in masks {
         let mut clone = bitmap.clone();
         apply_mask(&mut clone, version, level, mask);
         let pen = clone.qr_penalty();
