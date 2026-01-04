@@ -144,6 +144,15 @@ mod penalties {
             bit[index / size] & (1usize << (index % size)) != 0
         };
 
+        let mut lookup_table: Vec<Vec<bool>> = vec![vec![false; width]; width];
+        for (i, row) in lookup_table.iter_mut().enumerate() {
+            for (j, val) in row.iter_mut().enumerate() {
+                *val = get(i, j);
+            }
+        }
+
+        let get = |x:usize, y:usize| lookup_table[x][y];
+
         adjacent(width, get) + block(width, get) + fake_marker(width, get) + proportion(width, ones)
     }
 
