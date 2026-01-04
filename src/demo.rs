@@ -10,18 +10,20 @@ type NativeInt = i32;
 #[cfg(not(target_arch = "wasm32"))]
 type NativeInt = usize;
 
+type Byte = u8;
+
 mod info {
-    use super::NativeInt;
+    use super::{Byte, NativeInt};
     use crate::qr_standard::bitstream::{Mode, Token};
 
     // the structure holding information about the qr code
     #[derive(Debug, Clone)]
     struct Info {
-        bitmap: Vec<u8>,
-        codewords: Vec<u8>,
-        modes: Vec<(Mode, String)>,
-        mask: u8,
-        version: u8,
+        bitmap: Vec<Byte>,
+        codewords: Vec<Byte>,
+        modes: Vec<Byte>,
+        mask: NativeInt,
+        version: NativeInt,
     }
 
     impl Info {
@@ -30,8 +32,8 @@ mod info {
                 bitmap: Vec::new(),
                 codewords: Vec::new(),
                 modes: Vec::new(),
-                mask: u8::MAX,
-                version: u8::MAX,
+                mask: NativeInt::MAX,
+                version: NativeInt::MAX,
             }
         }
     }
@@ -62,7 +64,7 @@ mod info {
         use super::*;
         use crate::demo::NativeInt;
 
-        pub fn mask(mask: Option<u8>) -> u8 {
+        pub fn mask(mask: Option<NativeInt>) -> NativeInt {
             if let Some(mask) = mask {
                 // set new value
                 process_info(|x| {
@@ -76,9 +78,10 @@ mod info {
             }
         }
 
-        pub fn set_bitmap(bitmap: Vec<u8>) {
+        pub fn set_bitmap(bitmap: &Vec<Byte>) {
             process_info(|x| {
-                x.bitmap = bitmap;
+                x.bitmap.clear();
+                x.bitmap.extend(bitmap.iter());
             })
         }
 
