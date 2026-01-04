@@ -47,21 +47,16 @@ pub fn qr_fcode_remainder(fcode: u32) -> u32 {
 
 #[inline]
 pub fn bit_length(n: BigElement) -> u32 {
-    match n.checked_ilog2() {
-        Some(x) => x + 1,
-        None => 0,
-    }
+    n.checked_ilog2().map_or(0, |x| x + 1)
 }
 
 /// Carryless division over GF(2)\[X\]. Only called by
 /// `qr_generate_vcode`.
 pub fn carryless_divide(dividend: BigElement, divisor: BigElement) -> BigElement {
-    if bit_length(dividend) < bit_length(divisor) {
+    let (dnd_length, dsr_length) = (bit_length(dividend), bit_length(divisor));
+    if dnd_length < dsr_length {
         return dividend;
     }
-
-    let dnd_length = bit_length(dividend);
-    let dsr_length = bit_length(divisor);
     let mut dnd = dividend;
 
     // long division: for each bit that separates the dividend and divisor,
@@ -83,11 +78,8 @@ pub fn exp(n: usize) -> Element {
 
 /// Logarithm function within GF(2⁸).
 pub fn log(e: Element) -> usize {
-    if e == 0 {
-        panic!()
-    } else {
-        lookup::QR_EXP_LOG_TABLE.1[((e - 1) % 255) as usize]
-    }
+    //  e should never be 0
+    lookup::QR_EXP_LOG_TABLE.1[((e - 1) % 255) as usize]
 }
 
 /// Multiplication in GF(2⁸). Uses look-up tables.

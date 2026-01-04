@@ -253,12 +253,12 @@ pub fn optimize_mode(string: &String, class: u8) -> Vec<(Mode, String)> {
         if mode == current_mode {
             push_string.push(chr);
         } else {
-            output.push((current_mode, push_string.clone()));
+            output.push((current_mode, push_string));
             current_mode = mode;
             push_string = String::from(chr);
         }
     }
-    output.push((current_mode, push_string.clone()));
+    output.push((current_mode, push_string));
 
     output
 }

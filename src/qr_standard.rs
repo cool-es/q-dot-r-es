@@ -363,7 +363,9 @@ pub fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u16> {
     }
 
     let fcode = (fmt as u32) << 10;
-    Some(fcode as u16 | galois::qr_fcode_remainder(fcode) as u16)
+    let code = fcode as u16 | galois::qr_fcode_remainder(fcode) as u16;
+
+    Some(code)
 }
 
 pub fn set_fcode(input: &mut image::Bitmap, version: u32, fcode: u16) {
