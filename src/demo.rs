@@ -1,7 +1,12 @@
 //! Data structures primarily for tracking stats for an interactive WASM demo.
-#![allow(unused)]
+
+#[allow(unused)]
+mod info;
+pub use info::ops;
 
 // define types for use here
+
+type Byte = u8;
 
 // javascript-compatible integer
 #[cfg(target_arch = "wasm32")]
@@ -9,141 +14,3 @@ type NativeInt = i32;
 
 #[cfg(not(target_arch = "wasm32"))]
 type NativeInt = usize;
-
-type Byte = u8;
-
-mod info {
-    use super::{Byte, NativeInt};
-    use crate::qr_standard::bitstream::{Mode, Token};
-
-    // the structure holding information about the qr code
-    #[derive(Debug, Clone)]
-    struct Info {
-        // bitmap without a mask
-        bitmap_nomask: Vec<Byte>,
-
-        // bitmap with a mask (readable qr code)
-        bitmap: Vec<Byte>,
-
-        // TBD
-        codewords: Vec<Byte>,
-
-        // the small rectangle in larger qr codes
-        ecblock_data: Vec<Byte>,
-
-        // the mask data positioned around the alignment patterns
-        corner_mask_data: Vec<Byte>,
-
-        // which mask was chosen
-        mask: NativeInt,
-
-        // mode/byte data, as chosen by find_best_mode_optimization()
-        // reprocessed into a format more readable by wasm
-        modes: Vec<Byte>,
-
-        // which version was chosen
-        version: NativeInt,
-    }
-
-    impl Info {
-        const fn new() -> Info {
-            Info {
-                bitmap_nomask: Vec::new(),
-                bitmap: Vec::new(),
-                codewords: Vec::new(),
-                ecblock_data: Vec::new(),
-                corner_mask_data: Vec::new(),
-                mask: NativeInt::MAX,
-                modes: Vec::new(),
-                version: NativeInt::MAX,
-            }
-        }
-
-        fn clear(&mut self) {
-            self.bitmap_nomask.clear();
-            self.bitmap.clear();
-            self.codewords.clear();
-            self.corner_mask_data.clear();
-            self.ecblock_data.clear();
-            self.mask = NativeInt::MAX;
-            self.modes.clear();
-            self.version = NativeInt::MAX;
-        }
-    }
-
-    // the specific static variable storing the info at a specific place in memory
-    static mut INFO_STATE: Info = Info::new();
-
-    // the unsafe "swiss army knife function"
-    #[allow(static_mut_refs)]
-    fn process_info<F, K>(f: F) -> K
-    where
-        F: FnOnce(&mut Info) -> K,
-    {
-        unsafe { f(&mut INFO_STATE) }
-    }
-
-    // returns pointer to and byte length of a vector
-    fn ptr_and_len<T>(v: &'static T) -> (NativeInt, NativeInt)
-    where
-        Vec<Byte>: From<&'static T>,
-    {
-        let bytes: Vec<Byte> = v.into();
-        (bytes.as_ptr() as NativeInt, bytes.len() as NativeInt)
-    }
-
-    // operations to be called by the end user
-    pub mod ops {
-        use super::*;
-        use crate::demo::NativeInt;
-
-        pub fn mask(mask: Option<NativeInt>) -> NativeInt {
-            if let Some(mask) = mask {
-                // set new value
-                process_info(|x| {
-                    let old = x.mask;
-                    x.mask = mask;
-                    old
-                })
-            } else {
-                // return existing value
-                process_info(|x| x.mask)
-            }
-        }
-
-        pub fn set_bitmap(bitmap: &Vec<Byte>) {
-            process_info(|x| {
-                x.bitmap.clear();
-                x.bitmap.extend(bitmap.iter());
-            })
-        }
-
-        pub fn set_modes(modes: &Vec<(Mode, String)>) {
-            // reduce modes vector into pairs of mode and character byte
-            let modes = modes.iter().flat_map(|(m, s)| {
-                std::iter::repeat(match m {
-                    Mode::Numeric => 0,
-                    Mode::AlphaNum => 1,
-                    Mode::ASCII => 2,
-                })
-                .take(s.len())
-                .zip(s.bytes())
-                .flat_map(|(m, b)| [m, b].into_iter())
-            });
-
-            // static means no drop, so clear out the vector instead of making a new one
-            process_info(|x| {
-                x.modes.clear();
-                x.modes.extend(modes);
-            });
-        }
-
-        pub fn reset_all() {
-            process_info(|x| {
-                x.clear();
-            })
-        }
-    }
-}
-
-pub use info::ops;
