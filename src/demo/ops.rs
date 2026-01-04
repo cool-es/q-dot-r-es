@@ -1,18 +1,18 @@
 //! operations to be called by the end user
 
 use crate::{
-    demo::{info_struct, Byte, NativeInt},
+    demo::{info_struct::Info, Byte, NativeInt},
     qr_standard::bitstream::{Mode, Token},
 };
 
 // the specific static variable storing the info at a specific place in memory
-static mut INFO_STATE: info_struct::Info = info_struct::Info::new();
+static mut INFO_STATE: Info = Info::new();
 
 // the unsafe "swiss army knife function"
 #[allow(static_mut_refs)]
 pub(crate) fn process_info<F, K>(f: F) -> K
 where
-    F: FnOnce(&mut info_struct::Info) -> K,
+    F: FnOnce(&mut Info) -> K,
 {
     unsafe { f(&mut INFO_STATE) }
 }
