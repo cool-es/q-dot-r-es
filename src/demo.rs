@@ -42,6 +42,17 @@ mod info {
                 version: NativeInt::MAX,
             }
         }
+
+        fn clear(&mut self) {
+            self.bitmap_nomask.clear();
+            self.bitmap.clear();
+            self.codewords.clear();
+            self.corner_mask_data.clear();
+            self.ecblock_data.clear();
+            self.mask = NativeInt::MAX;
+            self.modes.clear();
+            self.version = NativeInt::MAX;
+        }
     }
 
     // the specific static variable storing the info at a specific place in memory
@@ -113,7 +124,7 @@ mod info {
 
         pub fn reset_all() {
             process_info(|x| {
-                *x = Info::new();
+                x.clear();
             })
         }
     }
