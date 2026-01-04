@@ -86,9 +86,9 @@ mod info {
     // returns pointer to and byte length of a vector
     fn ptr_and_len<T>(v: &'static T) -> (NativeInt, NativeInt)
     where
-        Vec<u8>: From<&'static T>,
+        Vec<Byte>: From<&'static T>,
     {
-        let bytes: Vec<u8> = v.into();
+        let bytes: Vec<Byte> = v.into();
         (bytes.as_ptr() as NativeInt, bytes.len() as NativeInt)
     }
 
