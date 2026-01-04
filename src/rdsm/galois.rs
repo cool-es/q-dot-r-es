@@ -45,19 +45,6 @@ pub fn qr_fcode_remainder(fcode: u32) -> u32 {
     output
 }
 
-// (`fmt * 2^10` + remainder of `(fmt * 2^10) / g)` - this always has remainder 0.
-// this works since all numbers in a galois field are their own additive inverse,
-// and since (remainder of (k + remainder of k)) ==(remainder of k + remainder of k).
-/// Generate a QR code's 15-bit format code.
-pub fn qr_generate_fcode(fmt: u8) -> Option<u16> {
-    if fmt >= 32 {
-        return None;
-    }
-
-    // i'm aware that this code is ridiculous
-    Some(((fmt as u16) << 10) | (qr_fcode_remainder((fmt as u32) << 10)) as u16)
-}
-
 #[inline]
 pub fn bit_length(n: BigElement) -> u32 {
     match n.checked_ilog2() {

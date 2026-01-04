@@ -352,12 +352,18 @@ fn format_info_coords(version: u32, bit: u32) -> Option<((usize, usize), (usize,
     Some((coord1, coord2))
 }
 
+// (`fmt * 2^10` + remainder of `(fmt * 2^10) / g)` - this always has remainder 0.
+// this works since all numbers in a galois field are their own additive inverse,
+// and since (remainder of (k + remainder of k)) ==(remainder of k + remainder of k).
+/// Generate a QR code's 15-bit format code.
 pub fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u16> {
-    if correction_level > 3 || mask_pattern > 7 {
+    let fmt = (correction_level << 3) | mask_pattern;
+    if fmt >= 32 || correction_level > 3 || mask_pattern > 7 {
         return None;
     }
 
-    galois::qr_generate_fcode((correction_level << 3) | mask_pattern)
+    let fcode = (fmt as u32) << 10;
+    Some(fcode as u16 | galois::qr_fcode_remainder(fcode) as u16)
 }
 
 pub fn set_fcode(input: &mut image::Bitmap, version: u32, fcode: u16) {
@@ -370,19 +376,6 @@ pub fn set_fcode(input: &mut image::Bitmap, version: u32, fcode: u16) {
         input.set_bit(x2, y2, value);
     }
 }
-
-// return the coordinates of a given byte/codeword in a qr symbol (quite inefficiently)
-// fn qr_data_coords(codeword: u32, bit: u8, version: u32) -> Option<(usize, usize)> {
-//     let size = version_to_size(version)?;
-//     let bitstream_index = codeword * 8 + bit as u32;
-
-//     // only v1 for now
-//     if version != 1 {
-//         return None;
-//     }
-
-//     todo!()
-// }
 
 pub fn next_data_bit(x: usize, y: usize, version: u32) -> Option<(usize, usize)> {
     // naive, slow, and robust implementation of "next data bit"
