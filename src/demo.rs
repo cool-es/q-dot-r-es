@@ -10,16 +10,14 @@ type NativeInt = i32;
 #[cfg(not(target_arch = "wasm32"))]
 type NativeInt = usize;
 
-type ByteVec = Vec<u8>;
-
 mod info {
-    use crate::demo::{ByteVec, NativeInt};
+    use crate::demo::NativeInt;
     use crate::qr_standard::bitstream::{Mode, Token};
 
     // the structure holding information about the qr code
     struct Info {
-        bitmap: ByteVec,
-        codewords: ByteVec,
+        bitmap: Vec<u8>,
+        codewords: Vec<u8>,
         modes: Vec<(Mode, String)>,
         mask: u8,
         version: u8,
