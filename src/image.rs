@@ -220,6 +220,17 @@ impl Bitmap {
     pub fn debug_index_to_xy(&self, vec_index: usize, bit_index: u8) -> Option<(usize, usize)> {
         index_to_xy(vec_index, bit_index, self.width, self.height)
     }
+
+    /// set an already initialized bitmap to be identical to a different one
+    /// only for use with wasm
+    #[cfg(feature = "demo")]
+    pub fn set_to(&mut self, x: &Bitmap) {
+        self.bits.clear();
+        self.bits.extend(x.bits.iter());
+        self.width = x.width;
+        self.height = x.height;
+        self.border = x.border;
+    }
 }
 
 /// converts xy coordinates to the pixel's vector/bit indices:

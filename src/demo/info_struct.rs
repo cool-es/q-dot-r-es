@@ -6,7 +6,10 @@ use super::{Byte, NativeInt};
 #[derive(Debug, Clone)]
 pub(crate) struct Info {
     // bitmap without a mask
-    pub(crate) bitmap_nomask: Vec<Byte>,
+    pub bitmap_fcode: Vec<Byte>,
+
+    // bitmap without a mask
+    pub bitmap_nomask: Vec<Byte>,
 
     // bitmap with a mask (readable qr code)
     pub(crate) bitmap: Vec<Byte>,
@@ -18,7 +21,7 @@ pub(crate) struct Info {
     pub(crate) ecblock_data: Vec<Byte>,
 
     // the mask data positioned around the alignment patterns
-    pub(crate) corner_mask_data: Vec<Byte>,
+    pub format_info: [Byte; 2],
 
     // which mask was chosen
     pub(crate) mask: NativeInt,
@@ -34,11 +37,12 @@ pub(crate) struct Info {
 impl Info {
     pub(crate) const fn new() -> Info {
         Info {
+            bitmap_fcode: Vec::new(),
             bitmap_nomask: Vec::new(),
             bitmap: Vec::new(),
             codewords: Vec::new(),
             ecblock_data: Vec::new(),
-            corner_mask_data: Vec::new(),
+            format_info: [0; 2],
             mask: NativeInt::MAX,
             modes: Vec::new(),
             version: NativeInt::MAX,
@@ -46,11 +50,12 @@ impl Info {
     }
 
     pub(crate) fn clear(&mut self) {
+        self.bitmap_fcode.clear();
         self.bitmap_nomask.clear();
         self.bitmap.clear();
         self.codewords.clear();
-        self.corner_mask_data.clear();
         self.ecblock_data.clear();
+        self.format_info = [0; 2];
         self.mask = NativeInt::MAX;
         self.modes.clear();
         self.version = NativeInt::MAX;

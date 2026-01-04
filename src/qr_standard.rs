@@ -365,6 +365,11 @@ pub fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u16> {
     let fcode = (fmt as u32) << 10;
     let code = fcode as u16 | galois::qr_fcode_remainder(fcode) as u16;
 
+    #[cfg(feature = "demo")]
+    {
+        crate::demo::ops::process_info(|x| x.format_info = code.to_be_bytes())
+    }
+
     Some(code)
 }
 

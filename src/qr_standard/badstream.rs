@@ -229,7 +229,16 @@ pub fn make_qr(
 
     // back up mode vector to info structure
     #[cfg(feature = "demo")]
-    crate::demo::ops::set_modes(&input);
+    {
+        let a = input
+            .iter()
+            .map(|(m, s)| (m, s, s.bytes().collect::<Vec<u8>>()))
+            .collect::<Vec<_>>();
+        for a in a {
+            println!("\n{:?}", a);
+        }
+        crate::demo::ops::set_modes(&input);
+    }
 
     let tokens = bitstream::make_token_stream(
         input,
@@ -284,12 +293,13 @@ pub fn make_qr(
 }
 
 fn apply_mask(bitmap: &mut image::Bitmap, version: u32, level: u8, mask: u8) {
-    super::set_fcode(
-        bitmap,
-        version,
-        super::data_to_fcode([0b01, 0b00, 0b11, 0b10][level as usize], mask)
-            .expect("could not generate format code"),
-    );
+    let fcode = super::data_to_fcode([0b01, 0b00, 0b11, 0b10][level as usize], mask)
+        .expect("could not generate format code");
+
+    #[cfg(feature = "demo")]
+    {}
+
+    super::set_fcode(bitmap, version, fcode);
     bitmap.qr_mask_xor(mask);
 }
 
