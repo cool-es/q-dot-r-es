@@ -191,6 +191,18 @@ mod penalties {
             adjacent, fake_marker, width, sum, adj, fmk
         );
         sum
+        #[cfg(not(feature = "complete"))]
+        {
+            adjacent(width, get) + fake_marker(width, get)
+        }
+
+        #[cfg(feature = "complete")]
+        {
+            adjacent(width, get)
+                + fake_marker(width, get)
+                + block(width, get)
+                + proportion(width, get)
+        }
     }
 
     // Penalty: "Adjacent modules in row/column in same color".
@@ -234,6 +246,7 @@ mod penalties {
 
     /// penalty: `3 * (m - 1) * (n - 1)`
     /// where the block size = `m * n`
+    #[cfg(feature = "complete")]
     fn block<F>(width: usize, get: F) -> u32
     where
         F: Fn(usize, usize) -> bool,
@@ -355,6 +368,7 @@ mod penalties {
 
     // #[allow(unused_variables)]
     /// Proportion of dark modules in entire symbol
+    #[cfg(feature = "complete")]
     fn proportion(width: usize, ones: u32) -> u32 {
         // penalty: 10 * k
         // k is the rating of the deviation of the proportion of dark modules in the symbol from 50% in steps of 5%
