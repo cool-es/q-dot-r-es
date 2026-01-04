@@ -11,7 +11,7 @@ type NativeInt = i32;
 type NativeInt = usize;
 
 mod info {
-    use crate::demo::NativeInt;
+    use super::NativeInt;
     use crate::qr_standard::bitstream::{Mode, Token};
 
     // the structure holding information about the qr code
@@ -49,11 +49,11 @@ mod info {
     }
 
     // returns pointer to and byte length of a vector
-    fn ptr_and_len<T>(vec: &'static T) -> (NativeInt, NativeInt)
+    fn ptr_and_len<T>(v: &'static T) -> (NativeInt, NativeInt)
     where
         Vec<u8>: From<&'static T>,
     {
-        let bytes: Vec<u8> = vec.into();
+        let bytes: Vec<u8> = v.into();
         (bytes.as_ptr() as NativeInt, bytes.len() as NativeInt)
     }
 
@@ -77,7 +77,6 @@ mod info {
         }
 
         pub fn set_bitmap(bitmap: Vec<u8>) {
-            // set new value
             process_info(|x| {
                 x.bitmap = bitmap;
             })
