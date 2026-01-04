@@ -1,8 +1,30 @@
 //! operations to be called by the end user
 
-use super::{ process_info};
-use crate::demo::{Byte, NativeInt};
-use crate::qr_standard::bitstream::{Mode, Token};
+use crate::{
+    demo::{info_struct, Byte, NativeInt},
+    qr_standard::bitstream::{Mode, Token},
+};
+
+// the specific static variable storing the info at a specific place in memory
+static mut INFO_STATE: info_struct::Info = info_struct::Info::new();
+
+// the unsafe "swiss army knife function"
+#[allow(static_mut_refs)]
+pub(crate) fn process_info<F, K>(f: F) -> K
+where
+    F: FnOnce(&mut info_struct::Info) -> K,
+{
+    unsafe { f(&mut INFO_STATE) }
+}
+
+// returns pointer to and byte length of a vector
+pub(crate) fn ptr_and_len<T>(v: &'static T) -> (NativeInt, NativeInt)
+where
+    Vec<Byte>: From<&'static T>,
+{
+    let bytes: Vec<Byte> = v.into();
+    (bytes.as_ptr() as NativeInt, bytes.len() as NativeInt)
+}
 
 pub fn mask(mask: Option<NativeInt>) -> NativeInt {
     if let Some(mask) = mask {

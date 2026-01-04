@@ -1,8 +1,9 @@
 //! Data structures primarily for tracking stats for an interactive WASM demo.
 
 #[allow(unused)]
-mod info;
-pub use info::ops;
+mod info_struct;
+#[allow(unused)]
+pub mod ops;
 
 // define types for use here
 
