@@ -13,17 +13,25 @@ type NativeInt = usize;
 #[cfg(target_arch = "wasm32")]
 mod info {
     use crate::demo::NativeInt;
+    use crate::qr_standard::bitstream::{Mode, Token};
 
+    // the structure holding information about the qr code
     struct Info {
         bitmap: Vec<u8>,
+        codewords: Vec<u8>,
         mask: u8,
+        version: u8,
     }
 
+    // the specific static variable storing the info at a specific place in memory
     static mut INFO_STATE: Info = Info {
         bitmap: Vec::new(),
+        codewords: todo!(),
         mask: u8::MAX,
+        version: todo!(),
     };
 
+    // the unsafe "swiss army knife function"
     #[allow(static_mut_refs)]
     fn process_info<F, K>(f: F) -> K
     where
@@ -32,11 +40,16 @@ mod info {
         unsafe { f(&mut INFO_STATE) }
     }
 
-    fn ptr_and_len(ptr: bool, items: &Vec<u8>) -> NativeInt {
+    // returns pointer to and byte length of a vector
+    fn ptr_and_len<T>(ptr: bool, vec: &T) -> NativeInt
+    where
+        T: Into<Vec<u8>>,
+    {
+        let bytes: Vec<u8> = vec.into();
         if ptr {
-            items.as_ptr() as NativeInt
+            bytes.as_ptr() as NativeInt
         } else {
-            items.len() as NativeInt
+            bytes.len() as NativeInt
         }
     }
 
@@ -61,7 +74,9 @@ mod info {
             process_info(|x| {
                 *x = Info {
                     bitmap: Vec::new(),
+                    codewords: todo!(),
                     mask: u8::MAX,
+                    version: todo!(),
                 }
             })
         }
