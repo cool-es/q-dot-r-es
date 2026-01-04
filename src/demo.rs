@@ -20,6 +20,7 @@ mod info {
     struct Info {
         bitmap: ByteVec,
         codewords: ByteVec,
+        modes: Vec<(Mode, String)>,
         mask: u8,
         version: u8,
     }
@@ -28,6 +29,7 @@ mod info {
     static mut INFO_STATE: Info = Info {
         bitmap: Vec::new(),
         codewords: Vec::new(),
+        modes: Vec::new(),
         mask: u8::MAX,
         version: u8::MAX,
     };
@@ -76,11 +78,16 @@ mod info {
             })
         }
 
+        pub fn set_modes(modes: &Vec<(Mode, String)>) {
+            process_info(|x| x.modes = modes.clone());
+        }
+
         pub fn reset_all() {
             process_info(|x| {
                 *x = Info {
                     bitmap: Vec::new(),
                     codewords: Vec::new(),
+                    modes: Vec::new(),
                     mask: u8::MAX,
                     version: u8::MAX,
                 }
@@ -89,4 +96,4 @@ mod info {
     }
 }
 
-use info::ops::*;
+pub use info::ops as ops;
