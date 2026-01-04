@@ -144,53 +144,6 @@ mod penalties {
             bit[index / size] & (1usize << (index % size)) != 0
         };
 
-        let timer = std::time::SystemTime::now();
-
-        let adjacent = adjacent(width, get);
-
-        let adj = std::time::SystemTime::now()
-            .duration_since(timer)
-            .unwrap()
-            .as_micros();
-        let timer = std::time::SystemTime::now();
-
-        /* let block = block(width, get);
-
-        let blk = std::time::SystemTime::now()
-            .duration_since(timer)
-            .unwrap()
-            .as_micros();
-        let timer = std::time::SystemTime::now(); */
-
-        let fake_marker = fake_marker(width, get);
-
-        let fmk = std::time::SystemTime::now()
-            .duration_since(timer)
-            .unwrap()
-            .as_micros();
-        /*     let timer = std::time::SystemTime::now();
-
-        let proportion = proportion(width, ones);
-
-        let prp = std::time::SystemTime::now()
-            .duration_since(timer)
-            .unwrap()
-            .as_micros(); */
-
-        let sum = adjacent + fake_marker;
-        // let f = |x: u32| format!("{:5} ({:.08}%)", x, (100 * x) as f32 / sum as f32);
-        // eprintln!(
-        //     "adjct: {}\nblock: {}\nf.mrk: {}\nprptn: {}\n",
-        //     f(adjacent),
-        //     f(block),
-        //     f(fake_marker),
-        //     f(proportion)
-        // );
-        eprintln!(
-            "{}\t{}\t{}\t{}\t{}\t{}",
-            adjacent, fake_marker, width, sum, adj, fmk
-        );
-        sum
         #[cfg(not(feature = "complete"))]
         {
             adjacent(width, get) + fake_marker(width, get)
