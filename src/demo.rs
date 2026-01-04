@@ -24,14 +24,20 @@ mod info {
         version: u8,
     }
 
+    impl Info {
+        const fn new() -> Info {
+            Info {
+                bitmap: Vec::new(),
+                codewords: Vec::new(),
+                modes: Vec::new(),
+                mask: u8::MAX,
+                version: u8::MAX,
+            }
+        }
+    }
+
     // the specific static variable storing the info at a specific place in memory
-    static mut INFO_STATE: Info = Info {
-        bitmap: Vec::new(),
-        codewords: Vec::new(),
-        modes: Vec::new(),
-        mask: u8::MAX,
-        version: u8::MAX,
-    };
+    static mut INFO_STATE: Info = Info::new();
 
     // the unsafe "swiss army knife function"
     #[allow(static_mut_refs)]
@@ -83,13 +89,7 @@ mod info {
 
         pub fn reset_all() {
             process_info(|x| {
-                *x = Info {
-                    bitmap: Vec::new(),
-                    codewords: Vec::new(),
-                    modes: Vec::new(),
-                    mask: u8::MAX,
-                    version: u8::MAX,
-                }
+                *x = Info::new();
             })
         }
     }
