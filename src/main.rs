@@ -188,14 +188,14 @@ fn main() -> std::io::Result<()> {
 
         let name = name_choice.unwrap_or(if example { "hello" } else { "out" }.to_string());
 
-        let qrc = qr_standard::badstream::make_qr(input, version_choice, level_choice, mask_choice)
+        let bitmap = qr_standard::badstream::make_qr(input, version_choice, level_choice, mask_choice)
             .add_border()
             .scale(scale_choice);
 
         let (output, ext) = if xbm_choice {
-            (qrc.as_xbm(&name).into_bytes(), "xbm")
+            (bitmap.as_xbm(&name).into_bytes(), "xbm")
         } else {
-            (qrc.as_bmp(), "bmp")
+            (bitmap.as_bmp(), "bmp")
         };
 
         let write_status = std::fs::write(format!("{}.{ext}", name), output);

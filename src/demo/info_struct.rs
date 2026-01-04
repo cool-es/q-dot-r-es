@@ -24,7 +24,7 @@ pub(crate) struct Info {
     pub(crate) mask: NativeInt,
 
     // mode/byte data, as chosen by find_best_mode_optimization()
-    // reprocessed into a format more readable by wasm
+    // reprocessed into a format more readable by javascript
     pub(crate) modes: Vec<Byte>,
 
     // which version was chosen
