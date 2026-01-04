@@ -113,7 +113,7 @@ mod penalties {
     // Calculate the total penalty.
     pub fn total_penalty(input: &crate::image::Bitmap) -> u32 {
         let width = input.dims().0;
-        let ones = input.debug_bits().iter().map(|x| x.count_ones()).sum();
+        // let ones = input.debug_bits().iter().map(|x| x.count_ones()).sum();
 
         let size = usize::BITS as usize;
         let bit = {
@@ -154,13 +154,13 @@ mod penalties {
             .as_micros();
         let timer = std::time::SystemTime::now();
 
-        let block = block(width, get);
+        /* let block = block(width, get);
 
         let blk = std::time::SystemTime::now()
             .duration_since(timer)
             .unwrap()
             .as_micros();
-        let timer = std::time::SystemTime::now();
+        let timer = std::time::SystemTime::now(); */
 
         let fake_marker = fake_marker(width, get);
 
@@ -168,16 +168,16 @@ mod penalties {
             .duration_since(timer)
             .unwrap()
             .as_micros();
-        let timer = std::time::SystemTime::now();
+        /*     let timer = std::time::SystemTime::now();
 
         let proportion = proportion(width, ones);
 
         let prp = std::time::SystemTime::now()
             .duration_since(timer)
             .unwrap()
-            .as_micros();
+            .as_micros(); */
 
-        let sum = adjacent + block + fake_marker + proportion;
+        let sum = adjacent + fake_marker;
         // let f = |x: u32| format!("{:5} ({:.08}%)", x, (100 * x) as f32 / sum as f32);
         // eprintln!(
         //     "adjct: {}\nblock: {}\nf.mrk: {}\nprptn: {}\n",
@@ -187,8 +187,8 @@ mod penalties {
         //     f(proportion)
         // );
         eprintln!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-            adjacent, block, fake_marker, proportion, width, sum, adj, blk, fmk, prp
+            "{}\t{}\t{}\t{}\t{}\t{}",
+            adjacent, fake_marker, width, sum, adj, fmk
         );
         sum
     }
