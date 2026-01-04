@@ -83,7 +83,23 @@ mod info {
         }
 
         pub fn set_modes(modes: &Vec<(Mode, String)>) {
-            process_info(|x| x.modes = modes.clone());
+            // reduce modes vector into pairs of mode and character byte
+            let modes = modes.iter().flat_map(|(m, s)| {
+                std::iter::repeat(match m {
+                    Mode::Numeric => 0,
+                    Mode::AlphaNum => 1,
+                    Mode::ASCII => 2,
+                })
+                .take(s.len())
+                .zip(s.bytes())
+                .flat_map(|(m, b)| [m, b].into_iter())
+            });
+
+            // static means no drop, so clear out the vector instead of making a new one
+            process_info(|x| {
+                x.modes.clear();
+                x.modes.extend(modes);
+            });
         }
 
         pub fn reset_all() {
