@@ -188,9 +188,10 @@ fn main() -> std::io::Result<()> {
 
         let name = name_choice.unwrap_or(if example { "hello" } else { "out" }.to_string());
 
-        let bitmap = qr_standard::badstream::make_qr(input, version_choice, level_choice, mask_choice)
-            .add_border()
-            .scale(scale_choice);
+        let bitmap =
+            qr_standard::badstream::make_qr(input, version_choice, level_choice, mask_choice)
+                .add_border()
+                .scale(scale_choice);
 
         let (output, ext) = if xbm_choice {
             (bitmap.as_xbm(&name).into_bytes(), "xbm")
