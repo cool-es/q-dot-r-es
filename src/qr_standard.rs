@@ -144,16 +144,20 @@ mod penalties {
             bit[index / size] & (1usize << (index % size)) != 0
         };
 
-        let mut lookup_table: Vec<Vec<bool>> = vec![vec![false; width]; width];
-        for (i, row) in lookup_table.iter_mut().enumerate() {
-            for (j, val) in row.iter_mut().enumerate() {
-                *val = get(i, j);
-            }
-        }
-
-        let get = |x:usize, y:usize| lookup_table[x][y];
-
-        adjacent(width, get) + block(width, get) + fake_marker(width, get) + proportion(width, ones)
+        let adjacent = adjacent(width, get);
+        let block = block(width, get);
+        let fake_marker = fake_marker(width, get);
+        let proportion = proportion(width, ones);
+        let sum = adjacent + block + fake_marker + proportion;
+        let f = |x: u32| format!("{:5} ({:.08}%)", x, (100 * x) as f32 / sum as f32);
+        eprintln!(
+            "adjct: {}\nblock: {}\nf.mrk: {}\nprptn: {}\n",
+            f(adjacent),
+            f(block),
+            f(fake_marker),
+            f(proportion)
+        );
+        sum
     }
 
     // Penalty: "Adjacent modules in row/column in same color".
