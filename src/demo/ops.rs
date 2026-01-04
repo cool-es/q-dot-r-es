@@ -41,9 +41,18 @@ pub fn mask(mask: Option<NativeInt>) -> NativeInt {
 }
 
 pub fn set_bitmap(bitmap: &Vec<Byte>) {
+    // make 1 pixel per bit into 1 pixel per byte
+    let bytes = bitmap.iter().flat_map(|x| {
+        let mut ax = [0; 8];
+        for (i, v) in ax.iter_mut().enumerate() {
+            *v = x.wrapping_shr(7 - i as u32) & 1;
+        }
+        ax.into_iter()
+    });
+
     process_info(|x| {
         x.bitmap.clear();
-        x.bitmap.extend(bitmap.iter());
+        x.bitmap.extend(bytes);
     })
 }
 
