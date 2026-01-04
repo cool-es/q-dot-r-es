@@ -15,6 +15,7 @@ mod info {
     use crate::qr_standard::bitstream::{Mode, Token};
 
     // the structure holding information about the qr code
+    #[derive(Debug, Clone)]
     struct Info {
         bitmap: Vec<u8>,
         codewords: Vec<u8>,
@@ -44,9 +45,9 @@ mod info {
     // returns pointer to and byte length of a vector
     fn ptr_and_len<T>(vec: &'static T) -> (NativeInt, NativeInt)
     where
-        ByteVec: From<&'static T>,
+        Vec<u8>: From<&'static T>,
     {
-        let bytes: ByteVec = vec.into();
+        let bytes: Vec<u8> = vec.into();
         (bytes.as_ptr() as NativeInt, bytes.len() as NativeInt)
     }
 
@@ -69,7 +70,7 @@ mod info {
             }
         }
 
-        pub fn set_bitmap(bitmap: ByteVec) {
+        pub fn set_bitmap(bitmap: Vec<u8>) {
             // set new value
             process_info(|x| {
                 x.bitmap = bitmap;
@@ -94,4 +95,4 @@ mod info {
     }
 }
 
-pub use info::ops as ops;
+pub use info::ops;
