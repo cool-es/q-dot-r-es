@@ -381,6 +381,9 @@ pub fn set_fcode(input: &mut image::Bitmap, version: u32, fcode: u16) {
         let value = (fcode ^ mask) & (1 << bit) != 0;
         input.set_bit(x1, y1, value);
         input.set_bit(x2, y2, value);
+
+        #[cfg(feature = "demo")]
+        {}
     }
 }
 
