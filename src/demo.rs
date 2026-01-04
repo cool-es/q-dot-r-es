@@ -69,7 +69,7 @@ mod info {
             }
         }
 
-        pub fn bitmap(bitmap: ByteVec) {
+        pub fn set_bitmap(bitmap: ByteVec) {
             // set new value
             process_info(|x| {
                 x.bitmap = bitmap;
