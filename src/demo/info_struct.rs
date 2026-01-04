@@ -1,9 +1,6 @@
 //! The info-holding structure.
 
-use crate::{
-    demo::{Byte, NativeInt},
-    qr_standard::bitstream::{Mode, Token},
-};
+use crate::demo::{Byte, NativeInt};
 
 // the structure holding information about the qr code
 #[derive(Debug, Clone)]
