@@ -227,6 +227,10 @@ pub fn make_qr(
         QRInput::Manual(vec) => vec,
     };
 
+    // back up mode vector to info structure
+    #[cfg(feature = "demo")]
+    crate::demo::ops::set_modes(&input);
+
     let tokens = bitstream::make_token_stream(
         input,
         if utf8_encoding {
