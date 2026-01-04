@@ -19,20 +19,26 @@ mod info {
     // the structure holding information about the qr code
     #[derive(Debug, Clone)]
     struct Info {
+        bitmap_nomask: Vec<Byte>,
         bitmap: Vec<Byte>,
         codewords: Vec<Byte>,
-        modes: Vec<Byte>,
+        ecblock_data: Vec<Byte>,
+        corner_mask_data: Vec<Byte>,
         mask: NativeInt,
+        modes: Vec<Byte>,
         version: NativeInt,
     }
 
     impl Info {
         const fn new() -> Info {
             Info {
+                bitmap_nomask: Vec::new(),
                 bitmap: Vec::new(),
                 codewords: Vec::new(),
-                modes: Vec::new(),
+                ecblock_data: Vec::new(),
+                corner_mask_data: Vec::new(),
                 mask: NativeInt::MAX,
+                modes: Vec::new(),
                 version: NativeInt::MAX,
             }
         }
