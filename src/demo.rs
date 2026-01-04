@@ -19,13 +19,29 @@ mod info {
     // the structure holding information about the qr code
     #[derive(Debug, Clone)]
     struct Info {
+        // bitmap without a mask
         bitmap_nomask: Vec<Byte>,
+
+        // bitmap with a mask (readable qr code)
         bitmap: Vec<Byte>,
+
+        // TBD
         codewords: Vec<Byte>,
+
+        // the small rectangle in larger qr codes
         ecblock_data: Vec<Byte>,
+
+        // the mask data positioned around the alignment patterns
         corner_mask_data: Vec<Byte>,
+
+        // which mask was chosen
         mask: NativeInt,
+
+        // mode/byte data, as chosen by find_best_mode_optimization()
+        // reprocessed into a format more readable by wasm
         modes: Vec<Byte>,
+
+        // which version was chosen
         version: NativeInt,
     }
 
