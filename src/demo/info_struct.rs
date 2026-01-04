@@ -1,6 +1,6 @@
 //! The info-holding structure.
 
-use crate::demo::{Byte, NativeInt};
+use super::{Byte, NativeInt};
 
 // the structure holding information about the qr code
 #[derive(Debug, Clone)]

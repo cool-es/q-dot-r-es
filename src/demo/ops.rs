@@ -1,9 +1,7 @@
 //! operations to be called by the end user
 
-use crate::{
-    demo::{info_struct::Info, Byte, NativeInt},
-    qr_standard::bitstream::{Mode, Token},
-};
+use super::{info_struct::Info, Byte, NativeInt};
+use crate::qr_standard::bitstream::{Mode, Token};
 
 // the specific static variable storing the info at a specific place in memory
 static mut INFO_STATE: Info = Info::new();
