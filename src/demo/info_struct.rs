@@ -3,9 +3,9 @@
 use super::{Byte, NativeInt};
 
 // bitmap array of 177^2 bytes, the size of the largest QR version
-const BMP_SIZE: usize = 31329;
-pub type BmpArray = [Byte; BMP_SIZE];
-pub const BLANK_BMP: BmpArray = [0; BMP_SIZE];
+const MAX_SIZE: usize = 31329;
+pub type BmpArray = [Byte; MAX_SIZE];
+pub const BLANK_BMP: BmpArray = [0; MAX_SIZE];
 
 // the structure holding information about the qr code
 #[derive(Debug, Clone)]
