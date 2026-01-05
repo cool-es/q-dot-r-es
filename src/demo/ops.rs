@@ -1,6 +1,9 @@
 //! operations to be called by the end user
 
-use super::{info_struct::Info, Byte, NativeInt};
+use super::{
+    info_struct::{BmpArray, Info, BLANK_BMP},
+    Byte, NativeInt,
+};
 use crate::{
     image::Bitmap,
     qr_standard::bitstream::{Mode, Token},
@@ -41,33 +44,23 @@ pub fn mask(mask: Option<NativeInt>) -> NativeInt {
     }
 }
 
-pub fn set_bitmap(bitmap: &Vec<Byte>) {
-    // make 1 pixel per bit into 1 pixel per byte
-    let bytes = bitmap.iter().flat_map(|x| {
-        let f = |z: Byte| Byte::from(x & (1 << (7 - z)) == 0);
-        [f(0), f(1), f(2), f(3), f(4), f(5), f(6), f(7)].into_iter()
-    });
-
-    process_info(|x| {
-        x.bitmap.clear();
-        x.bitmap.extend(bytes);
-    })
-}
-
-pub fn set_bitmap_2<F>(bitmap: &Vec<Byte>, ff: F)
+pub fn set_bitmap<F>(bitmap: &Bitmap, choice: F)
 where
-    F: FnOnce(&mut Info) -> &mut Bitmap,
+    F: FnOnce(&mut Info) -> &mut BmpArray,
 {
     // make 1 pixel per bit into 1 pixel per byte
-    let bytes = bitmap.iter().flat_map(|x| {
+    let bytes = bitmap.debug_bits().iter().flat_map(|x| {
         let f = |z: Byte| Byte::from(x & (1 << (7 - z)) == 0);
 
         [f(0), f(1), f(2), f(3), f(4), f(5), f(6), f(7)].into_iter()
     });
 
     process_info(|x| {
-        ff(x).as_bmp();
-        x.bitmap.extend(bytes);
+        let mut array = choice(x);
+        *array = BLANK_BMP;
+        for (copy, byte) in array.iter_mut().zip(bytes) {
+            *copy = byte
+        }
     })
 }
 
