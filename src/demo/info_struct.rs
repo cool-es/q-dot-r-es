@@ -7,6 +7,10 @@ const MAX_SIZE: usize = 31329;
 pub type BmpArray = [Byte; MAX_SIZE];
 pub const BLANK_BMP: BmpArray = [0; MAX_SIZE];
 
+// coordinates, for tracking the snaking pattern of data
+pub type BmpCoords = [[NativeInt; 2]; MAX_SIZE];
+pub const BLANK_COORDS: BmpCoords = [[0; 2]; MAX_SIZE];
+
 // the structure holding information about the qr code
 #[derive(Debug, Clone)]
 pub struct Info {
@@ -19,8 +23,13 @@ pub struct Info {
     // bitmap with a mask (readable qr code)
     pub bitmap: BmpArray,
 
-    // TBD
-    pub codewords: Vec<Byte>,
+    // the width/height of the qr code
+    pub dims: NativeInt,
+
+    pub bitstream: Vec<Byte>,
+
+    // the coordinates for the bitstream
+    pub bitstream_coords: Vec<(NativeInt, NativeInt)>,
 
     // the small rectangle in larger qr codes
     pub ecblock_data: Vec<Byte>,
@@ -45,7 +54,9 @@ impl Info {
             bitmap_fcode: BLANK_BMP,
             bitmap_nomask: BLANK_BMP,
             bitmap: BLANK_BMP,
-            codewords: Vec::new(),
+            dims: NativeInt::MAX,
+            bitstream: Vec::new(),
+            bitstream_coords: Vec::new(),
             ecblock_data: Vec::new(),
             format_info: [0; 2],
             mask: NativeInt::MAX,
@@ -58,7 +69,7 @@ impl Info {
         self.bitmap_fcode = BLANK_BMP;
         self.bitmap_nomask = BLANK_BMP;
         self.bitmap = BLANK_BMP;
-        self.codewords.clear();
+        self.bitstream.clear();
         self.ecblock_data.clear();
         self.format_info = [0; 2];
         self.mask = NativeInt::MAX;
