@@ -2,17 +2,22 @@
 
 use super::{Byte, NativeInt};
 
+// bitmap array of 177^2 bytes, the size of the largest QR version
+const BMP_SIZE: usize = 31329;
+pub type BmpArray = [Byte; BMP_SIZE];
+pub const BLANK_BMP: BmpArray = [0; BMP_SIZE];
+
 // the structure holding information about the qr code
 #[derive(Debug, Clone)]
 pub struct Info {
     // bitmap without a mask
-    pub bitmap_fcode: Vec<Byte>,
+    pub bitmap_fcode: BmpArray,
 
     // bitmap without a mask
-    pub bitmap_nomask: Vec<Byte>,
+    pub bitmap_nomask: BmpArray,
 
     // bitmap with a mask (readable qr code)
-    pub bitmap: Vec<Byte>,
+    pub bitmap: BmpArray,
 
     // TBD
     pub codewords: Vec<Byte>,
@@ -37,9 +42,9 @@ pub struct Info {
 impl Info {
     pub const fn new() -> Info {
         Info {
-            bitmap_fcode: Vec::new(),
-            bitmap_nomask: Vec::new(),
-            bitmap: Vec::new(),
+            bitmap_fcode: BLANK_BMP,
+            bitmap_nomask: BLANK_BMP,
+            bitmap: BLANK_BMP,
             codewords: Vec::new(),
             ecblock_data: Vec::new(),
             format_info: [0; 2],
@@ -50,9 +55,9 @@ impl Info {
     }
 
     pub fn clear(&mut self) {
-        self.bitmap_fcode.clear();
-        self.bitmap_nomask.clear();
-        self.bitmap.clear();
+        self.bitmap_fcode = BLANK_BMP;
+        self.bitmap_nomask = BLANK_BMP;
+        self.bitmap = BLANK_BMP;
         self.codewords.clear();
         self.ecblock_data.clear();
         self.format_info = [0; 2];
