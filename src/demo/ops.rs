@@ -1,22 +1,22 @@
 //! operations to be called by the end user
 
-use super::{
-    info_struct::{BmpArray, Info, BLANK_BMP},
-    Byte, NativeInt,
-};
-use crate::{
-    image::Bitmap,
-    qr_standard::bitstream::{Mode, Token},
+use {
+    crate::{
+        demo::{info_struct, Byte, NativeInt},
+        image,
+        qr_standard::bitstream::{Mode, Token},
+    },
+    std::iter::repeat,
 };
 
 // the specific static variable storing the info at a specific place in memory
-static mut INFO_STATE: Info = Info::new();
+static mut INFO_STATE: info_struct::Info = info_struct::Info::new();
 
 // the unsafe "swiss army knife function"
 #[allow(static_mut_refs)]
 pub(crate) fn process_info<F, K>(f: F) -> K
 where
-    F: FnOnce(&mut Info) -> K,
+    F: FnOnce(&mut info_struct::Info) -> K,
 {
     unsafe { f(&mut INFO_STATE) }
 }
@@ -44,13 +44,13 @@ pub fn mask(mask: Option<NativeInt>) -> NativeInt {
     }
 }
 
-pub fn set_mask(bitmap: &Bitmap, mask: u8) {
+pub fn set_mask(bitmap: &image::Bitmap, mask: u8) {
     set_bitmap(bitmap, |info| &mut info.bitmap_masks[mask as usize]);
 }
 
-pub fn set_bitmap<F>(bitmap: &Bitmap, choice: F)
+pub fn set_bitmap<F>(bitmap: &image::Bitmap, choice: F)
 where
-    F: FnOnce(&mut Info) -> &mut BmpArray,
+    F: FnOnce(&mut info_struct::Info) -> &mut info_struct::BmpArray,
 {
     // make 1 pixel per bit into 1 pixel per byte
     let bytes = bitmap.debug_bits().iter().flat_map(|x| {
@@ -60,7 +60,7 @@ where
 
     process_info(|x| {
         let mut array = choice(x);
-        *array = BLANK_BMP;
+        *array = info_struct::BLANK_BMP;
         for (copy, byte) in array.iter_mut().zip(bytes) {
             *copy = byte
         }
@@ -81,7 +81,7 @@ pub fn set_modes(modes: &Vec<(Mode, String)>) {
     });
 
     process_info(|x| {
-        x.modes = crate::demo::info_struct::BLANK_INFO.modes;
+        x.modes = info_struct::BLANK_INFO.modes;
         for (mo, mx) in x.modes.iter_mut().zip(modes) {
             *mo = mx;
         }
