@@ -101,7 +101,7 @@ pub fn write_badstream_to_bitmap(stream: &Badstream, bitmap: &mut image::Bitmap)
     {
         let mut info_badstream = image::Bitmap::blank_clone(bitmap);
         badstream_subfunction(&mut info_badstream);
-        crate::demo::ops::set_bitmap(bitmap, |info| &mut info.bitmap_badstream);
+        crate::demo::ops::set_bitmap(info_badstream, |info| &mut info.bitmap_badstream);
     }
 
     badstream_subfunction(bitmap);
