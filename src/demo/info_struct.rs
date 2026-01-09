@@ -1,9 +1,15 @@
 //! The info-holding structure.
 
+// NOTES:
+// it seems like WASM has access to 17 * 65536 = 1114112 bytes, or 1.0625 MiB
+// this works out to about 35 of my (enormous) bitmap arrays + 17 KiB
+
 use super::{Byte, NativeInt};
 
 // bitmap array of 177^2 bytes, the size of the largest QR version
-const MAX_SIZE: usize = 31329;
+// const MAX_SIZE: usize = 31329;
+// bitmap array of a version 15 code
+const MAX_SIZE: usize = 5929;
 pub type BmpArray = [Byte; MAX_SIZE];
 pub const BLANK_BMP: BmpArray = [0; MAX_SIZE];
 
