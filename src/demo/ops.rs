@@ -1,12 +1,9 @@
 //! operations to be called by the end user
 
-use {
-    crate::{
-        demo::{info, Byte, NativeInt},
-        image,
-        qr_standard::bitstream::{Mode, Token},
-    },
-    std::iter::repeat,
+use crate::{
+    demo::{info, Byte, NativeInt},
+    image,
+    qr_standard::bitstream::{Mode, Token},
 };
 
 // the specific static variable storing the info at a specific place in memory
@@ -67,15 +64,20 @@ where
     })
 }
 
-pub fn set_modes(modes: &Vec<(Mode, String)>) {
+pub fn set_modes<T>(modes: T)
+where
+    T: AsRef<[(Mode, String)]>,
+{
     // reduce modes vector into pairs of mode and character byte
-    let modes = modes.iter().flat_map(|(m, s)| {
-        std::iter::repeat(match m {
-            Mode::Numeric => 0,
-            Mode::AlphaNum => 1,
-            Mode::ASCII => 2,
-        })
-        .take(s.len())
+    let modes = modes.as_ref().iter().flat_map(|(m, s)| {
+        std::iter::repeat_n(
+            match m {
+                Mode::Numeric => 0,
+                Mode::AlphaNum => 1,
+                Mode::ASCII => 2,
+            },
+            s.len(),
+        )
         .zip(s.bytes())
         .flat_map(|(m, b)| [m, b].into_iter())
     });

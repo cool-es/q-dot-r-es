@@ -95,7 +95,7 @@ const fn _vbi(total_codewords: usize, level_data: [[usize; 3]; 4]) -> [VersionBl
     // so use 'while'-and-increment instead
     while i < 4 {
         let [ecc, bc1, bc2] = level_data[i];
-        assert!((total_codewords - bc2) % (bc1 + bc2) == 0);
+        assert!((total_codewords - bc2).is_multiple_of(bc1 + bc2));
         let cw1 = (total_codewords - bc2) / (bc1 + bc2);
         let dcw1 = cw1 - ecc;
         let opt = if bc2 == 0 {

@@ -15,7 +15,7 @@ pub const BLANK_BMP: BmpArray = [0; MAX_SIZE];
 
 // coordinates, for tracking the snaking pattern of data
 pub type BmpCoords = [[NativeInt; 2]; MAX_SIZE];
-pub const BLANK_COORDS: BmpCoords = [[0; 2]; MAX_SIZE];
+pub static BLANK_COORDS: BmpCoords = [[0; 2]; MAX_SIZE];
 
 // the structure holding information about the qr code
 #[derive(Debug, Clone)]

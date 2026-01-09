@@ -126,7 +126,7 @@ mod penalties {
                     pushy |=
                         usize::from(input.get_bit(x, y).expect("out of bounds")) << (ticker % size);
                     ticker += 1;
-                    if ticker % size == 0 {
+                    if ticker.is_multiple_of(size) {
                         bit_vector.push(pushy);
                         pushy = 0;
                     }

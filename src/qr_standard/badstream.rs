@@ -34,7 +34,7 @@ pub fn pad_to(codeword_length: usize, stream: &mut Badstream) {
             stream.len(),
             8 * codeword_length
         )
-    } else if stream.len().div_ceil(8) > codeword_length - 1 && stream.len() % 8 != 0 {
+    } else if stream.len().div_ceil(8) > codeword_length - 1 && !stream.len().is_multiple_of(8) {
         panic!(
             "pad_to() error: {} bits away from bound; code will not scan",
             codeword_length * 8 - stream.len()
@@ -42,7 +42,7 @@ pub fn pad_to(codeword_length: usize, stream: &mut Badstream) {
     }
 
     // pad to next codeword boundary with zeros
-    if stream.len() % 8 != 0 {
+    if !stream.len().is_multiple_of(8) {
         stream.resize(stream.len().next_multiple_of(8), 0);
     }
 
@@ -314,7 +314,7 @@ fn apply_mask(bitmap: &mut image::Bitmap, version: u32, level: u8, mask: u8) {
     {
         // for info extraction:
         // apply mask to blank bitmap
-        let mut info_mask = image::Bitmap::blank_clone(&bitmap);
+        let mut info_mask = image::Bitmap::blank_clone(bitmap);
         apply_mask_to_bitmap(&mut info_mask);
 
         // store in info data structure
