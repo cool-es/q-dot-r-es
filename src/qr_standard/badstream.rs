@@ -1,5 +1,5 @@
 use super::{
-    bitstream::{self, search, Mode},
+    bitstream::{self, Mode, search},
     image, tables,
 };
 use crate::rdsm::{galois, poly};
@@ -196,7 +196,9 @@ pub fn full_block_encode(stream: &Badstream, version: u32, level: u8) -> Badstre
 
     assert!(
         output.len() == 8 * total_data_codewords,
-        "full_block_encode(): version {} level {}: number of codewords should be {} but is {}\norig. data {:?}\noutput {:?}",version,level,
+        "full_block_encode(): version {} level {}: number of codewords should be {} but is {}\norig. data {:?}\noutput {:?}",
+        version,
+        level,
         total_data_codewords,
         output.len() / 8,
         encoded_poly_vec,

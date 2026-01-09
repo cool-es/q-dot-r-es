@@ -159,14 +159,9 @@ impl Bitmap {
         }
 
         format!(
-                "#define {}_width {}\n#define {}_height {}\nstatic unsigned char {}_bits[] = {{\n{}}};\n",
-                name,
-                self.width,
-                name,
-                self.height,
-                name,
-                nicedata,
-            )
+            "#define {}_width {}\n#define {}_height {}\nstatic unsigned char {}_bits[] = {{\n{}}};\n",
+            name, self.width, name, self.height, name, nicedata,
+        )
     }
 
     pub fn new(width: usize, height: usize) -> Self {

@@ -60,11 +60,7 @@ impl image::Bitmap {
     /// Return the QR code version (if any) based on the bitmap's dimensions.
     pub fn qr_version(&self) -> Option<u32> {
         let (x, y) = self.dims();
-        if x != y {
-            None
-        } else {
-            size_to_version(x)
-        }
+        if x != y { None } else { size_to_version(x) }
     }
 
     /// Create a blank QR code template.

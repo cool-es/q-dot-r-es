@@ -1,7 +1,7 @@
 //! operations to be called by the end user
 
 use crate::{
-    demo::{info, Byte, NativeInt},
+    demo::{Byte, NativeInt, info},
     image,
     qr_standard::bitstream::{Mode, Token},
 };

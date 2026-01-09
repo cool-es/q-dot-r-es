@@ -7,7 +7,7 @@
 //
 // any message of length n has at most
 // 6n-6 edges (alternating between aln-asc).
-use super::{char_status, tables, Mode};
+use super::{Mode, char_status, tables};
 
 /// The cheapest known way to reach a character.
 type Cost = u32;
@@ -117,7 +117,7 @@ impl CharNodes {
 
     /// The type of the node with the lowest cost.
     fn cheapest_mode(&self) -> Mode {
-        use Mode::{AlphaNum, Numeric, ASCII};
+        use Mode::{ASCII, AlphaNum, Numeric};
 
         let mut cheapest_mode = ASCII;
         let mut lowest_cost = self.get(ASCII).unwrap();
