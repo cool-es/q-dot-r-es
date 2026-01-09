@@ -2,7 +2,7 @@
 
 use {
     crate::{
-        demo::{info_struct, Byte, NativeInt},
+        demo::{info, Byte, NativeInt},
         image,
         qr_standard::bitstream::{Mode, Token},
     },
@@ -10,13 +10,13 @@ use {
 };
 
 // the specific static variable storing the info at a specific place in memory
-static mut INFO_STATE: info_struct::Info = info_struct::Info::new();
+static mut INFO_STATE: info::Info = info::Info::new();
 
 // the unsafe "swiss army knife function"
 #[allow(static_mut_refs)]
 pub(crate) fn process_info<F, K>(f: F) -> K
 where
-    F: FnOnce(&mut info_struct::Info) -> K,
+    F: FnOnce(&mut info::Info) -> K,
 {
     unsafe { f(&mut INFO_STATE) }
 }
@@ -50,7 +50,7 @@ pub fn set_mask(bitmap: &image::Bitmap, mask: u8) {
 
 pub fn set_bitmap<F>(bitmap: &image::Bitmap, choice: F)
 where
-    F: FnOnce(&mut info_struct::Info) -> &mut info_struct::BmpArray,
+    F: FnOnce(&mut info::Info) -> &mut info::BmpArray,
 {
     // make 1 pixel per bit into 1 pixel per byte
     let bytes = bitmap.debug_bits().iter().flat_map(|x| {
@@ -60,7 +60,7 @@ where
 
     process_info(|x| {
         let mut array = choice(x);
-        *array = info_struct::BLANK_BMP;
+        *array = info::BLANK_BMP;
         for (copy, byte) in array.iter_mut().zip(bytes) {
             *copy = byte
         }
@@ -81,7 +81,7 @@ pub fn set_modes(modes: &Vec<(Mode, String)>) {
     });
 
     process_info(|x| {
-        x.modes = info_struct::BLANK_INFO.modes;
+        x.modes = info::BLANK_INFO.modes;
         for (mo, mx) in x.modes.iter_mut().zip(modes) {
             *mo = mx;
         }
