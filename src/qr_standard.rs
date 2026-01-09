@@ -560,6 +560,12 @@ fn new_blank_qr_code(version: u32) -> image::Bitmap {
         set_vcode(&mut output, version, qr_generate_vcode(version));
     }
 
+    #[cfg(feature = "demo")]
+    {
+        // copy bitmap to info structure
+        crate::demo::ops::set_bitmap(&output, |info| &mut info.bitmap_base);
+    }
+
     output
 }
 
