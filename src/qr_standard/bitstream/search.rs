@@ -272,8 +272,10 @@ impl Mode {
         }
     }
 
+    // // // // // // // // // // // // // // // // // //
     #[cfg(feature = "demo")]
     pub fn demo_index(self) -> usize {
         self.index()
     }
+    // // // // // // // // // // // // // // // // // //
 }

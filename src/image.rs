@@ -216,6 +216,7 @@ impl Bitmap {
         index_to_xy(vec_index, bit_index, self.width, self.height)
     }
 
+    // // // // // // // // // // // // // // // // // //
     /// set an already initialized bitmap to be identical to a different one
     /// only for use with wasm
     #[cfg(feature = "demo")]
@@ -226,12 +227,15 @@ impl Bitmap {
         self.height = x.height;
         self.border = x.border;
     }
+    // // // // // // // // // // // // // // // // // //
 
+    // // // // // // // // // // // // // // // // // //
     /// Create a new bitmap with the same dimensions as a different one.
     #[cfg(feature = "demo")]
     pub fn blank_clone(to_copy: &Self) -> Self {
         Self::new(to_copy.width, to_copy.height)
     }
+    // // // // // // // // // // // // // // // // // //
 }
 
 /// converts xy coordinates to the pixel's vector/bit indices:

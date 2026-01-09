@@ -97,12 +97,14 @@ pub fn write_badstream_to_bitmap(stream: &Badstream, bitmap: &mut image::Bitmap)
         }
     };
 
+    // // // // // // // // // // // // // // // // // //
     #[cfg(feature = "demo")]
     {
         let mut info_badstream = image::Bitmap::blank_clone(bitmap);
         badstream_subfunction(&mut info_badstream);
         crate::demo::ops::set_bitmap(info_badstream, |info| &mut info.bitmap_badstream);
     }
+    // // // // // // // // // // // // // // // // // //
 
     badstream_subfunction(bitmap);
 }
@@ -148,11 +150,13 @@ pub fn split_to_blocks_and_encode(
         output.push(poly::encode_message(&i, (cw - dcw) as u32));
     }
 
+    // // // // // // // // // // // // // // // // // //
     #[cfg(feature = "demo")]
     {
         // may be interesting to save polynomial
         // todo!()
     }
+    // // // // // // // // // // // // // // // // // //
 
     output
 }
@@ -244,11 +248,13 @@ pub fn make_qr(
         QRInput::Manual(vec) => vec,
     };
 
+    // // // // // // // // // // // // // // // // // //
     // back up mode vector to info structure
     #[cfg(feature = "demo")]
     {
         crate::demo::ops::set_modes(&input);
     }
+    // // // // // // // // // // // // // // // // // //
 
     let tokens = bitstream::make_token_stream(
         input,
@@ -311,6 +317,7 @@ fn apply_mask(bitmap: &mut image::Bitmap, version: u32, level: u8, mask: u8) {
         bitmap.qr_mask_xor(mask);
     };
 
+    // // // // // // // // // // // // // // // // // //
     #[cfg(feature = "demo")]
     {
         // for info extraction:
@@ -321,6 +328,7 @@ fn apply_mask(bitmap: &mut image::Bitmap, version: u32, level: u8, mask: u8) {
         // store in info data structure
         crate::demo::ops::set_bitmap(info_mask, |info| &mut info.bitmap_masks[mask as usize]);
     }
+    // // // // // // // // // // // // // // // // // //
 
     apply_mask_to_bitmap(bitmap);
 }

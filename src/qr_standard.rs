@@ -145,6 +145,7 @@ mod penalties {
         let fake_marker = fake_marker(width, get);
         let proportion = proportion(width, ones);
 
+        // // // // // // // // // // // // // // // // // //
         #[cfg(feature = "demo")]
         {
             // copy penalties to info struct
@@ -153,6 +154,7 @@ mod penalties {
                     .copy_from_slice(&[adjacent, block, fake_marker, proportion])
             });
         }
+        // // // // // // // // // // // // // // // // // //
 
         adjacent + block + fake_marker + proportion
     }
@@ -375,10 +377,12 @@ pub fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u16> {
     let fcode = (fmt as u32) << 10;
     let code = fcode as u16 | galois::qr_fcode_remainder(fcode) as u16;
 
+    // // // // // // // // // // // // // // // // // //
     #[cfg(feature = "demo")]
     {
         crate::demo::ops::with_info(|x| x.format_info = code.to_be_bytes())
     }
+    // // // // // // // // // // // // // // // // // //
 
     Some(code)
 }
@@ -556,11 +560,13 @@ fn new_blank_qr_code(version: u32) -> image::Bitmap {
         set_vcode(&mut output, version, qr_generate_vcode(version));
     }
 
+    // // // // // // // // // // // // // // // // // //
     #[cfg(feature = "demo")]
     {
         // copy bitmap to info structure
         crate::demo::ops::set_bitmap(&output, |info| &mut info.bitmap_base);
     }
+    // // // // // // // // // // // // // // // // // //
 
     output
 }
