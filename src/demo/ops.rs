@@ -80,10 +80,11 @@ pub fn set_modes(modes: &Vec<(Mode, String)>) {
         .flat_map(|(m, b)| [m, b].into_iter())
     });
 
-    // static means no drop, so clear out the vector instead of making a new one
     process_info(|x| {
-        x.modes.clear();
-        x.modes.extend(modes);
+        x.modes = crate::demo::info_struct::BLANK_INFO.modes;
+        for (mo, mx) in x.modes.iter_mut().zip(modes) {
+            *mo = mx;
+        }
     });
 }
 

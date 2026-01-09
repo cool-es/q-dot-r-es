@@ -35,13 +35,13 @@ pub struct Info {
     // the width/height of the qr code
     pub dims: NativeInt,
 
-    pub bitstream: Vec<Byte>,
+    pub bitstream: [Byte; MAX_SIZE],
 
     // the coordinates for the bitstream
-    pub bitstream_coords: Vec<(NativeInt, NativeInt)>,
+    pub bitstream_coords: [(NativeInt, NativeInt); MAX_SIZE],
 
     // the small rectangle in larger qr codes
-    pub ecblock_data: Vec<Byte>,
+    pub ecblock_data: [Byte; MAX_SIZE],
 
     // the mask data positioned around the alignment patterns
     pub format_info: [Byte; 2],
@@ -51,7 +51,7 @@ pub struct Info {
 
     // mode/byte data, as chosen by find_best_mode_optimization()
     // reprocessed into a format more readable by javascript
-    pub modes: Vec<Byte>,
+    pub modes: [Byte; MAX_SIZE],
 
     // which version was chosen
     pub version: NativeInt,
@@ -59,64 +59,33 @@ pub struct Info {
     pub penalties: [u32; 4],
 }
 
+pub const BLANK_INFO: Info = Info {
+    bitmap: BLANK_BMP,
+    bitmap_badstream: BLANK_BMP,
+    bitmap_base: BLANK_BMP,
+    bitmap_fcode: BLANK_BMP,
+    bitmap_masks: [BLANK_BMP; 8],
+    bitmap_nomask: BLANK_BMP,
+
+    bitstream_coords: [(0, 0); MAX_SIZE],
+    bitstream: [0; MAX_SIZE],
+    ecblock_data: [0; MAX_SIZE],
+    modes: [Byte::MAX; MAX_SIZE],
+
+    format_info: [0; 2],
+    penalties: [0; 4],
+
+    dims: NativeInt::MAX,
+    mask: NativeInt::MAX,
+    version: NativeInt::MAX,
+};
+
 impl Info {
     pub const fn new() -> Info {
-        Info {
-            bitmap: BLANK_BMP,
-            bitmap_badstream: BLANK_BMP,
-            bitmap_base: BLANK_BMP,
-            bitmap_fcode: BLANK_BMP,
-            bitmap_masks: [BLANK_BMP; 8],
-            bitmap_nomask: BLANK_BMP,
-
-            bitstream_coords: Vec::new(),
-            bitstream: Vec::new(),
-            ecblock_data: Vec::new(),
-            modes: Vec::new(),
-
-            format_info: [0; 2],
-
-            dims: NativeInt::MAX,
-            mask: NativeInt::MAX,
-            version: NativeInt::MAX,
-            penalties: [0; 4],
-        }
+        BLANK_INFO
     }
 
     pub fn clear(&mut self) {
-        let Info {
-            bitmap_badstream,
-            bitmap_base,
-            bitmap_fcode,
-            bitmap_masks,
-            bitmap_nomask,
-            bitmap,
-            bitstream_coords,
-            bitstream,
-            dims,
-            ecblock_data,
-            format_info,
-            mask,
-            modes,
-            penalties,
-            version,
-        } = self;
-
-        *bitmap = BLANK_BMP;
-        *bitmap_badstream = BLANK_BMP;
-        *bitmap_base = BLANK_BMP;
-        *bitmap_fcode = BLANK_BMP;
-        *bitmap_masks = [BLANK_BMP; 8];
-        *bitmap_nomask = BLANK_BMP;
-
-        bitstream.clear();
-        bitstream_coords.clear();
-        ecblock_data.clear();
-        modes.clear();
-
-        *format_info = [0; 2];
-        *dims = NativeInt::MAX;
-        *mask = NativeInt::MAX;
-        *version = NativeInt::MAX;
+        *self = BLANK_INFO;
     }
 }
