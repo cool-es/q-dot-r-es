@@ -41,10 +41,6 @@ pub fn mask(mask: Option<NativeInt>) -> NativeInt {
     }
 }
 
-pub fn set_mask(bitmap: &image::Bitmap, mask: u8) {
-    set_bitmap(bitmap, |info| &mut info.bitmap_masks[mask as usize]);
-}
-
 pub fn set_bitmap<B, F>(bitmap: B, choice: F)
 where
     B: std::borrow::Borrow<image::Bitmap>,
@@ -56,8 +52,8 @@ where
         [f(0), f(1), f(2), f(3), f(4), f(5), f(6), f(7)].into_iter()
     });
 
-    with_info(|x| {
-        let array = choice(x);
+    with_info(|info| {
+        let array = choice(info);
         *array = info::BLANK_BMP;
         for (copy, byte) in array.iter_mut().zip(bytes) {
             *copy = byte

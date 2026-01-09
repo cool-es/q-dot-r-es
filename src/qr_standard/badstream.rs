@@ -148,6 +148,12 @@ pub fn split_to_blocks_and_encode(
         output.push(poly::encode_message(&i, (cw - dcw) as u32));
     }
 
+    #[cfg(feature = "demo")]
+    {
+        // may be interesting to save polynomial
+        // todo!()
+    }
+
     output
 }
 
@@ -318,7 +324,7 @@ fn apply_mask(bitmap: &mut image::Bitmap, version: u32, level: u8, mask: u8) {
         apply_mask_to_bitmap(&mut info_mask);
 
         // store in info data structure
-        crate::demo::ops::set_mask(&info_mask, mask);
+        crate::demo::ops::set_bitmap(info_mask, |info| &mut info.bitmap_masks[mask as usize]);
     }
 
     apply_mask_to_bitmap(bitmap);
