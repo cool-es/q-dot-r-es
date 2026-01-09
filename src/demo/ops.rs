@@ -47,43 +47,44 @@ where
     F: FnOnce(&mut info::Info) -> &mut info::BmpArray,
 {
     // make 1 pixel per bit into 1 pixel per byte
-    let bytes = bitmap.borrow().debug_bits().iter().flat_map(|x| {
-        let f = |z: Byte| Byte::from(x & (1 << (7 - z)) == 0);
-        [f(0), f(1), f(2), f(3), f(4), f(5), f(6), f(7)].into_iter()
-    });
+    let bytes = bitmap
+        .borrow()
+        .debug_bits()
+        .iter()
+        .flat_map(|x| {
+            let f = |z: Byte| Byte::from(x & (1 << (7 - z)) == 0);
+            [f(0), f(1), f(2), f(3), f(4), f(5), f(6), f(7)].into_iter()
+        })
+        .collect::<Vec<Byte>>();
 
     with_info(|info| {
         let array = choice(info);
         *array = info::BLANK_BMP;
-        for (copy, byte) in array.iter_mut().zip(bytes) {
-            *copy = byte
-        }
+        array[..bytes.len()].copy_from_slice(&bytes);
     })
 }
 
-pub fn set_modes<T>(modes: T)
+pub fn set_modes<T, S>(modes: T)
 where
-    T: AsRef<[(Mode, String)]>,
+    T: AsRef<[(Mode, S)]>,
+    S: AsRef<[u8]>,
 {
     // reduce modes vector into pairs of mode and character byte
-    let modes = modes.as_ref().iter().flat_map(|(m, s)| {
-        std::iter::repeat_n(
-            match m {
-                Mode::Numeric => 0,
-                Mode::AlphaNum => 1,
-                Mode::ASCII => 2,
-            },
-            s.len(),
-        )
-        .zip(s.bytes())
-        .flat_map(|(m, b)| [m, b].into_iter())
-    });
+    let mode_slice: Vec<u8> = modes
+        .as_ref()
+        .iter()
+        .flat_map(|(m, s)| {
+            let s: &[u8] = s.as_ref();
+            std::iter::repeat_n(Mode::demo_index(*m), s.len())
+                .zip(s.iter())
+                .flat_map(|(m, b)| [m as u8, *b].into_iter())
+        })
+        .collect();
 
     with_info(|x| {
         x.modes = info::BLANK_INFO.modes;
-        for (mo, mx) in x.modes.iter_mut().zip(modes) {
-            *mo = mx;
-        }
+        let min = mode_slice.len().min(x.modes.len());
+        x.modes[..min].copy_from_slice(&mode_slice[..min]);
     });
 }
 

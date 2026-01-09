@@ -271,4 +271,9 @@ impl Mode {
             Self::Numeric => 2,
         }
     }
+
+    #[cfg(feature = "demo")]
+    pub fn demo_index(self) -> usize {
+        self.index()
+    }
 }
