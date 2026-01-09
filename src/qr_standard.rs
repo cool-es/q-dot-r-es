@@ -152,7 +152,7 @@ mod penalties {
         #[cfg(feature = "demo")]
         {
             // copy penalties to info struct
-            crate::demo::ops::process_info(|info| {
+            crate::demo::ops::with_info(|info| {
                 info.penalties
                     .copy_from_slice(&[adjacent, block, fake_marker, proportion])
             });
@@ -381,7 +381,7 @@ pub fn data_to_fcode(correction_level: u8, mask_pattern: u8) -> Option<u16> {
 
     #[cfg(feature = "demo")]
     {
-        crate::demo::ops::process_info(|x| x.format_info = code.to_be_bytes())
+        crate::demo::ops::with_info(|x| x.format_info = code.to_be_bytes())
     }
 
     Some(code)

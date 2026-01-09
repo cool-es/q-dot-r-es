@@ -14,7 +14,7 @@ static mut INFO_STATE: info::Info = info::Info::new();
 
 // the unsafe "swiss army knife function"
 #[allow(static_mut_refs)]
-pub(crate) fn process_info<F, K>(f: F) -> K
+pub(crate) fn with_info<F, K>(f: F) -> K
 where
     F: FnOnce(&mut info::Info) -> K,
 {
@@ -33,14 +33,14 @@ where
 pub fn mask(mask: Option<NativeInt>) -> NativeInt {
     if let Some(mask) = mask {
         // set new value
-        process_info(|x| {
+        with_info(|x| {
             let old = x.mask;
             x.mask = mask;
             old
         })
     } else {
         // return existing value
-        process_info(|x| x.mask)
+        with_info(|x| x.mask)
     }
 }
 
@@ -58,8 +58,8 @@ where
         [f(0), f(1), f(2), f(3), f(4), f(5), f(6), f(7)].into_iter()
     });
 
-    process_info(|x| {
-        let mut array = choice(x);
+    with_info(|x| {
+        let array = choice(x);
         *array = info::BLANK_BMP;
         for (copy, byte) in array.iter_mut().zip(bytes) {
             *copy = byte
@@ -80,7 +80,7 @@ pub fn set_modes(modes: &Vec<(Mode, String)>) {
         .flat_map(|(m, b)| [m, b].into_iter())
     });
 
-    process_info(|x| {
+    with_info(|x| {
         x.modes = info::BLANK_INFO.modes;
         for (mo, mx) in x.modes.iter_mut().zip(modes) {
             *mo = mx;
@@ -89,7 +89,7 @@ pub fn set_modes(modes: &Vec<(Mode, String)>) {
 }
 
 pub fn reset_all() {
-    process_info(|x| {
+    with_info(|x| {
         x.clear();
     })
 }
