@@ -88,27 +88,62 @@ pub type VersionBlockInfo = (usize, usize, usize, Option<(usize, usize, usize)>)
 //      number of blocks of type 1,
 //      number of blocks of type 2
 const fn _vbi(total_codewords: usize, level_data: [[usize; 3]; 4]) -> [VersionBlockInfo; 4] {
-    let mut arr: [VersionBlockInfo; 4] = [(0, 0, 0, None); 4];
-    let mut i = 0;
+    let mut output: [VersionBlockInfo; 4] = [(0, 0, 0, None); 4];
+
+    // documentation:
+    // remember, blocks contain codewords!
+    // there are `total_codewords` in total in a given qr code version, and `ecc` error-correcting ones per block.
+    // the different kinds of BLOCKS are:
+    // `bc1` blocks of type 1,
+    // `bc2` blocks of type 2.
+    // the type-2 blocks have 1 additional data codeword.
+    // so `total_codewords` = x*`bc1` + (x+1)*`bc2`
+    // = x * (`bc1`+`bc2`) + `bc2`.
+    // thus, `bc1`+`bc2` divides `total_codewords`-`bc2`; x = `cw1`, the number of codewords in the first block type
+    //
 
     // const functions can't use 'for' loops,
     // so use 'while'-and-increment instead
+    let mut i = 0;
     while i < 4 {
-        let [ecc, bc1, bc2] = level_data[i];
-        assert!((total_codewords - bc2).is_multiple_of(bc1 + bc2));
-        let cw1 = (total_codewords - bc2) / (bc1 + bc2);
-        let dcw1 = cw1 - ecc;
-        let opt = if bc2 == 0 {
-            None
+        let [ecc_per_block, block_count_type_1, block_count_type_2] = level_data[i];
+
+        //  i     total_codewords: TCW = CW1*BC1 + (1+CW1)*BC2 -> TCW-BC2 = CW1*(BC1+BC2)
+        //  i     ecc_per_block: ECC
+        //  i  o  block_count_type_1: BC1
+        //  i  o  block_count_type_2: BC2
+        //     o  codewords_per_type_1_block: CW1 = (TCW-BC2) / (BC1+BC2) = DCW1 + ECC
+        //     o  data_codewords_per_type_1_block: DCW1 = CW1-ECC
+        //     o  codewords_per_type_2_block: CW2 = ECC+DCW2 = 1+CW1
+        //     o  data_codewords_per_type_2_block: DCW2 = 1+DCW1
+
+        let codewords_per_type_1_block =
+            (total_codewords - block_count_type_2) / (block_count_type_1 + block_count_type_2);
+
+        let data_codewords_per_type_1_block = codewords_per_type_1_block - ecc_per_block;
+
+        let type_2_data = if block_count_type_2 != 0 {
+            let data_codewords_per_type_2_block = data_codewords_per_type_1_block + 1;
+            let codewords_per_type_2_block = codewords_per_type_1_block + 1;
+            Some((
+                block_count_type_2,
+                codewords_per_type_2_block,
+                data_codewords_per_type_2_block,
+            ))
         } else {
-            Some((bc2, cw1 + 1, dcw1 + 1))
+            None
         };
 
-        arr[i] = (bc1, cw1, dcw1, opt);
+        output[i] = (
+            block_count_type_1,
+            codewords_per_type_1_block,
+            data_codewords_per_type_1_block,
+            type_2_data,
+        );
         i += 1;
     }
 
-    arr
+    output
 }
 
 /// error correction data (pg. 41...).

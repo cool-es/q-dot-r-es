@@ -135,13 +135,14 @@ pub fn split_to_blocks_and_encode(
         (poly.as_slice(), &[])
     };
 
-    for i in 0..bc {
-        let (a, b) = (i * dcw, (i + 1) * dcw);
-        unencoded.push(first[a..b].to_vec());
-    }
-    for i in 0..bc2 {
-        let (a, b) = (i * dcw2, (i + 1) * dcw2);
-        unencoded.push(second[a..b].to_vec());
+    // the main block scrambling code
+    for (polynomial, data_codewords, block_count) in [(first, dcw, bc), (second, dcw2, bc2)] {
+        for i in 0..block_count {
+            let start = i * data_codewords;
+            let len = data_codewords;
+            let segment = polynomial[start..start + len].to_vec();
+            unencoded.push(segment);
+        }
     }
 
     let mut output = Vec::new();
