@@ -247,13 +247,6 @@ pub fn make_qr(
     // back up mode vector to info structure
     #[cfg(feature = "demo")]
     {
-        let a = input
-            .iter()
-            .map(|(m, s)| (m, s, s.bytes().collect::<Vec<u8>>()))
-            .collect::<Vec<_>>();
-        for a in a {
-            println!("\n{:?}", a);
-        }
         crate::demo::ops::set_modes(&input);
     }
 
