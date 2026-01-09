@@ -75,27 +75,36 @@ pub fn push_bits(bits: &str, stream: &mut Badstream) {
 }
 
 pub fn write_badstream_to_bitmap(stream: &Badstream, bitmap: &mut image::Bitmap) {
-    let version = bitmap.qr_version().expect("invalid bitmap size");
-    let max = bitmap.dims().0 - 1;
-    let (mut x, mut y) = (max, max);
-    for (a, &i) in stream.iter().enumerate() {
-        bitmap.set_bit(x, y, i != 0);
-        match super::next_data_bit(x, y, version) {
-            Some((x2, y2)) => {
+    let badstream_subfunction = |bitmap: &mut image::Bitmap| {
+        let version = bitmap.qr_version().expect("invalid bitmap size");
+        let max = bitmap.dims().0 - 1;
+        let (mut x, mut y) = (max, max);
+        for (a, &i) in stream.iter().enumerate() {
+            bitmap.set_bit(x, y, i != 0);
+
+            if let Some((x2, y2)) = super::next_data_bit(x, y, version) {
                 (x, y) = (x2, y2);
-            }
-            None => {
+            } else {
                 assert!(
-                        a + 1 == stream.len(),
-                        "write_badstream_to_bitmap(): bitstream is {} bits but image only fits {} (difference: {} bits)",
-                        stream.len(),
-                        a + 1,
-                        stream.len() as i32 - (a + 1) as i32,
-                    );
+                    a + 1 == stream.len(),
+                    "write_badstream_to_bitmap(): bitstream is {} bits but image only fits {} (difference: {} bits)",
+                    stream.len(),
+                    a + 1,
+                    stream.len() as i32 - (a + 1) as i32,
+                );
                 break;
             }
         }
+    };
+
+    #[cfg(feature = "demo")]
+    {
+        let mut info_badstream = image::Bitmap::blank_clone(bitmap);
+        badstream_subfunction(&mut info_badstream);
+        crate::demo::ops::set_bitmap(bitmap, |info| &mut info.bitmap_badstream);
     }
+
+    badstream_subfunction(bitmap);
 }
 
 pub fn split_to_blocks_and_encode(
@@ -296,11 +305,23 @@ fn apply_mask(bitmap: &mut image::Bitmap, version: u32, level: u8, mask: u8) {
     let fcode = super::data_to_fcode([0b01, 0b00, 0b11, 0b10][level as usize], mask)
         .expect("could not generate format code");
 
-    #[cfg(feature = "demo")]
-    {}
+    let apply_mask_to_bitmap = |bitmap: &mut image::Bitmap| {
+        super::set_fcode(bitmap, version, fcode);
+        bitmap.qr_mask_xor(mask);
+    };
 
-    super::set_fcode(bitmap, version, fcode);
-    bitmap.qr_mask_xor(mask);
+    #[cfg(feature = "demo")]
+    {
+        // for info extraction:
+        // apply mask to blank bitmap
+        let mut info_mask = image::Bitmap::blank_clone(&bitmap);
+        apply_mask_to_bitmap(&mut info_mask);
+
+        // store in info data structure
+        crate::demo::ops::set_mask(&info_mask, mask);
+    }
+
+    apply_mask_to_bitmap(bitmap);
 }
 
 pub fn apply_best_mask(bitmap: &mut image::Bitmap, version: u32, level: u8) {

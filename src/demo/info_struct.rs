@@ -23,6 +23,15 @@ pub struct Info {
     // bitmap with a mask (readable qr code)
     pub bitmap: BmpArray,
 
+    // only the binary "badstream"
+    pub bitmap_badstream: BmpArray,
+
+    // only the base QR alignment patterns etc
+    pub bitmap_base: BmpArray,
+
+    // all of the masks applied to otherwise blank bitmaps
+    pub bitmap_masks: [BmpArray; 8],
+
     // the width/height of the qr code
     pub dims: NativeInt,
 
@@ -51,29 +60,59 @@ pub struct Info {
 impl Info {
     pub const fn new() -> Info {
         Info {
-            bitmap_fcode: BLANK_BMP,
-            bitmap_nomask: BLANK_BMP,
             bitmap: BLANK_BMP,
-            dims: NativeInt::MAX,
-            bitstream: Vec::new(),
+            bitmap_badstream: BLANK_BMP,
+            bitmap_base: BLANK_BMP,
+            bitmap_fcode: BLANK_BMP,
+            bitmap_masks: [BLANK_BMP; 8],
+            bitmap_nomask: BLANK_BMP,
+
             bitstream_coords: Vec::new(),
+            bitstream: Vec::new(),
             ecblock_data: Vec::new(),
-            format_info: [0; 2],
-            mask: NativeInt::MAX,
             modes: Vec::new(),
+
+            format_info: [0; 2],
+
+            dims: NativeInt::MAX,
+            mask: NativeInt::MAX,
             version: NativeInt::MAX,
         }
     }
 
     pub fn clear(&mut self) {
-        self.bitmap_fcode = BLANK_BMP;
-        self.bitmap_nomask = BLANK_BMP;
-        self.bitmap = BLANK_BMP;
-        self.bitstream.clear();
-        self.ecblock_data.clear();
-        self.format_info = [0; 2];
-        self.mask = NativeInt::MAX;
-        self.modes.clear();
-        self.version = NativeInt::MAX;
+        let Info {
+            bitmap_badstream,
+            bitmap_base,
+            bitmap_fcode,
+            bitmap_masks,
+            bitmap_nomask,
+            bitmap,
+            bitstream_coords,
+            bitstream,
+            dims,
+            ecblock_data,
+            format_info,
+            mask,
+            modes,
+            version,
+        } = self;
+
+        *bitmap = BLANK_BMP;
+        *bitmap_badstream = BLANK_BMP;
+        *bitmap_base = BLANK_BMP;
+        *bitmap_fcode = BLANK_BMP;
+        *bitmap_masks = [BLANK_BMP; 8];
+        *bitmap_nomask = BLANK_BMP;
+
+        bitstream.clear();
+        bitstream_coords.clear();
+        ecblock_data.clear();
+        modes.clear();
+
+        *format_info = [0; 2];
+        *dims = NativeInt::MAX;
+        *mask = NativeInt::MAX;
+        *version = NativeInt::MAX;
     }
 }

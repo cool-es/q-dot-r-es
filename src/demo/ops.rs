@@ -44,6 +44,10 @@ pub fn mask(mask: Option<NativeInt>) -> NativeInt {
     }
 }
 
+pub fn set_mask(bitmap: &Bitmap, mask: u8) {
+    set_bitmap(bitmap, |info| &mut info.bitmap_masks[mask as usize]);
+}
+
 pub fn set_bitmap<F>(bitmap: &Bitmap, choice: F)
 where
     F: FnOnce(&mut Info) -> &mut BmpArray,
@@ -51,7 +55,6 @@ where
     // make 1 pixel per bit into 1 pixel per byte
     let bytes = bitmap.debug_bits().iter().flat_map(|x| {
         let f = |z: Byte| Byte::from(x & (1 << (7 - z)) == 0);
-
         [f(0), f(1), f(2), f(3), f(4), f(5), f(6), f(7)].into_iter()
     });
 
