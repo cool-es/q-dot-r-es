@@ -144,7 +144,21 @@ mod penalties {
             bit[index / size] & (1usize << (index % size)) != 0
         };
 
-        adjacent(width, get) + block(width, get) + fake_marker(width, get) + proportion(width, ones)
+        let adjacent = adjacent(width, get);
+        let block = block(width, get);
+        let fake_marker = fake_marker(width, get);
+        let proportion = proportion(width, ones);
+
+        #[cfg(feature = "demo")]
+        {
+            // copy penalties to info struct
+            crate::demo::ops::process_info(|info| {
+                info.penalties
+                    .copy_from_slice(&[adjacent, block, fake_marker, proportion])
+            });
+        }
+
+        adjacent + block + fake_marker + proportion
     }
 
     // Penalty: "Adjacent modules in row/column in same color".
@@ -381,9 +395,6 @@ pub fn set_fcode(input: &mut image::Bitmap, version: u32, fcode: u16) {
         let value = (fcode ^ mask) & (1 << bit) != 0;
         input.set_bit(x1, y1, value);
         input.set_bit(x2, y2, value);
-
-        #[cfg(feature = "demo")]
-        {}
     }
 }
 

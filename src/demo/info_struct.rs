@@ -55,6 +55,8 @@ pub struct Info {
 
     // which version was chosen
     pub version: NativeInt,
+
+    pub penalties: [u32; 4],
 }
 
 impl Info {
@@ -77,6 +79,7 @@ impl Info {
             dims: NativeInt::MAX,
             mask: NativeInt::MAX,
             version: NativeInt::MAX,
+            penalties: [0; 4],
         }
     }
 
@@ -95,6 +98,7 @@ impl Info {
             format_info,
             mask,
             modes,
+            penalties,
             version,
         } = self;
 
